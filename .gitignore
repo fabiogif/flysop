@@ -1,0 +1,14 @@
+/vendor
+./vendor
+/node_modules
+./node_modules
+docker-compose.yml
+./docker-compose.yml
+.vercel
+.env.docker
+.env
+.env.*
+!.env.docker.example
+!.env.example
+.env.example
+.env.example.docker

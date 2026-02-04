@@ -1,0 +1,128 @@
+version: '3.8'
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        container_name: soprender-app
+        restart: unless-stopped
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+            - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+        networks:
+            - sail
+        depends_on:
+            pgsql:
+                condition: service_healthy
+            mysql:
+                condition: service_healthy
+            minio:
+                condition: service_started
+        env_file:
+            - .env
+        # DB_* vêm do .env (Supabase ou local). Para Postgres local: DB_HOST=pgsql, DB_PORT=5432, etc.
+        ports:
+            - '8000:8000'
+        command: sh -c "composer install --no-interaction && php artisan key:generate --force || true && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=8000"
+
+    nginx:
+        image: nginx:alpine
+        container_name: soprender-nginx
+        restart: unless-stopped
+        ports:
+            - '80:80'
+        volumes:
+            - ./:/var/www/html
+            - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        networks:
+            - sail
+        depends_on:
+            - app
+
+    minio:
+        image: 'minio/minio:latest'
+        restart: unless-stopped
+        ports:
+            - '9001:9000'
+            - '8900:8900'
+        environment:
+            MINIO_ROOT_USER: minio
+            MINIO_ROOT_PASSWORD: password
+        command: 'minio server /data/minio --console-address ":8900"'
+        volumes:
+            - minio-data:/data/minio
+        healthcheck:
+            test:
+                - CMD
+                - curl
+                - '-f'
+                - 'http://localhost:9000/minio/health/live'
+            retries: 3
+            timeout: 5s
+        networks:
+            - sail
+
+    pgsql:
+        image: 'postgres:15'
+        ports:
+            - '${FORWARD_DB_PORT:-5432}:5432'
+        environment:
+            PGPASSWORD: '${DB_PASSWORD:-secret}'
+            POSTGRES_DB: '${DB_DATABASE:-laravel}'
+            POSTGRES_USER: '${DB_USERNAME:-laravel}'
+            POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+        volumes:
+            - 'sail-pgsql:/var/lib/postgresql/data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - pg_isready
+                - '-q'
+                - '-d'
+                - '${DB_DATABASE:-laravel}'
+                - '-U'
+                - '${DB_USERNAME:-laravel}'
+            retries: 3
+            timeout: 5s
+
+    mysql:
+        image: 'mysql/mysql-server:8.0'
+        ports:
+            - '${FORWARD_DB_PORT:-3306}:3306'
+        environment:
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-secret}'
+            MYSQL_ROOT_HOST: '%'
+            MYSQL_DATABASE: '${DB_DATABASE:-laravel}'
+            MYSQL_USER: '${DB_USERNAME:-laravel}'
+            MYSQL_PASSWORD: '${DB_PASSWORD:-secret}'
+            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+        volumes:
+            - 'sail-mysql:/var/lib/mysql'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - mysqladmin
+                - ping
+                - '-p${DB_PASSWORD:-secret}'
+            retries: 3
+            timeout: 5s
+
+volumes:
+    sail-pgsql:
+        driver: local
+    sail-mysql:
+        driver: local
+    minio-data:
+        driver: local
+
+networks:
+    sail:
+        driver: bridge
+        driver_opts:
+            com.docker.network.enable_ipv6: "true"

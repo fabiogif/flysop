@@ -1,0 +1,125 @@
+/**
+ * SOP – Tema do site (Fase 2: Layout/UX)
+ * Variáveis, hierarquia visual e acessibilidade.
+ */
+:root {
+  --sop-primary: #0d6efd;
+  --sop-primary-dark: #0a58ca;
+  --sop-text: #212529;
+  --sop-text-muted: #6c757d;
+  --sop-bg-light: #f8f9fa;
+  --sop-border: #dee2e6;
+  --sop-radius: 0.5rem;
+  --sop-spacing: 1rem;
+  --sop-spacing-lg: 2rem;
+  --sop-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  --sop-focus-ring: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Skip link – acessibilidade */
+.skip-link {
+  position: absolute;
+  top: -3rem;
+  left: var(--sop-spacing);
+  padding: 0.5rem 1rem;
+  background: var(--sop-primary);
+  color: #fff;
+  border-radius: var(--sop-radius);
+  z-index: 9999;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: var(--sop-spacing);
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Conteúdo principal */
+.site-main {
+  outline: none;
+}
+.site-main:focus {
+  outline: none;
+}
+
+/* Botões – foco visível */
+.btn-primary:focus-visible,
+.btn-outline-primary:focus-visible,
+a.btn:focus-visible {
+  box-shadow: var(--sop-focus-ring);
+  outline: none;
+}
+
+/* Navegação – foco em links */
+.navbar .nav-link:focus-visible,
+.navbar .btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Seções – espaçamento consistente */
+.section-py {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+@media (min-width: 768px) {
+  .section-py {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
+/* Cards de serviço – altura uniforme e hover */
+.sop-service-card {
+  height: 100%;
+  border-radius: var(--sop-radius);
+  border: 1px solid var(--sop-border);
+  padding: var(--sop-spacing-lg);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.sop-service-card:hover {
+  box-shadow: var(--sop-shadow);
+  border-color: var(--sop-primary);
+}
+.sop-service-card h3 {
+  font-size: 1.125rem;
+  margin-bottom: 0.5rem;
+}
+.sop-service-card p {
+  color: var(--sop-text-muted);
+  font-size: 0.9375rem;
+  margin-bottom: 0;
+}
+
+/* Hero – título corrigido e CTA */
+.sop-hero-title {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  line-height: 1.2;
+}
+.sop-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Footer – texto e links */
+#site-footer a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.copyright {
+  font-size: 0.875rem;
+  color: var(--sop-text-muted);
+}
+
+/* Botão subir – acessível */
+#movetop {
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+#movetop:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}

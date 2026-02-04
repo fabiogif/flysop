@@ -1,0 +1,27 @@
+features:
+  - 'php latest'
+  - mysql
+  - ssl
+source: 'https://github.com/fabiogif/sopadminvercel'
+root: public_html/public
+nginx:
+  fastcgi: 'on'
+  locations:
+    -
+      match: /
+      try_files: '$uri $uri/ /index.php$is_args$args'
+commands:
+  - 'cp .env.example .env'
+  - 'sed -i "s/DB_HOST=127.0.0.1/DB_HOST=localhost/g" .env'
+  - 'sed -ri "s/DB_DATABASE=.*/DB_DATABASE=${DATABASE}/g" .env'
+  - 'sed -ri "s/DB_USERNAME=.*/DB_USERNAME=${USERNAME}/g" .env'
+  - 'sed -ri "s/DB_PASSWORD=.*/DB_PASSWORD=${PASSWORD}/g" .env'
+  - 'sed -ri "s/APP_URL=.*/APP_URL=http:\/\/${DOMAIN}/g" .env'
+  - 'composer update'
+  - 'php artisan migrate:fresh'
+  - 'php artisan key:generate'
+  - 'php artisan storage:link'
+
+
+
+url: https://sopadmin1v.domcloud.io/
