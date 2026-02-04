@@ -1,0 +1,54 @@
+# Dockerfile para deploy no fly.io
+# Usa imagem oficial PHP (Debian) para evitar 404 em repositórios Ubuntu antigos
+
+FROM php:8.2-cli AS base
+
+# Sempre atualizar índice antes de instalar pacotes (evita 404 em repos antigos)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libzip-dev \
+        libpng-dev \
+        libonig-dev \
+        libxml2-dev \
+        libpq-dev \
+        curl \
+    && docker-php-ext-install -j$(nproc) \
+        zip \
+        pdo \
+        pdo_pgsql \
+        mbstring \
+        xml \
+        bcmath \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+# Copiar dependências primeiro (melhor cache)
+COPY composer.json composer.lock ./
+
+# Instalar dependências PHP (sem dev para produção)
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
+# Copiar o resto da aplicação
+COPY . .
+
+# Completar autoload e scripts
+RUN composer dump-autoload --optimize \
+    && composer run-script post-install-cmd 2>/dev/null || true
+
+# Permissões para Laravel
+RUN chown -R www-data:www-data /app \
+    && chmod -R 755 /app/storage /app/bootstrap/cache
+
+# fly.io injeta PORT (ex.: 8080)
+ENV PORT=8080
+EXPOSE 8080
+
+# Servir Laravel (em produção considere nginx + php-fpm)
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT}"]
