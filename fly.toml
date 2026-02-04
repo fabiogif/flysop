@@ -8,8 +8,13 @@ app = "flysop"
 [env]
   APP_ENV = "production"
   APP_DEBUG = "false"
+  # Use a URL real do app (troque flysop pelo nome do seu app)
+  APP_URL = "https://flysop.fly.dev"
+  # Cookie de sessão via HTTPS (obrigatório para login no fly.io)
+  SESSION_SECURE_COOKIE = "true"
+  # Sessão no cookie evita 419 quando não há Redis/DB de sessão no fly.io
+  SESSION_DRIVER = "cookie"
 
-  
 [http_service]
   internal_port = 8080
   force_https = true

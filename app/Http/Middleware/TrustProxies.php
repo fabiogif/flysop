@@ -9,10 +9,11 @@ class TrustProxies extends Middleware
 {
     /**
      * The trusted proxies for this application.
+     * No fly.io/proxy: use '*' para confiar em todos os proxies (fly.io, nginx, etc.)
      *
      * @var array|string|null
      */
-    protected $proxies;
+    protected $proxies = '*';
 
     /**
      * The headers that should be used to detect proxies.
