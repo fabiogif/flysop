@@ -3,7 +3,7 @@
 app = "soprender"
 
 [build]
-  dockerfile = "Dockerfile.fly"
+  dockerfile = "Dockerfile"
 
 [env]
   APP_ENV = "production"

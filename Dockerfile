@@ -1,19 +1,43 @@
-FROM richarvey/nginx-php-fpm:latest
-#FROM php:8.2-cli
+# fly.io / deploy – imagem oficial PHP (Debian), evita 404 em apt
+# Para nginx+php-fpm local use: Dockerfile.nginx
+
+FROM php:8.2-cli AS base
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        git \
+        unzip \
+        libzip-dev \
+        libpng-dev \
+        libonig-dev \
+        libxml2-dev \
+        libpq-dev \
+        curl \
+    && docker-php-ext-install -j$(nproc) \
+        zip \
+        pdo \
+        pdo_pgsql \
+        mbstring \
+        xml \
+        bcmath \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+
 COPY . .
+RUN composer dump-autoload --optimize \
+    && composer run-script post-install-cmd 2>/dev/null || true
 
-# Image config
-ENV SKIP_COMPOSER 1
-ENV WEBROOT /var/www/html/public
-ENV PHP_ERRORS_STDERR 1
-ENV RUN_SCRIPTS 1
-ENV REAL_IP_HEADER 1
+RUN chown -R www-data:www-data /app \
+    && chmod -R 755 /app/storage /app/bootstrap/cache
 
-# Laravel config
-ENV APP_ENV production
-ENV APP_DEBUG false
-ENV LOG_CHANNEL stderr
+ENV PORT=8080
+EXPOSE 8080
 
-# Allow composer to run as root
-ENV COMPOSER_ALLOW_SUPERUSER 1
-CMD ["/start.sh"]
+CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT}"]
