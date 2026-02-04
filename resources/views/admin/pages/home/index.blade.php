@@ -77,7 +77,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title mb-0">Ocorrências recentes</h3>
-                    <small class="text-muted" id="dashboard-occurrences-updated">Atualização automática a cada 15s</small>
+                    <small class="text-muted" id="dashboard-occurrences-updated">Atualização automática a cada 1 min</small>
                 </div>
                 <div class="card-body p-0">
                     <ul class="list-group list-group-flush" id="dashboard-occurrences-recent">
@@ -120,7 +120,7 @@
         const updatedEl = document.getElementById('dashboard-occurrences-updated');
         const url = '{{ route("admin.dashboard.occurrences-recent") }}?limit=5';
         const driversUrl = '{{ route("admin.dashboard.drivers-last-positions") }}?minutes=30';
-        const interval = 15000;
+        const interval = 60000;
         const API_KEY = @json($dashboardMapsKey);
         var lastOccurrences = [];
         var lastDriverPositions = [];

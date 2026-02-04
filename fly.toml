@@ -12,7 +12,7 @@ app = "flysop"
   APP_URL = "https://flysop.fly.dev"
   # Cookie de sessão via HTTPS (obrigatório para login no fly.io)
   SESSION_SECURE_COOKIE = "true"
-  # Sessão no cookie evita 419 quando não há Redis/DB de sessão no fly.io
+  # Sessão no cooki1e evita 419 quando não há Redis/DB de sessão no fly.io
   SESSION_DRIVER = "cookie"
 
 [http_service]
