@@ -1,6 +1,6 @@
 # fly.io – https://fly.io/docs/reference/configuration/
 # Nome do app (obrigatório): use o que foi criado em fly launch ou escolha um único
-app = "soprender"
+app = "flysop"
 
 [build]
   dockerfile = "Dockerfile"
