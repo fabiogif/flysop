@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TypeOccurrence extends Model
 {
 
-    protected $fillable = ['id', 'name'];
+    protected $fillable = ['id', 'name', 'sla_hours', 'parent_id'];
     use HasFactory;
 
     public function search($filtter = null)
@@ -16,5 +16,15 @@ class TypeOccurrence extends Model
         $result = $this->where('name', 'LIKE', "%{$filtter}%")
             ->paginate(10);
         return $result;
+    }
+
+    public function parent()
+    {
+        return $this->belongsTo(TypeOccurrence::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(TypeOccurrence::class, 'parent_id');
     }
 }

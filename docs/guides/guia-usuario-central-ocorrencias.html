@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>flySOP — Guia do Usuário · Central Inteligente de Ocorrências Públicas</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  :root {
+    --ink: #0f172a;
+    --muted: #475569;
+    --line: #e2e8f0;
+    --brand: #0e7490;
+    --brand-dark: #155e75;
+    --soft: #ecfeff;
+    --ok: #047857;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 11.5pt;
+    margin: 0;
+  }
+  h1, h2, h3 { color: var(--brand-dark); page-break-after: avoid; }
+  h1 { font-size: 24pt; margin: 0 0 10px; line-height: 1.2; }
+  h2 {
+    font-size: 15pt;
+    border-bottom: 2px solid var(--brand);
+    padding-bottom: 6px;
+    margin-top: 28px;
+  }
+  h3 { font-size: 12.5pt; margin-top: 18px; color: var(--brand); }
+  p, li { orphans: 3; widows: 3; }
+  .cover {
+    min-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 28px;
+    border: 1px solid var(--line);
+    background: linear-gradient(160deg, #f8fafc 0%, var(--soft) 55%, #ffffff 100%);
+    page-break-after: always;
+  }
+  .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 10pt;
+    color: var(--brand);
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .subtitle { font-size: 13pt; color: var(--muted); max-width: 640px; }
+  .meta {
+    margin-top: 40px;
+    font-size: 11pt;
+    color: var(--muted);
+  }
+  .meta strong { color: var(--ink); }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 18px;
+    font-size: 10.5pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid var(--line);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f1f5f9; color: var(--brand-dark); }
+  .box {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--brand);
+    background: #f8fafc;
+    padding: 12px 14px;
+    margin: 14px 0;
+    page-break-inside: avoid;
+  }
+  .box.ok { border-left-color: var(--ok); background: #ecfdf5; }
+  .toc a { color: var(--brand-dark); text-decoration: none; }
+  .toc li { margin: 5px 0; }
+  .step {
+    counter-increment: step;
+    margin: 10px 0;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border-radius: 6px;
+    page-break-inside: avoid;
+  }
+  .step::before {
+    content: "Passo " counter(step) " — ";
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .phase-steps { counter-reset: step; }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 9.5pt;
+    font-weight: 700;
+    background: #cffafe;
+    color: var(--brand-dark);
+    margin: 0 4px 6px 0;
+  }
+  .footer-note {
+    margin-top: 28px;
+    font-size: 10pt;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
+  ul { padding-left: 18px; }
+  .flow {
+    background: var(--soft);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    page-break-inside: avoid;
+    font-size: 11pt;
+  }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="eyebrow">Guia do usuário · flySOP</div>
+  <h1>Central Inteligente de Ocorrências Públicas</h1>
+  <p class="subtitle">
+    Um guia simples para entender o que o sistema faz, quem usa cada parte
+    e como funciona o fluxo completo — da abertura da ocorrência até o fechamento.
+  </p>
+  <div class="meta">
+    <p><strong>Para quem é este guia:</strong> gestores, supervisores, atendentes, agentes de campo e equipes de operação</p>
+    <p><strong>Objetivo:</strong> explicar o sistema em linguagem de negócio, sem detalhes técnicos</p>
+    <p><strong>Data:</strong> Agosto/2026</p>
+  </div>
+</section>
+
+<section>
+  <h2>1. Sumário</h2>
+  <ol class="toc">
+    <li><a href="#o-que-e">O que é o flySOP</a></li>
+    <li><a href="#quem-usa">Quem usa o sistema</a></li>
+    <li><a href="#beneficios">O que o sistema oferece</a></li>
+    <li><a href="#fluxo">Como funciona o atendimento (passo a passo)</a></li>
+    <li><a href="#modulos">Cada área do sistema, em linguagem simples</a></li>
+    <li><a href="#dashboard">Acompanhamento e mapa</a></li>
+    <li><a href="#despacho">Despacho inteligente</a></li>
+    <li><a href="#gps">Acompanhamento em tempo real</a></li>
+    <li><a href="#relatorios">Relatórios e transparência</a></li>
+    <li><a href="#privacidade">Privacidade e proteção de dados</a></li>
+    <li><a href="#dia-a-dia">Roteiro do dia a dia por perfil</a></li>
+  </ol>
+</section>
+
+<section id="o-que-e">
+  <h2>2. O que é o flySOP</h2>
+  <p>
+    O flySOP é a <strong>Central Inteligente de Ocorrências Públicas</strong>:
+    uma plataforma para registrar, priorizar, despachar e acompanhar ocorrências
+    com localização, prazos e histórico completo.
+  </p>
+  <div class="box ok">
+    Em vez de planilhas e mensagens espalhadas, a equipe trabalha em um único lugar:
+    com protocolo, status claros, mapa, alertas de prazo e evidências do atendimento.
+  </div>
+  <p>Na prática, o sistema ajuda a responder perguntas como:</p>
+  <ul>
+    <li>Quantas ocorrências estão abertas agora?</li>
+    <li>Quais estão perto de estourar o prazo?</li>
+    <li>Qual agente está mais perto para atender?</li>
+    <li>Onde a equipe está no mapa neste momento?</li>
+    <li>O que aconteceu do início ao fim em cada caso?</li>
+  </ul>
+</section>
+
+<section id="quem-usa">
+  <h2>3. Quem usa o sistema</h2>
+  <table>
+    <thead>
+      <tr><th>Perfil</th><th>Responsabilidade</th><th>O que faz no sistema</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Administrador</strong></td>
+        <td>Configuração e governança</td>
+        <td>Cadastros gerais, usuários, prioridades, relatórios e regras de privacidade</td>
+      </tr>
+      <tr>
+        <td><strong>Supervisor / Secretaria</strong></td>
+        <td>Operação e decisão</td>
+        <td>Triagem, despacho, acompanhamento de prazos e visão do mapa</td>
+      </tr>
+      <tr>
+        <td><strong>Atendente</strong></td>
+        <td>Registro e atualização</td>
+        <td>Abre ocorrências, organiza informações e acompanha andamento</td>
+      </tr>
+      <tr>
+        <td><strong>Agente de campo / Motorista</strong></td>
+        <td>Atendimento na rua</td>
+        <td>Aceita chamados, atualiza status, envia evidências e compartilha localização</td>
+      </tr>
+      <tr>
+        <td><strong>Cidadão</strong></td>
+        <td>Solicitante</td>
+        <td>Pode abrir e acompanhar ocorrências (conforme o canal disponibilizado)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="beneficios">
+  <h2>4. O que o sistema oferece</h2>
+  <p>
+    <span class="pill">Protocolo único</span>
+    <span class="pill">Prioridade e prazo</span>
+    <span class="pill">Histórico completo</span>
+    <span class="pill">Mapa operacional</span>
+    <span class="pill">Despacho por proximidade</span>
+    <span class="pill">GPS em tempo real</span>
+    <span class="pill">Alertas de prazo</span>
+    <span class="pill">Evidências antes/depois</span>
+    <span class="pill">Relatórios</span>
+    <span class="pill">Proteção de dados</span>
+  </p>
+
+  <div class="card">
+    <h3>Para a gestão</h3>
+    <p>Visão clara de volume, prazos e desempenho da operação — com indicadores e relatórios prontos para reunião e prestação de contas.</p>
+  </div>
+  <div class="card">
+    <h3>Para a operação</h3>
+    <p>Menos tempo decidindo “quem vai” e mais tempo atendendo: o sistema sugere o agente mais adequado e mostra a situação no mapa.</p>
+  </div>
+  <div class="card">
+    <h3>Para o atendimento de campo</h3>
+    <p>O agente vê só o que é dele, aceita o chamado, registra o andamento e envia fotos do antes e depois.</p>
+  </div>
+  <div class="card">
+    <h3>Para o cidadão</h3>
+    <p>Mais transparência: a ocorrência ganha protocolo e pode ser acompanhada ao longo do fluxo.</p>
+  </div>
+</section>
+
+<section id="fluxo">
+  <h2>5. Como funciona o atendimento (passo a passo)</h2>
+  <div class="flow">
+    <strong>Fluxo resumido:</strong><br />
+    Abertura → Triagem → Despacho → Aceite do agente → Deslocamento → Atendimento → Conclusão → Finalização
+  </div>
+
+  <div class="phase-steps">
+    <div class="step"><strong>Abertura da ocorrência.</strong> Atendente ou cidadão registra o caso com endereço, tipo e descrição. O sistema gera um protocolo e define a prioridade e o prazo.</div>
+    <div class="step"><strong>Triagem.</strong> A supervisão revisa as informações, ajusta tipo/prioridade quando necessário e verifica se pode ser duplicata de outro caso.</div>
+    <div class="step"><strong>Despacho.</strong> O sistema sugere agentes próximos e disponíveis. A pessoa responsável confirma quem irá atender.</div>
+    <div class="step"><strong>Aceite.</strong> O agente recebe o chamado, aceita ou recusa, e o status é atualizado para toda a central.</div>
+    <div class="step"><strong>Deslocamento e atendimento.</strong> Com o GPS ativo, a central acompanha a rota. O agente registra evidências e muda o status conforme avança.</div>
+    <div class="step"><strong>Conclusão e fechamento.</strong> O caso é concluído/finalizado, fica com histórico completo e pode gerar relatório.</div>
+  </div>
+
+  <h3>Status que o time acompanha</h3>
+  <table>
+    <thead><tr><th>Status</th><th>Significado simples</th></tr></thead>
+    <tbody>
+      <tr><td>Recebida</td><td>A ocorrência entrou no sistema</td></tr>
+      <tr><td>Triagem</td><td>Está sendo analisada e classificada</td></tr>
+      <tr><td>Aguardando aceitação</td><td>Foi atribuída a um agente e espera resposta</td></tr>
+      <tr><td>Aceita / Recusada</td><td>O agente confirmou ou recusou o chamado</td></tr>
+      <tr><td>Em deslocamento</td><td>O agente está a caminho</td></tr>
+      <tr><td>Em atendimento</td><td>O agente está no local resolvendo</td></tr>
+      <tr><td>Concluída</td><td>O serviço foi executado</td></tr>
+      <tr><td>Finalizada / Cancelada / Duplicada</td><td>Encerramento formal do caso</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="modulos">
+  <h2>6. Cada área do sistema, em linguagem simples</h2>
+
+  <div class="card">
+    <h3>Ocorrências</h3>
+    <p>É o coração do sistema. Cada ocorrência tem protocolo, prioridade, prazo, endereço, responsável e histórico de tudo o que aconteceu.</p>
+  </div>
+
+  <div class="card">
+    <h3>Prioridades e prazos</h3>
+    <p>Nem todo chamado tem a mesma urgência. O sistema usa prioridades (com cores e pesos) e prazos por tipo de ocorrência para ajudar a equipe a decidir o que vem primeiro.</p>
+  </div>
+
+  <div class="card">
+    <h3>Tipos de ocorrência</h3>
+    <p>Os tipos (e subtipos) organizam a operação — por exemplo, iluminação, limpeza, trânsito — e ajudam a aplicar o prazo correto.</p>
+  </div>
+
+  <div class="card">
+    <h3>Departamentos e equipes</h3>
+    <p>Permitem organizar a força de trabalho por especialidade. Isso melhora o despacho: além de proximidade, o sistema considera a equipe certa para o problema.</p>
+  </div>
+
+  <div class="card">
+    <h3>Permissões de acesso</h3>
+    <p>Cada perfil vê e faz apenas o que compete a ele. O menu e as ações mudam conforme a função da pessoa — sem misturar responsabilidades.</p>
+  </div>
+
+  <div class="card">
+    <h3>Evidências (antes e depois)</h3>
+    <p>O agente pode anexar fotos do antes e do depois do atendimento, com data/hora e localização quando disponível. Isso fortalece a transparência e a prestação de contas.</p>
+  </div>
+
+  <div class="card">
+    <h3>Notificações</h3>
+    <p>Avisos internos para eventos importantes: ocorrência atribuída, mudança de status e prazo em risco.</p>
+  </div>
+
+  <div class="card">
+    <h3>Histórico e auditoria</h3>
+    <p>Toda mudança relevante fica registrada: quem alterou, quando e o que mudou. A timeline da ocorrência conta a história completa do atendimento.</p>
+  </div>
+</section>
+
+<section id="dashboard">
+  <h2>7. Acompanhamento e mapa</h2>
+  <h3>Painel operacional</h3>
+  <p>O dashboard mostra, em tempo quase real, a saúde da operação:</p>
+  <ul>
+    <li>Quantas ocorrências estão abertas</li>
+    <li>Quantas estão em atendimento</li>
+    <li>Quantas foram finalizadas no dia</li>
+    <li>Quais estão com prazo em risco ou já estourado</li>
+  </ul>
+  <p>Há também gráficos para acompanhar tendência e volume ao longo do tempo.</p>
+
+  <h3>Mapa operacional</h3>
+  <ul>
+    <li>Visualiza ocorrências e equipes no território</li>
+    <li>Agrupa marcadores quando há muitos pontos próximos</li>
+    <li>Mostra mapa de calor das regiões com mais demanda</li>
+    <li>Permite filtrar por status, tipo, prioridade, data e equipe</li>
+  </ul>
+
+  <div class="box">
+    <strong>Busca rápida:</strong> a busca global encontra ocorrências por protocolo, endereço e informações relacionadas, sem precisar abrir várias telas.
+  </div>
+</section>
+
+<section id="despacho">
+  <h2>8. Despacho inteligente</h2>
+  <p>
+    Quando uma ocorrência precisa ir a campo, o sistema sugere os agentes mais adequados —
+    normalmente os mais próximos e disponíveis, considerando também a especialidade da equipe.
+  </p>
+  <div class="box ok">
+    <strong>Importante:</strong> a sugestão é uma ajuda à decisão. A confirmação final continua humana:
+    a supervisão escolhe e atribui o agente.
+  </div>
+  <div class="phase-steps">
+    <div class="step">Abrir a ocorrência e solicitar sugestão de atendimento.</div>
+    <div class="step">Ver a lista ranqueada de candidatos (proximidade e disponibilidade).</div>
+    <div class="step">Confirmar o agente escolhido.</div>
+    <div class="step">Acompanhar aceite, deslocamento e atendimento.</div>
+  </div>
+</section>
+
+<section id="gps">
+  <h2>9. Acompanhamento em tempo real</h2>
+  <p>
+    Enquanto o agente está em deslocamento ou atendimento, a central pode acompanhar
+    a posição no mapa. Isso reduz ligações desnecessárias e aumenta a previsibilidade
+    do tempo de chegada.
+  </p>
+  <ul>
+    <li>A posição do agente atualiza a visão da central</li>
+    <li>A rota recente pode ser consultada no acompanhamento</li>
+    <li>O status do agente acompanha o andamento da ocorrência</li>
+  </ul>
+</section>
+
+<section id="relatorios">
+  <h2>10. Relatórios e transparência</h2>
+  <p>O sistema permite gerar documentos para análise e arquivamento:</p>
+  <ul>
+    <li><strong>Ficha da ocorrência</strong> (documento completo do caso)</li>
+    <li><strong>Relatórios de fechamento</strong></li>
+    <li><strong>Planilhas</strong> com listagens e tempos médios por etapa</li>
+  </ul>
+  <p>
+    Também existe apoio à detecção de possíveis duplicidades:
+    o sistema sinaliza casos parecidos (mesmo tipo, região próxima e período semelhante)
+    para revisão humana — sem juntar automaticamente os registros.
+  </p>
+</section>
+
+<section id="privacidade">
+  <h2>11. Privacidade e proteção de dados</h2>
+  <p>
+    A operação lida com dados pessoais e de localização. Por isso o sistema inclui práticas
+    de proteção alinhadas à LGPD:
+  </p>
+  <ul>
+    <li>Consentimento quando o cidadão registra solicitação pelos canais públicos</li>
+    <li>Retenção e anonimização de dados antigos (incluindo trajetos)</li>
+    <li>Possibilidade de atendimento a pedidos de esquecimento</li>
+    <li>Registro de acessos a informações sensíveis</li>
+  </ul>
+  <div class="box">
+    Em resumo: a central ganha eficiência operacional sem abrir mão de responsabilidade
+    no tratamento dos dados.
+  </div>
+</section>
+
+<section id="dia-a-dia">
+  <h2>12. Roteiro do dia a dia por perfil</h2>
+
+  <h3>Administrador</h3>
+  <ul>
+    <li>Manter cadastros (prioridades, tipos, equipes e usuários)</li>
+    <li>Acompanhar indicadores e relatórios gerenciais</li>
+    <li>Garantir que permissões e regras de privacidade estejam corretas</li>
+  </ul>
+
+  <h3>Supervisor</h3>
+  <ul>
+    <li>Começar o dia pelo dashboard (abertas, SLA em risco, mapa)</li>
+    <li>Fazer triagem e despacho das ocorrências prioritárias</li>
+    <li>Acompanhar deslocamentos e intervir em gargalos</li>
+  </ul>
+
+  <h3>Atendente</h3>
+  <ul>
+    <li>Registrar novas ocorrências com o máximo de clareza</li>
+    <li>Atualizar informações e anexos</li>
+    <li>Orientar o cidadão com base no protocolo e no status</li>
+  </ul>
+
+  <h3>Agente de campo</h3>
+  <ul>
+    <li>Ver a lista de chamados atribuídos</li>
+    <li>Aceitar, deslocar-se e atualizar o andamento</li>
+    <li>Enviar evidências e concluir o atendimento</li>
+  </ul>
+
+  <h3>Resultado esperado da operação</h3>
+  <div class="box ok">
+    Menos tempo perdido em coordenação manual, mais previsibilidade de prazo,
+    melhor uso da equipe em campo e histórico confiável de cada atendimento.
+  </div>
+
+  <div class="footer-note">
+    Guia funcional do flySOP — Central Inteligente de Ocorrências Públicas.
+    Versão orientada a usuários e gestores, sem detalhes técnicos de implementação.
+  </div>
+</section>
+
+</body>
+</html>

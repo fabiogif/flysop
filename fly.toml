@@ -25,3 +25,12 @@ app = "flysop"
 [[vm]]
   size = "shared-cpu-1x"
   memory = "256mb"
+
+# PENDENTE (Fase 0, produção): QUEUE_CONNECTION e BROADCAST_DRIVER continuam sync/log aqui.
+# Dev já usa Redis (fila) e Soketi (broadcast) via docker-compose.dev.yml. Para produção falta:
+# 1) provisionar um Redis (add-on Fly.io ou serviço externo) e definir REDIS_*/QUEUE_CONNECTION=redis em secrets;
+# 2) um provedor WebSocket (Pusher pago ou Soketi self-hosted num app Fly.io à parte) e PUSHER_*/BROADCAST_DRIVER=pusher;
+# 3) um processo "worker" (php artisan queue:work) — hoje só existe o processo "web" no Procfile;
+#    min_machines_running=0 (scale-to-zero) não é compatível com um worker persistente, então isso
+#    provavelmente exige um app/machine Fly.io separado para o worker, sem auto-stop.
+# Decisão de custo/operação em aberto — ver "Riscos e decisões em aberto" do plano de execução.

@@ -12,6 +12,8 @@ if (!isset($occurrences)) {
     $driverId = $occurrences->driver_id ?? '';
 }
 $drivers = $drivers ?? collect();
+$priorities = $priorities ?? collect();
+$priorityId = $occurrences->priority_id ?? '';
 ?>
 <div class="row">
     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
@@ -49,10 +51,9 @@ $drivers = $drivers ?? collect();
         <div class="row">
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
                 <div class="form-group">
-                    <label for="administrative_area_level_1-input">Estado:</label>
-                    <input type="text" name="state" class="form-control" readonly
-                        id="administrative_area_level_1-input"
-                        value="{{ $occurrences->state ?? old('state') }}">
+                    <label for="sublocality-input">Bairro:</label>
+                    <input type="text" name="neighborhood" id="sublocality-input" readonly class="form-control"
+                        placeholder="Preenchido pelo mapa" value="{{ $occurrences->neighborhood ?? old('neighborhood') }}">
                 </div>
             </div>
             <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
@@ -60,6 +61,14 @@ $drivers = $drivers ?? collect();
                     <label for="locality-input">Cidade:</label>
                     <input type="text" name="city" id="locality-input" readonly class="form-control"
                         value="{{ $occurrences->city ?? old('city') }}">
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                <div class="form-group">
+                    <label for="administrative_area_level_1-input">Estado:</label>
+                    <input type="text" name="state" class="form-control" readonly
+                        id="administrative_area_level_1-input"
+                        value="{{ $occurrences->state ?? old('state') }}">
                 </div>
             </div>
         </div>
@@ -164,6 +173,18 @@ $drivers = $drivers ?? collect();
                     </select>
                 </div>
             </div>
+            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
+                <div class="form-group">
+                    <label for="priority_id">Prioridade:</label>
+                    <select name="priority_id" id="priority_id" class="form-control">
+                        <option value="">Não definida</option>
+                        @foreach ($priorities as $priority)
+                            <option value="{{ $priority->id }}" {{ (string)($priorityId ?? old('priority_id')) === (string)$priority->id ? 'selected' : '' }}>
+                                {{ $priority->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
         </div>
         <div class="row">
             <div class="form-group">
@@ -233,6 +254,7 @@ $drivers = $drivers ?? collect();
         if (place.formatted_address) locInput.value = place.formatted_address;
         if (!place.address_components) return;
         var fmt = { street_number: 'short_name', route: 'long_name', locality: 'long_name',
+            sublocality_level_1: 'long_name',
             administrative_area_level_1: 'short_name', country: 'long_name', postal_code: 'short_name' };
         function comp(type) {
             for (var i = 0; i < place.address_components.length; i++) {
@@ -248,9 +270,11 @@ $drivers = $drivers ?? collect();
         var localityEl = getInput('locality');
         var stateEl = getInput('administrative_area_level_1');
         var zipEl = getInput('postal_code');
+        var sublocalityEl = getInput('sublocality');
         if (localityEl) localityEl.value = comp('locality');
         if (stateEl) stateEl.value = comp('administrative_area_level_1');
         if (zipEl) zipEl.value = comp('postal_code');
+        if (sublocalityEl) sublocalityEl.value = comp('sublocality_level_1');
         if (getEl('country-input')) getEl('country-input').value = comp('country') || 'Brasil';
     }
 

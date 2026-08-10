@@ -29,7 +29,9 @@ class StoreUpdateTypeOccurrence extends FormRequest
             $id = 0;
         }
         return [
-            'name' => "required|min:3|max:255|unique:profiles,name,{$id},id",
+            'name' => "required|min:3|max:255|unique:type_occurrences,name,{$id},id",
+            'sla_hours' => 'nullable|integer|min:1',
+            'parent_id' => "nullable|integer|exists:type_occurrences,id|different:{$id}",
         ];
     }
 }

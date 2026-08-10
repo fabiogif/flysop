@@ -1,4 +1,4 @@
-# Plano de Refatoração e Evolução – SOP (Sistema de Ocorrências Públicas)
+# Plano de Refatoração e Evolução – CIOP (Central Inteligente de Ocorrências Públicas)
 
 Documento mestre para guiar a refatoração e evolução do sistema, com foco em **monitoramento em tempo real**, **UX/UI moderna** e **arquitetura sólida**.
 
@@ -18,7 +18,7 @@ Documento mestre para guiar a refatoração e evolução do sistema, com foco em
 - [x] Layout refatorado: `site/layouts/app.blade.php` (semântico, main, sections com aria-labelledby)
 - [x] Skip link "Ir para o conteúdo", foco visível em botões e links
 - [x] CSS do tema: `public/css/site-theme.css` (variáveis, espaçamento, cards, a11y)
-- [x] Hero com título correto (SOP – Sistema de Ocorrências Públicas), CTA Acessar/Cadastrar
+- [x] Hero com título correto (CIOP - Central Inteligente de Ocorrências Públicas), CTA Acessar/Cadastrar
 - [x] Seção Sobre com texto orientado ao usuário (ocorrências, geolocalização, tempo real)
 - [x] Serviços: 3 cards (Geolocalização, Status em tempo real, Gestão integrada) com copy do SOP
 - [x] Stats: labels orientados a monitoramento (Ocorrências, Mapa, Status)

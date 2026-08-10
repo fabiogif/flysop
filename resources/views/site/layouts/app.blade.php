@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="SOP – Sistema de Ocorrências Públicas. Gestão de ocorrências com geolocalização e acompanhamento em tempo real.">
-    <title>@yield('title', 'SOP | Sistema de Ocorrências Públicas')</title>
+    <meta name="description" content="CIOP - Central Inteligente de Ocorrências Públicas. Gestão de ocorrências com geolocalização e acompanhamento em tempo real.">
+    <title>@yield('title', 'CIOP - Central Inteligente de Ocorrências Públicas')</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,7 +19,7 @@
     <header id="site-header" class="fixed-top" role="banner">
         <nav class="navbar navbar-expand-lg navbar-dark" aria-label="Navegação principal">
             <a class="navbar-brand" href="{{ url('/') }}">
-                SOP <span class="fa fa-shield" aria-hidden="true"></span>
+                CIOP <span class="fa fa-shield" aria-hidden="true"></span>
             </a>
             <button class="navbar-toggler bg-gradient" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Abrir menu">
@@ -52,7 +52,7 @@
             <div class="row align-items-center">
                 <div class="col-lg-7 col-md-12 col-sm-12 order-lg-first mt-lg-0 mt-4">
                     <h1 id="hero-title" class="mb-4 title sop-hero-title">
-                        <strong>SOP</strong> – Sistema de Ocorrências Públicas
+                        <strong>CIOP</strong> - Central Inteligente de Ocorrências Públicas
                     </h1>
                     <p class="mb-0">Gestão de ocorrências com geolocalização e acompanhamento em tempo real.</p>
                     <div class="sop-hero-cta">
@@ -79,10 +79,10 @@
                 <div class="row about-content align-items-center">
                     <div class="col-lg-6 info mb-lg-0 mb-4">
                         <h2 id="about-title" class="title">Sobre o sistema</h2>
-                        <p class="mt-3 mb-0">O SOP centraliza o cadastro e o acompanhamento de ocorrências públicas, com suporte a geolocalização e status em tempo real, facilitando a gestão e a tomada de decisão.</p>
+                        <p class="mt-3 mb-0">O CIOP centraliza o cadastro e o acompanhamento de ocorrências públicas, com suporte a geolocalização e status em tempo real, facilitando a gestão e a tomada de decisão.</p>
                     </div>
                     <div class="col-lg-6">
-                        <img src="{{ asset('images/about.png') }}" class="img-fluid img-shadow" alt="Ilustração sobre o sistema SOP" width="500" height="350" loading="lazy">
+                        <img src="{{ asset('images/about.png') }}" class="img-fluid img-shadow" alt="Ilustração sobre o sistema CIOP" width="500" height="350" loading="lazy">
                     </div>
                 </div>
             </div>
@@ -92,7 +92,7 @@
             <div class="container">
                 <div class="row align-items-center mb-4">
                     <div class="col-lg-8 offset-lg-2 col-md-12 text-center">
-                        <h2 id="services-title" class="section-title">O que o SOP oferece</h2>
+                        <h2 id="services-title" class="section-title">O que o CIOP oferece</h2>
                         <p class="text-muted mb-0">Ferramentas para registrar, acompanhar e resolver ocorrências de forma organizada e transparente.</p>
                     </div>
                 </div>
@@ -159,9 +159,9 @@
                 <div class="row">
                     <div class="col-lg-6">
                         <div class="footer-logo mb-3">
-                            <a href="{{ url('/') }}"><span class="fa fa-shield" aria-hidden="true"></span> SOP</a>
+                            <a href="{{ url('/') }}"><span class="fa fa-shield" aria-hidden="true"></span> CIOP</a>
                         </div>
-                        <p class="mb-0">Sistema de Ocorrências Públicas – gestão de ocorrências com geolocalização e monitoramento em tempo real.</p>
+                        <p class="mb-0">CIOP - Central Inteligente de Ocorrências Públicas – gestão de ocorrências com geolocalização e monitoramento em tempo real.</p>
                     </div>
                     <div class="col-lg-6 mt-4 mt-lg-0 text-lg-right">
                         <a href="{{ route('login') }}" class="btn btn-outline-light btn-sm">Acessar o sistema</a>
@@ -173,7 +173,7 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12 text-center py-3">
-                        <p class="copyright mb-0">© {{ date('Y') }} SOP – Sistema de Ocorrências Públicas</p>
+                        <p class="copyright mb-0">© {{ date('Y') }} CIOP - Central Inteligente de Ocorrências Públicas</p>
                     </div>
                 </div>
             </div>

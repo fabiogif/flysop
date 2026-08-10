@@ -33,9 +33,18 @@ import Echo from 'laravel-echo';
 
 window.Pusher = require('pusher-js');
 
+// Suporta Pusher SaaS (MIX_PUSHER_WS_HOST vazio -> host oficial via cluster + TLS)
+// ou um servidor compatível self-hosted como Soketi (MIX_PUSHER_WS_HOST/WS_PORT, sem TLS).
+const pusherForceTLS = process.env.MIX_PUSHER_FORCE_TLS !== 'false';
+
 window.Echo = new Echo({
     broadcaster: 'pusher',
     key: process.env.MIX_PUSHER_APP_KEY,
     cluster: process.env.MIX_PUSHER_APP_CLUSTER,
-    forceTLS: true
+    wsHost: process.env.MIX_PUSHER_WS_HOST || undefined,
+    wsPort: process.env.MIX_PUSHER_WS_PORT || undefined,
+    wssPort: process.env.MIX_PUSHER_WS_PORT || undefined,
+    forceTLS: pusherForceTLS,
+    enabledTransports: pusherForceTLS ? ['ws', 'wss'] : ['ws'],
+    disableStats: true,
 });

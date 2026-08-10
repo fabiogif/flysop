@@ -7,8 +7,12 @@ use App\Models\Role;
 use Illuminate\Database\Seeder;
 
 /**
- * Cria os cargos (roles) do sistema: Administrador, Secretaria, Motorista, Operador.
- * Define as permissões apropriadas para cada cargo.
+ * Cria os cargos (roles) do sistema: Administrador, Secretaria, Motorista, Operador,
+ * Atendente, Supervisor. Define as permissões apropriadas para cada cargo.
+ *
+ * "Motorista" cobre o conceito de "Agente de Campo" da especificação original —
+ * não existe role separada (decisão da Fase 2 do plano de execução, para reaproveitar
+ * a tabela drivers, o middleware ensure.driver e o painel já existentes).
  */
 class RoleSeeder extends Seeder
 {
@@ -26,6 +30,9 @@ class RoleSeeder extends Seeder
                     'users',
                     'statusOccurrences',
                     'typeOccurrences',
+                    'priorities',
+                    'departments',
+                    'teams',
                     'issuings',
                     'occurrences',
                     'drivers',
@@ -33,10 +40,11 @@ class RoleSeeder extends Seeder
             ],
             [
                 'name' => 'Secretaria',
-                'description' => 'Acesso para gerenciar ocorrências, tipos, status e órgãos',
+                'description' => 'Acesso para gerenciar ocorrências, tipos, status, prioridades e órgãos',
                 'permissions' => [
                     'statusOccurrences',
                     'typeOccurrences',
+                    'priorities',
                     'issuings',
                     'occurrences',
                     'drivers',
@@ -44,7 +52,7 @@ class RoleSeeder extends Seeder
             ],
             [
                 'name' => 'Motorista',
-                'description' => 'Acesso ao painel do motorista para gerenciar ocorrências atribuídas',
+                'description' => 'Acesso ao painel do motorista (agente de campo) para gerenciar ocorrências atribuídas',
                 'permissions' => [
                     'occurrences',
                 ],
@@ -56,6 +64,27 @@ class RoleSeeder extends Seeder
                     'occurrences',
                     'statusOccurrences',
                     'typeOccurrences',
+                ],
+            ],
+            [
+                'name' => 'Atendente',
+                'description' => 'Registra e triagem ocorrências: cadastra, edita, classifica prioridade e encaminha',
+                'permissions' => [
+                    'occurrences',
+                ],
+            ],
+            [
+                'name' => 'Supervisor',
+                'description' => 'Distribui ocorrências entre equipes, altera prioridades, acompanha SLA e reabre ocorrências',
+                'permissions' => [
+                    'occurrences',
+                    'statusOccurrences',
+                    'typeOccurrences',
+                    'priorities',
+                    'issuings',
+                    'drivers',
+                    'departments',
+                    'teams',
                 ],
             ],
         ];

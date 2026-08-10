@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<title>CIOP — Guia de Funcionalidades</title>
+<style>
+@page { size: A4; margin: 16mm 14mm 18mm 14mm; }
+:root { --brand:#0e7490; --dark:#155e75; --ink:#0f172a; --muted:#475569; --line:#e2e8f0; --soft:#ecfeff; --ok:#047857; }
+* { box-sizing: border-box; }
+body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.5; margin: 0; }
+h1 { font-size: 22pt; color: var(--dark); margin: 0 0 8px; }
+h2 { font-size: 14pt; color: var(--dark); border-bottom: 2px solid var(--brand); padding-bottom: 4px; margin-top: 24px; page-break-after: avoid; }
+h3 { font-size: 11.5pt; color: var(--brand); margin-top: 14px; page-break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
+.cover { min-height: 90vh; padding: 28px; border: 1px solid var(--line); background: linear-gradient(165deg,#f8fafc,var(--soft) 55%,#fff); page-break-after: always; display: flex; flex-direction: column; justify-content: center; }
+.eyebrow { text-transform: uppercase; letter-spacing: .12em; color: var(--brand); font-weight: 700; font-size: 9.5pt; }
+.subtitle { color: var(--muted); max-width: 640px; font-size: 12pt; }
+.meta { margin-top: 32px; color: var(--muted); font-size: 10.5pt; }
+.meta strong { color: var(--ink); }
+table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 9.5pt; page-break-inside: avoid; }
+th, td { border: 1px solid var(--line); padding: 7px 8px; vertical-align: top; text-align: left; }
+th { background: #f1f5f9; color: var(--dark); }
+.card { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 10px 0; page-break-inside: avoid; }
+.badge { display: inline-block; background: #d1fae5; color: var(--ok); font-size: 8.5pt; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-right: 4px; }
+.pill { display: inline-block; background: var(--soft); color: var(--dark); font-size: 9pt; font-weight: 600; padding: 3px 9px; border-radius: 999px; margin: 0 4px 6px 0; }
+.toc a { color: var(--dark); text-decoration: none; }
+.box { border-left: 4px solid var(--brand); background: #f8fafc; padding: 10px 12px; margin: 12px 0; page-break-inside: avoid; }
+.flow { background: var(--soft); border-radius: 8px; padding: 12px 14px; margin: 10px 0; page-break-inside: avoid; }
+.footer-note { margin-top: 24px; font-size: 9pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: 8px; }
+ul { padding-left: 18px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="eyebrow">Catálogo de produto · CIOP</div>
+  <h1>Guia de Funcionalidades</h1>
+  <p class="subtitle">
+    Visão completa das capacidades da <strong>Central Inteligente de Ocorrências Públicas</strong>:
+    o que a aplicação oferece em autenticação, operação, mapa, despacho, GPS,
+    relatórios, segurança e conformidade.
+  </p>
+  <div class="meta">
+    <p><strong>Versão:</strong> 1.0</p>
+    <p><strong>Data:</strong> 10/08/2026</p>
+    <p><strong>Público:</strong> banca examinadora, gestores e equipe de produto</p>
+    <p><strong>Escopo:</strong> catálogo funcional completo da solução (visão de produto entregue)</p>
+  </div>
+</section>
+
+<section>
+  <h2>1. Sumário</h2>
+  <ol class="toc">
+    <li><a href="#visao">Visão geral das funcionalidades</a></li>
+    <li><a href="#acessos">Acessos, perfis e autenticação</a></li>
+    <li><a href="#ocorrencias">Ocorrências</a></li>
+    <li><a href="#status">Status, timeline e evidências</a></li>
+    <li><a href="#despacho">Despacho e equipes</a></li>
+    <li><a href="#gps">GPS e tempo real</a></li>
+    <li><a href="#dashboard">Dashboard, mapa e busca</a></li>
+    <li><a href="#cadastros">Cadastros e administração</a></li>
+    <li><a href="#api">API e canais externos</a></li>
+    <li><a href="#relatorios">Relatórios e duplicidade</a></li>
+    <li><a href="#seguranca">Segurança, privacidade e LGPD</a></li>
+    <li><a href="#site">Site público</a></li>
+    <li><a href="#matriz">Matriz completa de funcionalidades</a></li>
+  </ol>
+</section>
+
+<section id="visao">
+  <h2>2. Visão geral das funcionalidades</h2>
+  <p>
+    O <strong>CIOP - Central Inteligente de Ocorrências Públicas</strong> reúne, em uma única plataforma, a operação completa de ocorrências públicas:
+    do registro ao fechamento, com protocolo, prioridade, SLA, mapa, despacho inteligente,
+    acompanhamento em tempo real, evidências, notificações, relatórios e proteção de dados.
+  </p>
+  <p>
+    <span class="pill">Protocolo e SLA</span>
+    <span class="pill">Perfis e permissões</span>
+    <span class="pill">Painel do agente</span>
+    <span class="pill">GPS ao vivo</span>
+    <span class="pill">Mapa operacional</span>
+    <span class="pill">Despacho inteligente</span>
+    <span class="pill">Dashboard e KPIs</span>
+    <span class="pill">Busca global</span>
+    <span class="pill">Relatórios PDF/Excel</span>
+    <span class="pill">LGPD</span>
+  </p>
+  <div class="flow">
+    <strong>Fluxo ponta a ponta:</strong>
+    Abertura → Triagem → Despacho → Aceite → Deslocamento (GPS) → Atendimento → Evidências → Conclusão → Relatório
+  </div>
+</section>
+
+<section id="acessos">
+  <h2>3. Acessos, perfis e autenticação</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Login e sessão web</h3>
+    <p>Acesso seguro ao painel administrativo e à área do agente, com login, logout, registro e recuperação de senha.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Autenticação de clientes via API</h3>
+    <p>Clientes externos autenticam-se por token, consultam dados autorizados e encerram a sessão de forma segura.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Perfis de usuário</h3>
+    <ul>
+      <li><strong>Administrador</strong> — configuração, usuários, prioridades, relatórios e LGPD</li>
+      <li><strong>Supervisor / Secretaria</strong> — triagem, despacho, SLA e mapa</li>
+      <li><strong>Atendente / Operador</strong> — registro e atualização de ocorrências</li>
+      <li><strong>Agente de Campo / Motorista</strong> — aceite, deslocamento, evidências e GPS</li>
+      <li><strong>Cidadão</strong> — abertura e acompanhamento de ocorrências</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Controle de acesso por papéis e permissões</h3>
+    <p>Menus e ações filtrados conforme o perfil. Policies garantem que cada usuário só execute o que compete à sua função. O administrador é reconhecido pelo papel Administrador.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Autenticação em dois fatores (Administrador)</h3>
+    <p>Camada adicional de proteção para contas administrativas, elevando a segurança do acesso privilegiado.</p>
+  </div>
+</section>
+
+<section id="ocorrencias">
+  <h2>4. Ocorrências</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Cadastro completo de ocorrências</h3>
+    <p>Criação, edição, consulta, exclusão e busca no painel. Inclusão de título, descrição, dados do solicitante, órgão, tipo, status, endereço e anexos.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Protocolo único</h3>
+    <p>Cada ocorrência recebe um protocolo gerado automaticamente na criação, usado para rastreio interno e comunicação com o cidadão.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Prioridade e SLA</h3>
+    <p>Prioridades configuráveis (nome, peso, cor e prazo padrão). O sistema calcula o prazo (<em>due_at</em>) a partir do tipo e/ou da prioridade e destaca casos em risco ou estourados.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Tipos e subtipos</h3>
+    <p>Tipos de ocorrência com hierarquia (tipo/subtipo), prazo próprio de SLA e vínculo às ocorrências.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Endereço estruturado + mapa</h3>
+    <p>Endereço livre com apoio de autocomplete, além de bairro, cidade, UF e CEP. Geolocalização no formulário para posicionar a ocorrência no mapa.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Atribuição a agente</h3>
+    <p>Vinculação da ocorrência a um agente/motorista, com reflexo imediato no painel de campo e nas notificações.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Abertura por API / canal cidadão</h3>
+    <p>Clientes e canais externos podem registrar e consultar ocorrências por API autenticada, com consentimento quando aplicável.</p>
+  </div>
+</section>
+
+<section id="status">
+  <h2>5. Status, timeline e evidências</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Fluxo de status expandido</h3>
+    <p>Recebida → Triagem → Aguardando aceitação → Aceita/Recusada → Em deslocamento → Em atendimento → Concluída → Finalizada / Cancelada / Duplicada, com ordenação e marcação de status terminais.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Validação de transições</h3>
+    <p>O sistema só permite mudanças de status válidas (de-para), evitando saltos indevidos no fluxo operacional.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Timeline / histórico de status</h3>
+    <p>Cada mudança grava quem alterou, de qual status para qual, nota e horário. A tela de detalhe exibe a linha do tempo completa.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Aceite e recusa pelo agente</h3>
+    <p>No painel do motorista, o agente aceita ou recusa o chamado atribuído e atualiza o andamento do atendimento.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Evidências antes e depois</h3>
+    <p>Fotos e anexos classificados como “antes” ou “depois”, com data/hora, usuário e geolocalização quando disponível.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Notificações internas</h3>
+    <p>Avisos para ocorrência atribuída, mudança de status e SLA em risco, processados de forma assíncrona.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Auditoria de alterações</h3>
+    <p>Registro de quem editou quais campos, reforçando rastreabilidade e prestação de contas.</p>
+  </div>
+</section>
+
+<section id="despacho">
+  <h2>6. Despacho e equipes</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Departamentos e equipes</h3>
+    <p>Organização da força de trabalho por departamento/equipe, com vínculo opcional do agente à especialidade.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Despacho inteligente</h3>
+    <p>Sugestão ranqueada dos agentes mais próximos e disponíveis (incluindo filtro por equipe). A confirmação final é humana.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Sincronização agente ↔ ocorrência</h3>
+    <p>O status do agente acompanha o andamento da ocorrência (disponível, em deslocamento, em atendimento), mantendo o mapa operacional coerente.</p>
+  </div>
+</section>
+
+<section id="gps">
+  <h2>7. GPS e tempo real</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Envio de posição do agente</h3>
+    <p>O painel do motorista envia latitude/longitude com autenticação e limite de frequência, vinculado à ocorrência em atendimento.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Rastreamento ao vivo</h3>
+    <p>A central acompanha a posição em tempo real via WebSocket. O componente de acompanhamento atualiza o mapa sem recarregar a página.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Rota recente do agente</h3>
+    <p>Consulta da trilha de posições da ocorrência, com limite de pontos para leitura eficiente.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Retenção de posições</h3>
+    <p>Política automática de limpeza de posições antigas, alinhada a desempenho e privacidade.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Canal privado por ocorrência</h3>
+    <p>Somente perfis autorizados ou o agente dono da ocorrência escutam o canal de atualização daquela ocorrência.</p>
+  </div>
+</section>
+
+<section id="dashboard">
+  <h2>8. Dashboard, mapa e busca</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> KPIs operacionais</h3>
+    <p>Indicadores de ocorrências abertas, em atendimento, finalizadas no dia, SLA em risco e SLA estourado.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Gráficos</h3>
+    <p>Séries e distribuição visual para apoiar reuniões e acompanhamento de tendência.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Mapa operacional</h3>
+    <ul>
+      <li>Markers de ocorrências e agentes</li>
+      <li>Clustering para regiões densas</li>
+      <li>Mapa de calor da demanda</li>
+      <li>Filtros por status, tipo, prioridade, data, agente/equipe</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Atualização em tempo quase real</h3>
+    <p>Push via broadcasting no dashboard, com polling como contingência.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Busca global</h3>
+    <p>Pesquisa unificada por protocolo, endereço, descrição e campos correlatos (busca textual avançada no banco).</p>
+  </div>
+</section>
+
+<section id="cadastros">
+  <h2>9. Cadastros e administração</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Cadastros de domínio</h3>
+    <ul>
+      <li>Prioridades</li>
+      <li>Tipos de ocorrência (com subtipos)</li>
+      <li>Status de ocorrência</li>
+      <li>Órgãos (issuings)</li>
+      <li>Motoristas / agentes</li>
+      <li>Departamentos e equipes</li>
+      <li>Usuários, papéis e permissões</li>
+      <li>Tenants / organizações</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Gestão de imagens e anexos</h3>
+    <p>Upload e listagem de anexos da ocorrência, inclusive evidências classificadas por fase.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Módulos auxiliares de apoio</h3>
+    <p>Cadastros complementares do ecossistema (categorias, produtos, mesas e estruturas de perfil/permissão) disponíveis no painel administrativo.</p>
+  </div>
+</section>
+
+<section id="api">
+  <h2>10. API e canais externos</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> API autenticada</h3>
+    <ul>
+      <li>Emissão e revogação de token</li>
+      <li>Consulta de ocorrências e detalhe</li>
+      <li>Consulta por cliente</li>
+      <li>Consulta de tenants e tipos</li>
+      <li>Criação de ocorrência por canal autorizado</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Cadastro de client / consumidor</h3>
+    <p>Registro de clientes e consumidores para integração com aplicativos e canais digitais.</p>
+  </div>
+</section>
+
+<section id="relatorios">
+  <h2>11. Relatórios e duplicidade</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Exportação PDF</h3>
+    <p>Ficha da ocorrência e relatórios de fechamento gerados sob demanda.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Exportação Excel/CSV</h3>
+    <p>Listagens e indicadores de tempo médio por etapa, com base no histórico de status.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Geração assíncrona</h3>
+    <p>Relatórios processados em fila: a solicitação não trava a tela; o usuário é notificado quando o arquivo está pronto.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Detecção de possível duplicidade</h3>
+    <p>Alerta quando há casos do mesmo tipo, próximos geograficamente e na mesma janela de tempo. A revisão e o tratamento permanecem humanos (sem merge automático).</p>
+  </div>
+</section>
+
+<section id="seguranca">
+  <h2>12. Segurança, privacidade e LGPD</h2>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Proteção de endpoints e canais</h3>
+    <p>Autenticação web/API, autorização por perfil, throttle no envio de GPS e canal privado por ocorrência.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Ponto único de gravação de posição</h3>
+    <p>Toda posição do agente passa por um serviço central autenticado, sem endpoints públicos inseguros.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Filas e processamento assíncrono</h3>
+    <p>Notificações, relatórios e rotinas de retenção executam em worker supervisionado, sem bloquear a interação do usuário.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> LGPD</h3>
+    <ul>
+      <li>Consentimento no formulário público</li>
+      <li>Retenção e anonimização de trajetos e dados antigos</li>
+      <li>Endpoint de esquecimento</li>
+      <li>Log de acesso a dados sensíveis</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Isolamento por organização</h3>
+    <p>Contexto multi-tenant preservado: cada organização opera seus próprios dados sem misturar informações.</p>
+  </div>
+</section>
+
+<section id="site">
+  <h2>13. Site público</h2>
+  <div class="card">
+    <h3><span class="badge">Disponível</span> Landing institucional</h3>
+    <p>Página pública de apresentação do SOP, com navegação para acesso ao sistema e informações do produto.</p>
+  </div>
+</section>
+
+<section id="matriz">
+  <h2>14. Matriz completa de funcionalidades</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Funcionalidade</th><th>Módulo</th><th>Benefício</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>Login / logout / recuperação de senha</td><td>Acesso</td><td>Entrada segura ao sistema</td></tr>
+      <tr><td>2</td><td>Auth API por token</td><td>Acesso</td><td>Integração com apps/canais</td></tr>
+      <tr><td>3</td><td>Perfis (Admin, Supervisor, Atendente, Agente, Cidadão)</td><td>RBAC</td><td>Responsabilidades claras</td></tr>
+      <tr><td>4</td><td>Permissões e policies</td><td>RBAC</td><td>Controle fino de ações</td></tr>
+      <tr><td>5</td><td>2FA para administrador</td><td>Segurança</td><td>Proteção reforçada</td></tr>
+      <tr><td>6</td><td>CRUD de ocorrências</td><td>Ocorrências</td><td>Operação do dia a dia</td></tr>
+      <tr><td>7</td><td>Protocolo único</td><td>Ocorrências</td><td>Rastreabilidade</td></tr>
+      <tr><td>8</td><td>Prioridades configuráveis</td><td>SLA</td><td>Urgência explícita</td></tr>
+      <tr><td>9</td><td>Cálculo de prazo (SLA)</td><td>SLA</td><td>Gestão de tempo</td></tr>
+      <tr><td>10</td><td>Tipos e subtipos</td><td>Cadastros</td><td>Classificação padronizada</td></tr>
+      <tr><td>11</td><td>Endereço estruturado + mapa</td><td>Ocorrências</td><td>Localização precisa</td></tr>
+      <tr><td>12</td><td>Anexos / evidências antes-depois</td><td>Evidências</td><td>Comprovação do atendimento</td></tr>
+      <tr><td>13</td><td>Fluxo de status expandido</td><td>Workflow</td><td>Padronização operacional</td></tr>
+      <tr><td>14</td><td>Validação de transições</td><td>Workflow</td><td>Integridade do processo</td></tr>
+      <tr><td>15</td><td>Timeline de status</td><td>Auditoria</td><td>Histórico completo</td></tr>
+      <tr><td>16</td><td>Aceite/recusa pelo agente</td><td>Campo</td><td>Compromisso claro</td></tr>
+      <tr><td>17</td><td>Painel do motorista/agente</td><td>Campo</td><td>Operação em campo</td></tr>
+      <tr><td>18</td><td>Departamentos e equipes</td><td>Organização</td><td>Especialização</td></tr>
+      <tr><td>19</td><td>Despacho inteligente (ranking)</td><td>Despacho</td><td>Melhor alocação</td></tr>
+      <tr><td>20</td><td>Confirmação humana do despacho</td><td>Despacho</td><td>Controle gerencial</td></tr>
+      <tr><td>21</td><td>Sync status agente ↔ ocorrência</td><td>Operação</td><td>Visão coerente</td></tr>
+      <tr><td>22</td><td>Envio de GPS autenticado</td><td>Realtime</td><td>Localização segura</td></tr>
+      <tr><td>23</td><td>Broadcast em tempo real</td><td>Realtime</td><td>Acompanhamento ao vivo</td></tr>
+      <tr><td>24</td><td>Canal privado por ocorrência</td><td>Segurança</td><td>Privacidade do rastreio</td></tr>
+      <tr><td>25</td><td>Consulta de rota / trilha</td><td>Realtime</td><td>Histórico de deslocamento</td></tr>
+      <tr><td>26</td><td>Retenção de posições</td><td>LGPD/Perf.</td><td>Limpeza automática</td></tr>
+      <tr><td>27</td><td>Dashboard com KPIs</td><td>Gestão</td><td>Decisão rápida</td></tr>
+      <tr><td>28</td><td>Gráficos operacionais</td><td>Gestão</td><td>Análise visual</td></tr>
+      <tr><td>29</td><td>Mapa com clustering</td><td>Mapa</td><td>Leitura em escala</td></tr>
+      <tr><td>30</td><td>Mapa de calor</td><td>Mapa</td><td>Hotspots de demanda</td></tr>
+      <tr><td>31</td><td>Filtros avançados</td><td>Mapa/Lista</td><td>Foco operacional</td></tr>
+      <tr><td>32</td><td>Busca global</td><td>Produtividade</td><td>Achado rápido</td></tr>
+      <tr><td>33</td><td>Push no dashboard (+ fallback)</td><td>Realtime</td><td>Atualização contínua</td></tr>
+      <tr><td>34</td><td>Notificações internas</td><td>Comunicação</td><td>Alertas oportunos</td></tr>
+      <tr><td>35</td><td>Auditoria de campos</td><td>Compliance</td><td>Rastreio de mudanças</td></tr>
+      <tr><td>36</td><td>Exportação PDF</td><td>Relatórios</td><td>Documentação formal</td></tr>
+      <tr><td>37</td><td>Exportação Excel/CSV</td><td>Relatórios</td><td>Análise tabular</td></tr>
+      <tr><td>38</td><td>Geração via fila</td><td>Infra</td><td>Performance da UI</td></tr>
+      <tr><td>39</td><td>Detecção de duplicidade</td><td>Qualidade</td><td>Menos retrabalho</td></tr>
+      <tr><td>40</td><td>Consentimento / esquecimento / anonimização</td><td>LGPD</td><td>Conformidade</td></tr>
+      <tr><td>41</td><td>Log de acesso sensível</td><td>LGPD</td><td>Governança</td></tr>
+      <tr><td>42</td><td>API de tenants/tipos/ocorrências</td><td>Integração</td><td>Ecossistema digital</td></tr>
+      <tr><td>43</td><td>Cadastro client/consumer</td><td>Integração</td><td>Onboarding de canais</td></tr>
+      <tr><td>44</td><td>Site institucional</td><td>Comunicação</td><td>Apresentação pública</td></tr>
+      <tr><td>45</td><td>Multi-tenant (isolamento)</td><td>Arquitetura</td><td>Separação por órgão</td></tr>
+      <tr><td>46</td><td>Observabilidade (Telescope/logs)</td><td>Operação TI</td><td>Diagnóstico</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <strong>Total:</strong> 46 funcionalidades de produto documentadas neste guia,
+    cobrindo acesso, operação, campo, mapa, gestão, integração, relatórios e conformidade.
+  </div>
+
+  <div class="footer-note">
+    Guia de Funcionalidades — CIOP - Central Inteligente de Ocorrências Públicas.
+    Versão 1.0 — 10/08/2026. Visão de catálogo de produto para apresentação.
+  </div>
+</section>
+
+</body>
+</html>

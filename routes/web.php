@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\OccurrencesController;
 use App\Http\Controllers\Admin\TypeOccurrenceController;
 use App\Http\Controllers\Admin\StatusOccurrenceController;
 use App\Http\Controllers\Admin\DriverController;
+use App\Http\Controllers\Admin\PriorityController;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -106,6 +107,10 @@ Route::prefix('admin')
 
         Route::any('/statusOccurrences/search', [App\Http\Controllers\Admin\StatusOccurrenceController::class , 'search'])->name('statusOccurrences.search');
         Route::resource('statusOccurrences', StatusOccurrenceController::class);
+
+        //Prioridade de ocorrencia
+        Route::any('/priorities/search', [App\Http\Controllers\Admin\PriorityController::class , 'search'])->name('priorities.search');
+        Route::resource('priorities', PriorityController::class);
 
         //Orgão
         Route::any('/issuings/search', [App\Http\Controllers\Admin\IssuingController::class , 'search'])->name('issuings.search');

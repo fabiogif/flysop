@@ -12,11 +12,28 @@
             @csrf
             <div class="row">
                 <ul>
+                    <li><b>Protocolo:</b> {{ $occurrences->protocol ?? '—' }}</li>
                     <li><b>Nome:</b> {{ $occurrences->title }}</li>
+                    <li>
+                        <b>Prioridade:</b>
+                        @if ($occurrences->priority)
+                            <span class="badge" style="background-color: {{ $occurrences->priority->color ?? '#6c757d' }}; color: #fff;">{{ $occurrences->priority->name }}</span>
+                        @else
+                            —
+                        @endif
+                    </li>
+                    <li>
+                        <b>Prazo (SLA):</b>
+                        {{ $occurrences->due_at ? $occurrences->due_at->format('d/m/Y H:i') : '—' }}
+                        @if ($occurrences->due_at && $occurrences->due_at->isPast())
+                            <span class="badge badge-danger">Vencido</span>
+                        @endif
+                    </li>
                     <li><b>Ultima Atualização:</b> {{ date('d/M/Y h:m:s', strtotime($occurrences->updated_at)) }}</li>
                     <li><b>E-mail:</b> {{ $occurrences->email }}</li>
                     <li><b>Telefone:</b> {{ $occurrences->phone }}</li>
                     <li><b>Endereço:</b> {{ $occurrences->address }}</li>
+                    <li><b>Bairro/Cidade/UF:</b> {{ implode(' - ', array_filter([$occurrences->neighborhood, $occurrences->city, $occurrences->state])) ?: '—' }}</li>
                     @foreach ($occurrencesImagens as $occurrencesImagen)
                         <li
                             style="padding:5px; background:#343a40!important;  border-radius:24px; list-style:none; margin:10px 0">
@@ -42,6 +59,40 @@
         <!--card-body-->
     </div>
     <!--card-->
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <span>Histórico de status</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-condensed mb-0">
+                <thead>
+                    <tr>
+                        <th>De</th>
+                        <th>Para</th>
+                        <th>Alterado por</th>
+                        <th>Data</th>
+                        <th>Observação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($occurrences->statusHistory as $entry)
+                        <tr>
+                            <td>{{ $entry->fromStatus->name ?? '—' }}</td>
+                            <td>{{ $entry->toStatus->name ?? '—' }}</td>
+                            <td>{{ $entry->changedBy->name ?? 'Sistema' }}</td>
+                            <td>{{ $entry->created_at ? $entry->created_at->format('d/m/Y H:i') : '—' }}</td>
+                            <td>{{ $entry->note ?? '—' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="5">Sem histórico registrado.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     @if ($occurrences->driver_id)
         <div class="card mt-3">

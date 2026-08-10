@@ -136,8 +136,7 @@ class DriverOccurrenceController extends Controller
         ]);
 
         if ($isAdmin) {
-            $occurrence = $this->occurrenceService->findOrFail($id);
-            $occurrence->update(['status_occurrences_id' => (int) $request->status_occurrences_id]);
+            $this->occurrenceService->updateStatusByAdmin($id, (int) $request->status_occurrences_id);
         } else {
             $this->occurrenceService->updateStatusByDriver(
                 $id,

@@ -38,9 +38,11 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
+                        <th>Protocolo</th>
                         <th>Nome</th>
                         <th>Título</th>
                         <th>Tipo</th>
+                        <th>Prioridade</th>
                         <th>Órgão</th>
                         <th>Status</th>
                         <th>E-mail</th>
@@ -51,9 +53,17 @@
                 <tbody>
                     @foreach ($occurrences as $occurrence)
                         <tr>
+                            <td>{{ $occurrence->protocol ?? '—' }}</td>
                             <td>{{ $occurrence->name }}</td>
                             <td>{{ $occurrence->title }}</td>
                             <td>{{ $occurrence->nameType ?? '—' }}</td>
+                            <td>
+                                @if ($occurrence->priority)
+                                    <span class="badge" style="background-color: {{ $occurrence->priority->color ?? '#6c757d' }}; color: #fff;">{{ $occurrence->priority->name }}</span>
+                                @else
+                                    —
+                                @endif
+                            </td>
                             <td>{{ $occurrence->nameIssuings ?? '—' }}</td>
                             <td>
                                 @php

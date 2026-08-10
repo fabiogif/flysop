@@ -9,7 +9,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * Cria permissões do menu admin e cargo Administrador com todas as permissões.
- * Atribui o cargo aos usuários de acesso (fabio@fabio.com, robson@robson.com).
+ * Atribui o cargo a todos os usuários cujo e-mail está em config('acl.admin') —
+ * mesma lista usada por User::isAdmin() como fallback (ver UserACLTrait).
  *
  * Permissões devem coincidir com o 'can' do menu em config/adminlte.php.
  */
@@ -24,6 +25,9 @@ class PermissionMenuSeeder extends Seeder
         'users' => 'Usuários',
         'statusOccurrences' => 'Status de Ocorrências',
         'typeOccurrences' => 'Tipo de Ocorrências',
+        'priorities' => 'Prioridades',
+        'departments' => 'Departamentos',
+        'teams' => 'Equipes',
         'issuings' => 'Órgãos',
         'occurrences' => 'Ocorrências',
         'drivers' => 'Motoristas',
@@ -45,7 +49,7 @@ class PermissionMenuSeeder extends Seeder
         );
         $role->permissions()->sync(collect($permissions)->pluck('id'));
 
-        $adminEmails = ['fabio@fabio.com', 'robson@robson.com'];
+        $adminEmails = config('acl.admin', []);
         $users = User::whereIn('email', $adminEmails)->get();
         foreach ($users as $user) {
             if (!$user->roles()->where('roles.id', $role->id)->exists()) {

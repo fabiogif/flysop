@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'SOP'),
+    'name' => env('APP_NAME', 'CIOP - Central Inteligente de Ocorrências Públicas'),
 
     /*
     |--------------------------------------------------------------------------

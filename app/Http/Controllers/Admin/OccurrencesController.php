@@ -43,7 +43,7 @@ class OccurrencesController extends Controller
     public function show(int $id): View|RedirectResponse
     {
         $occurrence = $this->occurrenceService->findOrFail($id);
-        $occurrence->load('imagens');
+        $occurrence->load(['imagens', 'priority', 'statusHistory.fromStatus', 'statusHistory.toStatus', 'statusHistory.changedBy']);
         $formData = $this->occurrenceService->getFormData();
 
         return view('admin.pages.occurrences.show', [
@@ -65,6 +65,8 @@ class OccurrencesController extends Controller
             'typeOccurrences' => $formData['typeOccurrences'],
             'statusOccurrences' => $formData['statusOccurrences'],
             'issuings' => $formData['issuings'],
+            'drivers' => $formData['drivers'],
+            'priorities' => $formData['priorities'],
         ]);
     }
 

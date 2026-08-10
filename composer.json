@@ -17,6 +17,7 @@
         "laravel/tinker": "^2.5",
         "laravel/ui": "^3.2",
         "league/flysystem-aws-s3-v3": "~1.0",
+        "predis/predis": "^3.5",
         "pusher/pusher-php-server": "^7.2",
         "ramsey/uuid": "^4.7"
     },

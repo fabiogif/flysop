@@ -14,7 +14,7 @@ return [
      |
      */
 
-    'title' => 'Sistema de ocorrências',
+    'title' => 'CIOP - Central Inteligente de Ocorrências Públicas',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -45,12 +45,12 @@ return [
      |
      */
 
-    'logo' => '<b>So</b>p',
+    'logo' => '<b>CIOP</b>',
     'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'Sistema de Ocorrências Publicas',
+    'logo_img_alt' => 'CIOP - Central Inteligente de Ocorrências Públicas',
 
     /*
      |--------------------------------------------------------------------------
@@ -276,6 +276,12 @@ return [
             'url' => 'admin/typeOccurrences',
             'icon' => 'fas fa-layer-group',
             'can' => 'typeOccurrences'
+        ],
+        [
+            'text' => 'Prioridades',
+            'url' => 'admin/priorities',
+            'icon' => 'fas fa-exclamation-circle',
+            'can' => 'priorities'
         ],
         [
             'text' => 'Orgãos',

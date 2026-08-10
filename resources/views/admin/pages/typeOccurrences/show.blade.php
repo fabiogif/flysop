@@ -13,6 +13,8 @@
             <div class="row">
                 <ul>
                     <li><b>Nome:</b> {{ $typeOccurrence->name }}</li>
+                    <li><b>SLA:</b> {{ $typeOccurrence->sla_hours ? $typeOccurrence->sla_hours . ' horas' : '—' }}</li>
+                    <li><b>Tipo pai:</b> {{ $typeOccurrence->parent?->name ?? '—' }}</li>
                 </ul>
             </div>
             <!--row-->

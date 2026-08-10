@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<title>flySOP — Guia Completo da Central Inteligente de Ocorrências Públicas</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  :root {
+    --ink: #0f172a;
+    --muted: #475569;
+    --line: #e2e8f0;
+    --brand: #0e7490;
+    --brand-dark: #155e75;
+    --soft: #ecfeff;
+    --ok: #047857;
+    --warn: #b45309;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.55;
+    font-size: 11pt;
+    margin: 0;
+  }
+  h1, h2, h3, h4 { color: var(--brand-dark); page-break-after: avoid; }
+  h1 { font-size: 22pt; margin: 0 0 8px; }
+  h2 {
+    font-size: 15pt;
+    border-bottom: 2px solid var(--brand);
+    padding-bottom: 6px;
+    margin-top: 28px;
+  }
+  h3 { font-size: 12.5pt; margin-top: 18px; color: var(--brand); }
+  h4 { font-size: 11pt; margin-top: 12px; }
+  p, li { orphans: 3; widows: 3; }
+  .cover {
+    min-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 24px;
+    border: 1px solid var(--line);
+    background: linear-gradient(160deg, #f8fafc 0%, var(--soft) 55%, #ffffff 100%);
+    page-break-after: always;
+  }
+  .cover .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    font-size: 10pt;
+    color: var(--brand);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .cover h1 { font-size: 28pt; line-height: 1.2; }
+  .cover .subtitle { font-size: 13pt; color: var(--muted); max-width: 620px; }
+  .meta {
+    margin-top: 36px;
+    font-size: 10.5pt;
+    color: var(--muted);
+  }
+  .meta strong { color: var(--ink); }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 9pt;
+    font-weight: 700;
+    background: #d1fae5;
+    color: var(--ok);
+    margin-right: 4px;
+  }
+  .badge.p0 { background: #fee2e2; color: #b91c1c; }
+  .badge.p1 { background: #ffedd5; color: #c2410c; }
+  .badge.p2 { background: #e0f2fe; color: #0369a1; }
+  .badge.p3 { background: #f1f5f9; color: #475569; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 18px;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid var(--line);
+    padding: 7px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #f1f5f9; color: var(--brand-dark); }
+  code, .path {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 9.5pt;
+    background: #f8fafc;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 9pt;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    page-break-inside: avoid;
+  }
+  .box {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--brand);
+    background: #f8fafc;
+    padding: 10px 12px;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .box.ok { border-left-color: var(--ok); background: #ecfdf5; }
+  .toc a { color: var(--brand-dark); text-decoration: none; }
+  .toc li { margin: 4px 0; }
+  .step {
+    counter-increment: step;
+    margin: 10px 0;
+    padding-left: 8px;
+  }
+  .step::before {
+    content: "Passo " counter(step) " — ";
+    font-weight: 700;
+    color: var(--brand);
+  }
+  .phase-steps { counter-reset: step; }
+  .module-card {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 12px 0;
+    page-break-inside: avoid;
+  }
+  .footer-note {
+    margin-top: 28px;
+    font-size: 9.5pt;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 8px;
+  }
+  ul { padding-left: 18px; }
+  .kpi {
+    display: inline-block;
+    min-width: 120px;
+    margin: 4px 6px 4px 0;
+    padding: 8px 10px;
+    background: var(--soft);
+    border-radius: 6px;
+    font-size: 9.5pt;
+  }
+  .kpi strong { display: block; font-size: 12pt; color: var(--brand-dark); }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="eyebrow">Documentação de produto · flySOP / SOPADMIN</div>
+  <h1>Central Inteligente de Ocorrências Públicas</h1>
+  <p class="subtitle">
+    Guia completo das implementações realizadas: infraestrutura, módulos de negócio,
+    dashboard operacional, despacho inteligente, GPS em tempo real, relatórios e conformidade LGPD.
+  </p>
+  <div class="meta">
+    <p><strong>Projeto:</strong> flySOP — Sistema de Ocorrências Públicas</p>
+    <p><strong>Base técnica:</strong> Laravel 8 · PHP 8.1 · PostgreSQL · Redis · Sanctum · AdminLTE · Vue 2 · Google Maps · Pusher/Soketi</p>
+    <p><strong>Plano de referência:</strong> virtual-jingling-cookie.md</p>
+    <p><strong>Status deste documento:</strong> descreve o sistema <em>como entregue</em> (fases 0–6 concluídas)</p>
+    <p><strong>Data:</strong> Agosto/2026</p>
+  </div>
+</section>
+
+<section>
+  <h2>1. Sumário</h2>
+  <ol class="toc">
+    <li><a href="#visao">Visão geral do sistema</a></li>
+    <li><a href="#arquitetura">Arquitetura e padrões</a></li>
+    <li><a href="#modulos">Mapa de módulos</a></li>
+    <li><a href="#fase0">Fase 0 — Segurança e infraestrutura</a></li>
+    <li><a href="#fase1">Fase 1 — Fundação de dados da ocorrência</a></li>
+    <li><a href="#fase2">Fase 2 — RBAC, departamentos e equipes</a></li>
+    <li><a href="#fase3">Fase 3 — Status, auditoria, evidências e notificações</a></li>
+    <li><a href="#fase4">Fase 4 — Dashboard, mapa e busca global</a></li>
+    <li><a href="#fase5">Fase 5 — Despacho inteligente e GPS robusto</a></li>
+    <li><a href="#fase6">Fase 6 — Relatórios, duplicidade e LGPD</a></li>
+    <li><a href="#ambiente">Passo a passo do ambiente</a></li>
+    <li><a href="#operacao">Passo a passo operacional (uso do sistema)</a></li>
+    <li><a href="#verificacao">Checklist de verificação</a></li>
+  </ol>
+</section>
+
+<section id="visao">
+  <h2>2. Visão geral do sistema</h2>
+  <p>
+    O flySOP evoluiu de um painel de ocorrências multi-tenant para uma
+    <strong>Central Inteligente de Ocorrências Públicas</strong>: múltiplos perfis,
+    protocolo e SLA, timeline auditável, mapa operacional com clustering/heatmap,
+    despacho por proximidade, GPS em tempo real, notificações assíncronas,
+    exportações e rotinas LGPD.
+  </p>
+
+  <div class="box ok">
+    <strong>Princípio de entrega:</strong> evolução do que já existia
+    (Controller fino → Service → Repository), sem redesenhar do zero e sem expandir multi-tenant.
+  </div>
+
+  <h3>2.1 Perfis de usuário entregues</h3>
+  <table>
+    <thead>
+      <tr><th>Perfil</th><th>Papel no sistema</th><th>Área principal</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Administrador</td><td>Configuração, usuários, prioridade, status, relatórios e LGPD</td><td>AdminLTE completo</td></tr>
+      <tr><td>Secretaria / Supervisor</td><td>Triagem, despacho, acompanhamento de SLA e mapa</td><td>Admin filtrado por permissão</td></tr>
+      <tr><td>Atendente / Operador</td><td>Cadastro e atualização de ocorrências, evidências</td><td>Admin filtrado</td></tr>
+      <tr><td>Agente de Campo / Motorista</td><td>Aceite, deslocamento, atendimento, GPS e evidências</td><td>Painel do motorista</td></tr>
+      <tr><td>Cidadão</td><td>Abertura e consulta de ocorrência (quando autenticado/público controlado)</td><td>Site / API</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2.2 Capacidades entregues (resumo)</h3>
+  <div>
+    <span class="kpi"><strong>Protocolo + SLA</strong>prioridade e prazo por tipo</span>
+    <span class="kpi"><strong>Timeline</strong>histórico append-only</span>
+    <span class="kpi"><strong>Dashboard</strong>KPIs + Chart.js</span>
+    <span class="kpi"><strong>Mapa</strong>cluster + heatmap</span>
+    <span class="kpi"><strong>Despacho</strong>ranking por distância</span>
+    <span class="kpi"><strong>Realtime</strong>WebSocket + fallback</span>
+    <span class="kpi"><strong>Export</strong>PDF / Excel via fila</span>
+    <span class="kpi"><strong>LGPD</strong>retenção e esquecimento</span>
+  </div>
+</section>
+
+<section id="arquitetura">
+  <h2>3. Arquitetura e padrões</h2>
+  <h3>3.1 Stack</h3>
+  <table>
+    <thead><tr><th>Camada</th><th>Tecnologia</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>Laravel 8, PHP 8.1, Sanctum, Telescope</td></tr>
+      <tr><td>Painel admin</td><td>Blade + AdminLTE + jQuery + Vue 2 (ilhas)</td></tr>
+      <tr><td>Painel motorista</td><td>Blade + JS de geolocalização</td></tr>
+      <tr><td>Site público</td><td>Blade + Vite</td></tr>
+      <tr><td>Banco</td><td>PostgreSQL 15 (principal) + MySQL auxiliar no compose</td></tr>
+      <tr><td>Fila / cache</td><td>Redis + <code>queue:work</code></td></tr>
+      <tr><td>Realtime</td><td>Pusher ou Soketi (<code>BROADCAST_DRIVER=pusher</code>)</td></tr>
+      <tr><td>Mapas</td><td>Google Maps + MarkerClusterer + HeatmapLayer</td></tr>
+      <tr><td>Deploy local</td><td>Docker Compose (<code>docker-compose.dev.yml</code>) no WSL</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Fluxo padrão de uma request</h3>
+  <pre>Browser / App
+  → routes/web.php | routes/api.php
+  → Middleware (auth / auth:sanctum / ensure.driver / can:*)
+  → Controller fino
+  → FormRequest
+  → Service (regra de negócio)
+  → RepositoryInterface → Repository → Model (TenantScope)
+  → Blade / Resource JSON / Evento broadcast / Job de fila</pre>
+
+  <h3>3.3 Quando usar Service/Repository</h3>
+  <ul>
+    <li><strong>Camadas completas</strong> (Occurrence, Tenant, DriverPosition, Dispatch, Dashboard, Report): regra de negócio, side effects, integrações.</li>
+    <li><strong>CRUD simples</strong> (Priority, Department, Product etc.): controller + model + FormRequest, sem forçar camadas extras.</li>
+  </ul>
+</section>
+
+<section id="modulos">
+  <h2>4. Mapa de módulos implementados</h2>
+
+  <div class="module-card">
+    <h3>4.1 Ocorrências</h3>
+    <p><span class="badge">Core</span> Domínio central da central inteligente.</p>
+    <ul>
+      <li><strong>Camadas:</strong> <code>OccurrencesController</code>, <code>OccurrenceService</code>, <code>OccurrenceRepository</code>, <code>OccurrenceResource</code></li>
+      <li><strong>Campos-chave:</strong> protocol, priority_id, due_at, endereço estruturado, status expandido, driver_id, team_id</li>
+      <li><strong>Regras:</strong> geração de protocolo, cálculo de SLA, transições de status validadas, histórico append-only, sincronização com status do agente</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.2 Prioridades e tipos</h3>
+    <ul>
+      <li><strong>priorities:</strong> name, weight, color, default_sla_hours — CRUD admin</li>
+      <li><strong>type_occurrences:</strong> sla_hours + parent_id (tipo/subtipo)</li>
+      <li>Prioridade da ocorrência pode herdar SLA do tipo ou da prioridade selecionada</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.3 Status e timeline</h3>
+    <ul>
+      <li>Fluxo: Recebida → Triagem → Aguardando aceitação → Aceita/Recusada → Em deslocamento → Em atendimento → Concluída → Finalizada/Cancelada/Duplicada</li>
+      <li><code>occurrence_status_history</code> registra from/to, usuário, nota e timestamp</li>
+      <li>Flags <code>is_terminal</code> e <code>order</code> nos status</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.4 RBAC / Departamento / Equipe</h3>
+    <ul>
+      <li>Roles seedadas: Administrador, Supervisor, Atendente, Agente de Campo (Motorista), Cidadão</li>
+      <li>Policies Laravel nativas sobre Role/Permission existentes (sem Spatie Permission)</li>
+      <li><code>isAdmin()</code> baseado em Role Administrador (não mais allowlist de e-mail)</li>
+      <li>Tabelas <code>departments</code> e <code>teams</code>; <code>team_id</code> opcional em drivers</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.5 Motorista / Agente de Campo + GPS</h3>
+    <ul>
+      <li>Tabela <code>drivers</code> unificada (Agente de Campo)</li>
+      <li><code>DriverPositionService</code> único ponto de gravação de posição</li>
+      <li>Endpoints autenticados com Sanctum + throttle</li>
+      <li>Evento <code>DriverPositionUpdated</code> via broadcasting</li>
+      <li>Retenção de posições (&gt; 48h) via job agendado</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.6 Dashboard e mapa operacional</h3>
+    <ul>
+      <li>KPIs: abertas, em atendimento, finalizadas hoje, SLA em risco/estourado</li>
+      <li>Gráficos Chart.js</li>
+      <li>Google Maps com MarkerClusterer e HeatmapLayer</li>
+      <li>Filtros por status, tipo, prioridade, data, agente/equipe</li>
+      <li>Push realtime com polling como fallback</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.7 Despacho inteligente</h3>
+    <ul>
+      <li><code>DriverRepository</code> com ranking haversine (Postgres)</li>
+      <li>Filtro por disponibilidade e especialidade (<code>team_id</code>)</li>
+      <li>Sugestão ranqueada; confirmação humana obrigatória</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.8 Notificações, evidências e auditoria</h3>
+    <ul>
+      <li>Notificações database: atribuída, status mudou, SLA em risco</li>
+      <li>Evidências antes/depois em <code>occurrences_imagens</code> (phase, geo, captured_at, uploaded_by)</li>
+      <li>Auditoria de mudanças (activity log / histórico de domínio)</li>
+    </ul>
+  </div>
+
+  <div class="module-card">
+    <h3>4.9 Relatórios, busca, duplicidade e LGPD</h3>
+    <ul>
+      <li>PDF (DomPDF) e Excel/CSV (Maatwebsite) via jobs</li>
+      <li>Busca global Postgres full-text (<code>tsvector</code> + GIN)</li>
+      <li>Duplicidade sugerida: mesmo tipo + proximidade + janela temporal</li>
+      <li>Retenção/anonimização, endpoint de esquecimento, consentimento e log de acesso</li>
+    </ul>
+  </div>
+</section>
+
+<section id="fase0">
+  <h2>5. Fase 0 — Segurança e infraestrutura <span class="badge p0">P0</span></h2>
+  <p>Fundação sem a qual as demais fases não operam com segurança.</p>
+
+  <h3>5.1 O que foi entregue</h3>
+  <table>
+    <thead><tr><th>Item</th><th>Implementação</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Posição do motorista unificada</td>
+        <td><code>App\Services\DriverPositionService</code> consumido por controllers web e API</td>
+      </tr>
+      <tr>
+        <td>API de localização protegida</td>
+        <td><code>auth:sanctum</code> + throttle; sem aceitar <code>driver_id</code> arbitrário do payload</td>
+      </tr>
+      <tr>
+        <td>Canal privado</td>
+        <td><code>routes/channels.php</code>: <code>occurrence.{id}</code> restrito por role ou motorista dono</td>
+      </tr>
+      <tr>
+        <td>Broadcasting real</td>
+        <td><code>BROADCAST_DRIVER=pusher</code> (ou Soketi); evento <code>DriverPositionUpdated</code> chega ao front</td>
+      </tr>
+      <tr>
+        <td>Filas assíncronas</td>
+        <td><code>QUEUE_CONNECTION=redis</code> + worker supervisionado</td>
+      </tr>
+      <tr>
+        <td>API autenticada</td>
+        <td>Endpoints sensíveis de ocorrências/tenants/tipos com <code>auth:sanctum</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 Passo a passo de configuração</h3>
+  <div class="phase-steps">
+    <div class="step">Definir no <code>.env</code>: <code>BROADCAST_DRIVER</code>, <code>QUEUE_CONNECTION=redis</code>, <code>REDIS_*</code>, chaves Pusher/Soketi.</div>
+    <div class="step">Subir Redis e worker: <code>php artisan queue:work redis --tries=3</code>.</div>
+    <div class="step">Validar canais privados com dois usuários de roles diferentes.</div>
+    <div class="step">Confirmar <code>php artisan route:list</code> com middleware de auth nos endpoints corrigidos.</div>
+  </div>
+</section>
+
+<section id="fase1">
+  <h2>6. Fase 1 — Fundação de dados da ocorrência <span class="badge p1">P1</span></h2>
+
+  <h3>6.1 Modelo de dados</h3>
+  <table>
+    <thead><tr><th>Elemento</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>occurrences.protocol</code></td><td>Único, gerado em <code>OccurrenceService::create</code></td></tr>
+      <tr><td><code>occurrences.priority_id</code></td><td>FK para prioridades</td></tr>
+      <tr><td><code>occurrences.due_at</code></td><td>Calculado pelo SLA (tipo/prioridade)</td></tr>
+      <tr><td>Endereço estruturado</td><td>neighborhood, city, state, zipcode (+ address livre)</td></tr>
+      <tr><td><code>priorities</code></td><td>name, weight, color, default_sla_hours</td></tr>
+      <tr><td><code>type_occurrences</code></td><td>sla_hours, parent_id</td></tr>
+      <tr><td><code>occurrence_status_history</code></td><td>Histórico append-only de mudanças de status</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Passo a passo funcional</h3>
+  <div class="phase-steps">
+    <div class="step">Atendente cria ocorrência: sistema gera protocolo e calcula <code>due_at</code>.</div>
+    <div class="step">Prioridade e tipo alimentam peso visual e prazo de SLA.</div>
+    <div class="step">Toda mudança de status grava linha em <code>occurrence_status_history</code>.</div>
+    <div class="step">Telas create/edit/show exibem protocolo (readonly), prioridade, endereço e timeline.</div>
+  </div>
+</section>
+
+<section id="fase2">
+  <h2>7. Fase 2 — RBAC expandido + Departamento/Equipe <span class="badge p1">P1</span></h2>
+
+  <h3>7.1 Decisões implementadas</h3>
+  <ul>
+    <li>Motorista = subtipo de Agente de Campo (reusa <code>drivers</code>, <code>ensure.driver</code> e GPS).</li>
+    <li>Policies nativas Laravel sobre ACL caseiro (Role/Permission).</li>
+    <li>Menus AdminLTE filtrados por permissão para Atendente/Supervisor.</li>
+    <li>CRUD básico de departamentos e equipes.</li>
+  </ul>
+
+  <h3>7.2 Passo a passo de acesso</h3>
+  <div class="phase-steps">
+    <div class="step">Rodar seeders de roles/permissões.</div>
+    <div class="step">Vincular usuário a Role e, se agente, a registro em <code>drivers</code> (+ team opcional).</div>
+    <div class="step">Policies autorizam ações em Occurrence, Driver, Report etc.</div>
+    <div class="step">Administrador deixa de depender de e-mail hardcoded em <code>config/tenant.php</code>.</div>
+  </div>
+</section>
+
+<section id="fase3">
+  <h2>8. Fase 3 — Fluxo de status, auditoria, evidências e notificações <span class="badge p1">P1</span>/<span class="badge p2">P2</span></h2>
+
+  <h3>8.1 Máquina de status</h3>
+  <p>
+    <code>OccurrenceService::updateStatus()</code> valida o mapa de-para.
+    Transições inválidas são rejeitadas. Status terminais não permitem avanço.
+  </p>
+
+  <h3>8.2 Evidências antes/depois</h3>
+  <ul>
+    <li>Campos em <code>occurrences_imagens</code>: <code>phase</code> (antes/depois), lat/lng, <code>captured_at</code>, <code>uploaded_by_user_id</code></li>
+    <li>Agente envia fotos no deslocamento/atendimento; admin visualiza na ficha</li>
+  </ul>
+
+  <h3>8.3 Notificações internas</h3>
+  <ul>
+    <li>Canal database do Laravel</li>
+    <li>Eventos: ocorrência atribuída, status alterado, SLA em risco</li>
+    <li>Processadas pela fila Redis (Fase 0)</li>
+  </ul>
+
+  <h3>8.4 Passo a passo do atendimento</h3>
+  <div class="phase-steps">
+    <div class="step">Ocorrência entra como Recebida/Triagem.</div>
+    <div class="step">Supervisor atribui agente → status Aguardando aceitação + notificação.</div>
+    <div class="step">Agente aceita → Em deslocamento → Em atendimento, enviando evidências.</div>
+    <div class="step">Conclusão/Finalização registra timeline completa para auditoria e relatórios.</div>
+  </div>
+</section>
+
+<section id="fase4">
+  <h2>9. Fase 4 — Dashboard, mapa e busca global <span class="badge p1">P1</span>/<span class="badge p2">P2</span></h2>
+
+  <h3>9.1 Dashboard</h3>
+  <ul>
+    <li><code>DashboardService</code> agrega KPIs e séries para Chart.js</li>
+    <li>Cards: abertas, em atendimento, finalizadas hoje, SLA em risco, SLA estourado</li>
+  </ul>
+
+  <h3>9.2 Mapa operacional</h3>
+  <ul>
+    <li>Clustering com <code>@googlemaps/markerclusterer</code></li>
+    <li>Heatmap com <code>google.maps.visualization.HeatmapLayer</code></li>
+    <li>Filtros reutilizam padrão <code>/{recurso}/search</code></li>
+    <li>Atualização por broadcasting; polling permanece como fallback</li>
+  </ul>
+
+  <h3>9.3 Busca global</h3>
+  <p>
+    Full-text search nativo do Postgres (<code>tsvector</code> + índice GIN) sobre protocolo,
+    endereço, descrição e dados correlatos — sem Elasticsearch/Meilisearch.
+  </p>
+</section>
+
+<section id="fase5">
+  <h2>10. Fase 5 — Despacho inteligente + GPS robusto <span class="badge p2">P2</span></h2>
+
+  <h3>10.1 Ranking de agentes</h3>
+  <pre>-- Conceito da query (haversine em SQL Postgres)
+SELECT drivers.*, (
+  6371 * acos(
+    cos(radians(:lat)) * cos(radians(lat)) *
+    cos(radians(lng) - radians(:lng)) +
+    sin(radians(:lat)) * sin(radians(lat))
+  )
+) AS distance_km
+FROM drivers
+WHERE status = 'disponivel'
+  AND (team_id = :team_id OR :team_id IS NULL)
+ORDER BY distance_km ASC
+LIMIT 10;</pre>
+
+  <h3>10.2 Comportamento entregue</h3>
+  <ul>
+    <li>Sistema sugere ranking; humano confirma a atribuição</li>
+    <li>Status do Driver sincroniza com status da Occurrence no Service</li>
+    <li><code>driverRoute()</code> com limite de pontos</li>
+    <li>Job de retenção remove posições antigas (&gt; 48h)</li>
+  </ul>
+
+  <h3>10.3 Passo a passo do despacho</h3>
+  <div class="phase-steps">
+    <div class="step">Supervisor abre ocorrência e solicita sugestão de agentes.</div>
+    <div class="step">Sistema lista candidatos por distância/especialidade.</div>
+    <div class="step">Supervisor confirma o agente escolhido.</div>
+    <div class="step">GPS do agente alimenta o mapa admin em tempo real.</div>
+  </div>
+</section>
+
+<section id="fase6">
+  <h2>11. Fase 6 — Relatórios, duplicidade e LGPD <span class="badge p2">P2</span>/<span class="badge p3">P3</span></h2>
+
+  <h3>11.1 Exportações</h3>
+  <table>
+    <thead><tr><th>Formato</th><th>Biblioteca</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td>PDF</td><td>barryvdh/laravel-dompdf</td><td>Ficha da ocorrência e fechamento</td></tr>
+      <tr><td>Excel/CSV</td><td>maatwebsite/excel ^3</td><td>Listagens e tempo médio por etapa</td></tr>
+    </tbody>
+  </table>
+  <p>Geração sempre via job/fila — a request apenas enfileira e notifica quando o arquivo está pronto.</p>
+
+  <h3>11.2 Duplicidade</h3>
+  <ul>
+    <li>Heurística: mesmo tipo + proximidade geográfica + janela de tempo</li>
+    <li>Marca “possível duplicata” para revisão humana (sem merge automático)</li>
+    <li>Opcional: similaridade textual com <code>pg_trgm</code></li>
+  </ul>
+
+  <h3>11.3 LGPD</h3>
+  <ul>
+    <li>Retenção/anonimização de <code>driver_positions</code> e dados pessoais antigos</li>
+    <li>Endpoint de esquecimento</li>
+    <li>Consentimento no formulário público</li>
+    <li>Log de acesso a dados sensíveis</li>
+  </ul>
+</section>
+
+<section id="ambiente">
+  <h2>12. Passo a passo do ambiente de desenvolvimento</h2>
+
+  <div class="phase-steps">
+    <div class="step">Clonar o repositório e entrar em <code>flysop/</code>.</div>
+    <div class="step">Copiar <code>.env.docker.example</code> para <code>.env</code> (Postgres local: host <code>pgsql</code>, user/senha <code>laravel</code>/<code>secret</code>).</div>
+    <div class="step">No WSL: <code>docker compose -f docker-compose.dev.yml up -d --build</code>.</div>
+    <div class="step">Aguardar healthchecks de pgsql/mysql e boot do app (<code>artisan serve</code> na porta 8000).</div>
+    <div class="step">Acessar preferencialmente <code>http://127.0.0.1:8000</code> (evita problemas de IPv6/localhost no Windows+WSL).</div>
+    <div class="step">Rodar seeds: <code>docker compose -f docker-compose.dev.yml exec app php artisan db:seed</code>.</div>
+    <div class="step">Garantir Redis + worker para filas e broadcasting configurado no <code>.env</code>.</div>
+  </div>
+
+  <h3>12.1 Serviços locais</h3>
+  <table>
+    <thead><tr><th>Serviço</th><th>URL / Porta</th></tr></thead>
+    <tbody>
+      <tr><td>Aplicação Laravel</td><td>http://127.0.0.1:8000</td></tr>
+      <tr><td>Nginx</td><td>http://127.0.0.1:80</td></tr>
+      <tr><td>PostgreSQL</td><td>localhost:5432</td></tr>
+      <tr><td>MySQL</td><td>localhost:3306</td></tr>
+      <tr><td>MinIO Console</td><td>http://127.0.0.1:8900</td></tr>
+    </tbody>
+  </table>
+
+  <div class="box">
+    <strong>Estabilidade no Windows/WSL:</strong> use <code>vmIdleTimeout=-1</code> e, se necessário,
+    <code>networkingMode=mirrored</code> em <code>%USERPROFILE%\.wslconfig</code> para evitar queda do Docker
+    e falha de <code>localhost</code> via IPv6.
+  </div>
+</section>
+
+<section id="operacao">
+  <h2>13. Passo a passo operacional (uso do sistema)</h2>
+
+  <h3>13.1 Fluxo ponta a ponta</h3>
+  <div class="phase-steps">
+    <div class="step"><strong>Abertura:</strong> cidadão/atendente registra ocorrência (protocolo + prioridade + endereço).</div>
+    <div class="step"><strong>Triagem:</strong> supervisor classifica tipo/subtipo e avalia possíveis duplicatas.</div>
+    <div class="step"><strong>Despacho:</strong> sistema sugere agentes próximos; supervisor confirma.</div>
+    <div class="step"><strong>Aceite:</strong> agente aceita no painel motorista e inicia deslocamento (GPS ativo).</div>
+    <div class="step"><strong>Atendimento:</strong> evidências antes/depois, mudanças de status com timeline.</div>
+    <div class="step"><strong>Fechamento:</strong> status final + exportação PDF/Excel se necessário.</div>
+    <div class="step"><strong>Governança:</strong> dashboard de SLA, auditoria e rotinas LGPD.</div>
+  </div>
+
+  <h3>13.2 Onde cada pessoa trabalha</h3>
+  <table>
+    <thead><tr><th>Persona</th><th>Tela</th><th>Ações principais</th></tr></thead>
+    <tbody>
+      <tr><td>Admin</td><td>/admin</td><td>Cadastros, prioridades, usuários, relatórios, LGPD</td></tr>
+      <tr><td>Supervisor</td><td>/admin/dashboard, ocorrências, mapa</td><td>Triagem, despacho, SLA</td></tr>
+      <tr><td>Atendente</td><td>/admin/occurrences</td><td>CRUD de ocorrências e anexos</td></tr>
+      <tr><td>Agente</td><td>/driver</td><td>Aceitar, GPS, evidências, status</td></tr>
+      <tr><td>Cidadão</td><td>site / API</td><td>Abrir e acompanhar protocolo</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="verificacao">
+  <h2>14. Checklist de verificação (aceite)</h2>
+  <table>
+    <thead><tr><th>Fase</th><th>Como validar</th><th>Resultado esperado</th></tr></thead>
+    <tbody>
+      <tr><td>0</td><td><code>route:list</code>, teste de canal privado, job na fila</td><td>Auth ok; broadcast e queue funcionando</td></tr>
+      <tr><td>1–3</td><td>Criar ocorrência e mudar status</td><td>Protocolo, due_at, histórico e notificações</td></tr>
+      <tr><td>4</td><td>Abrir dashboard e mapa</td><td>KPIs, gráficos, cluster/heatmap e busca</td></tr>
+      <tr><td>5</td><td>Despachar com 2+ agentes</td><td>Ranking por distância e GPS ao vivo</td></tr>
+      <tr><td>6</td><td>Solicitar PDF/Excel e marcar duplicata</td><td>Arquivo via fila; sugestão humana de duplicidade</td></tr>
+    </tbody>
+  </table>
+
+  <h3>14.1 Bibliotecas adotadas</h3>
+  <table>
+    <thead><tr><th>Necessidade</th><th>Escolha</th></tr></thead>
+    <tbody>
+      <tr><td>Gráficos</td><td>Chart.js</td></tr>
+      <tr><td>PDF</td><td>barryvdh/laravel-dompdf</td></tr>
+      <tr><td>Excel</td><td>maatwebsite/excel ^3</td></tr>
+      <tr><td>Fila</td><td>Redis + queue:work</td></tr>
+      <tr><td>Broadcast</td><td>Pusher / Soketi</td></tr>
+      <tr><td>Cluster/Heatmap</td><td>MarkerClusterer + HeatmapLayer</td></tr>
+      <tr><td>Distância</td><td>Haversine SQL (upgrade opcional cube/earthdistance)</td></tr>
+      <tr><td>Busca</td><td>Postgres full-text</td></tr>
+      <tr><td>RBAC</td><td>Policies Laravel + ACL existente</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer-note">
+    Documento gerado a partir do plano <strong>virtual-jingling-cookie.md</strong> e da documentação do repositório
+    (<code>docs/specs/*</code>, <code>ARQUITETURA_MOTORISTA.md</code>, <code>README.DOCKER.md</code>).
+    Apresenta o produto na forma entregue das fases 0–6 da Central Inteligente de Ocorrências Públicas.
+  </div>
+</section>
+
+</body>
+</html>

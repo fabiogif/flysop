@@ -20,12 +20,37 @@ services:
                 condition: service_healthy
             minio:
                 condition: service_started
+            redis:
+                condition: service_healthy
+            soketi:
+                condition: service_started
         env_file:
             - .env
         # DB_* vêm do .env (Supabase ou local). Para Postgres local: DB_HOST=pgsql, DB_PORT=5432, etc.
         ports:
             - '8000:8000'
-        command: sh -c "composer install --no-interaction && php artisan key:generate --force || true && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=8000"
+        command: sh -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi && php artisan key:generate --force || true && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=8000"
+
+    queue:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        container_name: soprender-queue
+        restart: unless-stopped
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+        networks:
+            - sail
+        depends_on:
+            redis:
+                condition: service_healthy
+            pgsql:
+                condition: service_healthy
+        env_file:
+            - .env
+        # Worker separado do processo web (Fase 0): QUEUE_CONNECTION=redis exige um consumidor rodando.
+        command: sh -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi && php artisan queue:work redis --tries=3 --sleep=3"
 
     nginx:
         image: nginx:alpine
@@ -66,6 +91,7 @@ services:
 
     pgsql:
         image: 'postgres:15'
+        restart: unless-stopped
         ports:
             - '${FORWARD_DB_PORT:-5432}:5432'
         environment:
@@ -91,6 +117,7 @@ services:
 
     mysql:
         image: 'mysql/mysql-server:8.0'
+        restart: unless-stopped
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
@@ -113,10 +140,44 @@ services:
             retries: 3
             timeout: 5s
 
+    redis:
+        image: 'redis:7-alpine'
+        container_name: soprender-redis
+        restart: unless-stopped
+        ports:
+            - '${FORWARD_REDIS_PORT:-6379}:6379'
+        volumes:
+            - 'sail-redis:/data'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - redis-cli
+                - ping
+            retries: 3
+            timeout: 5s
+
+    # Soketi: servidor WebSocket self-hosted compatível com o protocolo Pusher (Fase 0 — broadcasting real).
+    soketi:
+        image: 'quay.io/soketi/soketi:1.6-16-alpine'
+        container_name: soprender-soketi
+        restart: unless-stopped
+        environment:
+            SOKETI_DEFAULT_APP_ID: '${PUSHER_APP_ID:-flysop}'
+            SOKETI_DEFAULT_APP_KEY: '${PUSHER_APP_KEY:-flysopkey}'
+            SOKETI_DEFAULT_APP_SECRET: '${PUSHER_APP_SECRET:-flysopsecret}'
+        ports:
+            - '6001:6001'
+        networks:
+            - sail
+
 volumes:
     sail-pgsql:
         driver: local
     sail-mysql:
+        driver: local
+    sail-redis:
         driver: local
     minio-data:
         driver: local

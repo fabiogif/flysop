@@ -20,13 +20,22 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
 /**
  * Canal privado por ocorrência: rota do motorista em tempo real.
- * Apenas usuários autenticados que podem ver a ocorrência (admin) podem escutar.
+ * Só pode escutar quem tem permissão para ver ocorrências no admin (occurrences)
+ * ou o motorista atualmente atribuído àquela ocorrência.
  */
 Broadcast::channel('occurrence.{id}', function ($user, $id) {
     if (! $user) {
         return false;
     }
-    $occurrence = Occurrences::find($id);
 
-    return $occurrence !== null;
+    $occurrence = Occurrences::find($id);
+    if (! $occurrence) {
+        return false;
+    }
+
+    if ($user->isAdmin() || $user->hasPermission('occurrences')) {
+        return true;
+    }
+
+    return $user->driver && (int) $occurrence->driver_id === (int) $user->driver->id;
 });

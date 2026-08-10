@@ -31,7 +31,9 @@ class TypeOccurrenceController extends Controller
 
     public function create()
     {
-        return view('admin.pages.typeOccurrences.create');
+        $parentOptions = $this->repository->whereNull('parent_id')->orderBy('name')->get();
+
+        return view('admin.pages.typeOccurrences.create', compact('parentOptions'));
     }
 
     public function store(StoreUpdateTypeOccurrence $request)
@@ -88,9 +90,11 @@ class TypeOccurrenceController extends Controller
         if (!$typeOccurrences) {
             return redirect()->back();
         }
+        $parentOptions = $this->repository->whereNull('parent_id')->where('id', '!=', $id)->orderBy('name')->get();
+
         return view(
             'admin.pages.typeOccurrences.edit',
-            ['typeOccurrence' => $typeOccurrences]
+            ['typeOccurrence' => $typeOccurrences, 'parentOptions' => $parentOptions]
         );
     }
 

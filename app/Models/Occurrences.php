@@ -7,7 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Occurrences extends Model
 {
-    protected $fillable = ['title', 'name', 'description', 'cpf', 'rg', 'address', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'driver_id', 'clients_id', 'nameType', 'nameStatus'];
+    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'clients_id', 'nameType', 'nameStatus'];
+
+    protected $casts = [
+        'due_at' => 'datetime',
+    ];
+
     use HasFactory;
 
     public function search($filter = null)
@@ -90,6 +95,16 @@ class Occurrences extends Model
     public function driver()
     {
         return $this->belongsTo(Driver::class);
+    }
+
+    public function priority()
+    {
+        return $this->belongsTo(Priority::class);
+    }
+
+    public function statusHistory()
+    {
+        return $this->hasMany(OccurrenceStatusHistory::class, 'occurrence_id')->orderByDesc('created_at');
     }
 
     /**
