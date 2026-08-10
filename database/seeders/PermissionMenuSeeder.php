@@ -23,6 +23,8 @@ class PermissionMenuSeeder extends Seeder
         'roles' => 'Cargos',
         'permissions' => 'Permissões',
         'users' => 'Usuários',
+        'settings' => 'Configurações da organização',
+        'audit' => 'Auditoria',
         'statusOccurrences' => 'Status de Ocorrências',
         'typeOccurrences' => 'Tipo de Ocorrências',
         'priorities' => 'Prioridades',

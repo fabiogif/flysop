@@ -8,9 +8,13 @@
     </ol>
 
     <h1 class="m-0 text-dark">Usuários
+        <a href="{{ route('users.invite.create') }}" class="btn btn-success mr-2">
+            <i class="fas fa-envelope"></i>
+            <span class="m-4">Convidar</span>
+        </a>
         <a href="{{ route('users.create') }}" class="btn btn-primary mr-5">
             <i class="fas fa-save"></i>
-            <span class=m-4>Adicionar</span>
+            <span class="m-4">Adicionar</span>
         </a>
     </h1>
 @stop
@@ -57,6 +61,16 @@
                                     title="Cargos">
                                     <i class="fas fa-address-card"></i>
                                 </a>
+                                @if ((int) $user->id !== (int) auth()->id())
+                                    <form action="{{ route('users.destroy', $user->id) }}" method="POST" class="d-inline"
+                                        onsubmit="return confirm('Remover este membro da organização?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-danger" title="Remover">
+                                            <i class="fas fa-user-minus"></i>
+                                        </button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @endforeach

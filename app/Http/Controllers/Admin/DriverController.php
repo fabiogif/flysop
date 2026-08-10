@@ -13,6 +13,7 @@ class DriverController extends Controller
 {
     public function __construct(protected Driver $repository)
     {
+        $this->middleware(['can:drivers']);
     }
 
     protected function scopeTenant()

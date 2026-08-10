@@ -28,6 +28,8 @@ class RoleSeeder extends Seeder
                     'roles',
                     'permissions',
                     'users',
+                    'settings',
+                    'audit',
                     'statusOccurrences',
                     'typeOccurrences',
                     'priorities',

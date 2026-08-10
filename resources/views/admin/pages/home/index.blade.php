@@ -4,7 +4,11 @@
 @section('content_header')
 
 
-<h1 class="m-0 text-dark">Painel de Controle</h1>
+<h1 class="m-0 text-dark">Painel de Controle
+    <a href="{{ route('admin.dashboard.export') }}" class="btn btn-sm btn-outline-secondary ml-2">
+        <i class="fas fa-file-csv"></i> Exportar uso
+    </a>
+</h1>
 <div class="row">
 
     <div class="col-lg-3 col-6">

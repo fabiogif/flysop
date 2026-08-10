@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Admin\ACL;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
 class RoleUserController extends Controller
 {
     protected $repository, $user, $role;
 
-    public function __construct(User $user, Role $role)
+    public function __construct(User $user, Role $role, protected AuditLogger $audit)
     {
         $this->user = $user;
         $this->role = $role;
@@ -74,6 +75,11 @@ class RoleUserController extends Controller
 
         $user->roles()->attach($request->roles);
 
+        $this->audit->log('user.roles_attached', $user, [
+            'role_ids' => $request->roles,
+            'email' => $user->email,
+        ]);
+
         return redirect()->route('users.roles', $user->id)->with('messageSuccess', 'Vinculado com sucesso');
     }
 
@@ -87,6 +93,13 @@ class RoleUserController extends Controller
         }
 
         $user->roles()->detach($role);
+
+        $this->audit->log('user.role_detached', $user, [
+            'role_id' => $role->id,
+            'role_name' => $role->name,
+            'email' => $user->email,
+        ]);
+
         return redirect()->route('users.roles', $user->id)->with('messageSuccess', 'Desvinculado com sucesso');
     }
 }

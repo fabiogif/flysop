@@ -15,6 +15,13 @@ use App\Http\Controllers\Admin\TypeOccurrenceController;
 use App\Http\Controllers\Admin\StatusOccurrenceController;
 use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\PriorityController;
+use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\TeamController;
+use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\Admin\UserInvitationController;
+use App\Http\Controllers\Admin\OrganisationSettingsController;
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Auth\AcceptInvitationController;
 
 use Illuminate\Support\Facades\Auth;
 
@@ -24,9 +31,12 @@ Route::get('/login', [App\Http\Controllers\HomeController::class , 'index'])->na
 
 Route::get('/home', [App\Http\Controllers\HomeController::class , 'index'])->name('home');
 
+Route::get('/invitations/{token}', [AcceptInvitationController::class, 'show'])->name('invitations.accept.show');
+Route::post('/invitations/{token}', [AcceptInvitationController::class, 'store'])->name('invitations.accept.store');
+
 Route::prefix('admin')
     ->namespace('')
-    ->middleware('auth')
+    ->middleware(['auth', 'admin.panel'])
     ->group(function () {
 
         //Route::get('/teste', function () {});
@@ -56,7 +66,18 @@ Route::prefix('admin')
 
         //Usuário
         Route::any('users/search', [App\Http\Controllers\Admin\UserController::class , 'search'])->name('users.search');
+        Route::get('users/invite/create', [UserInvitationController::class, 'create'])->name('users.invite.create');
+        Route::post('users/invite', [UserInvitationController::class, 'store'])->name('users.invite.store');
+        Route::delete('users/invite/{id}', [UserInvitationController::class, 'destroy'])->name('users.invite.destroy');
         Route::resource('users', UserController::class);
+
+        // Organização (settings + danger zone)
+        Route::get('settings/organisation', [OrganisationSettingsController::class, 'edit'])->name('settings.organisation.edit');
+        Route::put('settings/organisation', [OrganisationSettingsController::class, 'update'])->name('settings.organisation.update');
+        Route::delete('settings/organisation', [OrganisationSettingsController::class, 'destroy'])->name('settings.organisation.destroy');
+
+        // Auditoria
+        Route::get('audit', [AuditLogController::class, 'index'])->name('audit.index');
 
         //tenants -Empresa
         Route::any('tenants/search', [App\Http\Controllers\Admin\TenantController::class , 'search'])->name('tenants.search');
@@ -94,6 +115,7 @@ Route::prefix('admin')
         Route::resource('permission', PermissionController::class);
         //Home
         Route::get('/', [App\Http\Controllers\Admin\DashboardController::class , 'home'])->name('admin.index');
+        Route::get('/dashboard/export', [App\Http\Controllers\Admin\DashboardController::class , 'exportUsage'])->name('admin.dashboard.export');
         Route::get('/dashboard/occurrences-recent', [App\Http\Controllers\Admin\DashboardController::class , 'occurrencesRecent'])->name('admin.dashboard.occurrences-recent');
         Route::get('/dashboard/drivers-last-positions', [App\Http\Controllers\Admin\DashboardController::class , 'driversLastPositions'])->name('admin.dashboard.drivers-last-positions');
         //Ocorrencias
@@ -118,6 +140,19 @@ Route::prefix('admin')
 
         Route::any('/drivers/search', [DriverController::class, 'search'])->name('drivers.search');
         Route::resource('drivers', DriverController::class);
+
+        //Departamento
+        Route::any('/departments/search', [DepartmentController::class, 'search'])->name('departments.search');
+        Route::resource('departments', DepartmentController::class);
+
+        //Equipe
+        Route::any('/teams/search', [TeamController::class, 'search'])->name('teams.search');
+        Route::resource('teams', TeamController::class);
+
+        //Notificações internas
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
     });
 
 

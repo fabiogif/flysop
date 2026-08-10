@@ -15,6 +15,7 @@ class IssuingController extends Controller
     public function __construct(Issuing $issuing)
     {
         $this->repository = $issuing;
+        $this->middleware(['can:issuings']);
     }
 
     /**

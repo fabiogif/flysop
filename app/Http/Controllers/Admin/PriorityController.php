@@ -14,6 +14,7 @@ class PriorityController extends Controller
     public function __construct(Priority $priority)
     {
         $this->repository = $priority;
+        $this->middleware(['can:priorities']);
     }
 
     public function index()

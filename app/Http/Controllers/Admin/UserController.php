@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateUsers;
 use App\Models\User;
+use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     protected $repository, $users;
 
-    public function __construct(User $users)
+    public function __construct(User $users, protected AuditLogger $audit)
     {
         $this->repository = $users;
         $this->middleware(['can:users']);
@@ -51,7 +52,11 @@ class UserController extends Controller
         $data = $request->all();
         $data['tenant_id'] = auth()->user()->tenant_id;
         $data['password'] = bcrypt($data['password']);
-        $this->repository->create($data);
+        $user = $this->repository->create($data);
+
+        $this->audit->log('user.created', $user, [
+            'email' => $user->email,
+        ]);
 
         return redirect()->route('users.index')->with('messageSuccess', 'Adicionado com sucesso');
     }
@@ -112,6 +117,11 @@ class UserController extends Controller
 
         $profile->update($data);
 
+        $this->audit->log('user.updated', $profile, [
+            'email' => $profile->email,
+            'fields' => array_keys($data),
+        ]);
+
         return  redirect()->route('users.index')->with('messageSuccess', 'Alterado com sucesso');
     }
 
@@ -128,6 +138,14 @@ class UserController extends Controller
         if (!$users) {
             return redirect()->back();
         }
+
+        if ((int) $users->id === (int) auth()->id()) {
+            return redirect()->back()->with('messageDanger', 'Você não pode remover a própria conta.');
+        }
+
+        $this->audit->log('user.deleted', $users, [
+            'email' => $users->email,
+        ]);
 
         $users->delete();
 

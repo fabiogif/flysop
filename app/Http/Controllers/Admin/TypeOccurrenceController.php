@@ -15,6 +15,7 @@ class TypeOccurrenceController extends Controller
     public function __construct(TypeOccurrence $typeOccurrence)
     {
         $this->repository = $typeOccurrence;
+        $this->middleware(['can:typeOccurrences']);
     }
 
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateOccurrences;
 use App\Models\DriverPosition;
+use App\Models\Occurrences;
 use App\Services\OccurrenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,10 +17,13 @@ class OccurrencesController extends Controller
     public function __construct(
         protected OccurrenceService $occurrenceService
     ) {
+        $this->middleware(['can:occurrences']);
     }
 
     public function index(): View
     {
+        $this->authorize('viewAny', Occurrences::class);
+
         $occurrences = $this->occurrenceService->getPaginatedList();
 
         return view('admin.pages.occurrences.index', ['occurrences' => $occurrences]);
@@ -27,6 +31,8 @@ class OccurrencesController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Occurrences::class);
+
         $formData = $this->occurrenceService->getFormData();
 
         return view('admin.pages.occurrences.create', $formData);
@@ -34,8 +40,14 @@ class OccurrencesController extends Controller
 
     public function store(StoreUpdateOccurrences $request): RedirectResponse
     {
+        $this->authorize('create', Occurrences::class);
+
         $anexos = $request->hasFile('anexo') ? $request->allFiles()['anexo'] : [];
-        $this->occurrenceService->storeForAdmin($request->validated(), is_array($anexos) ? $anexos : [$anexos]);
+        $this->occurrenceService->storeForAdmin(
+            $request->validated(),
+            is_array($anexos) ? $anexos : [$anexos],
+            $request->input('anexo_phase')
+        );
 
         return redirect()->route('occurrences.index')->with('messageSuccess', 'Ocorrência cadastrada com sucesso.');
     }
@@ -43,7 +55,9 @@ class OccurrencesController extends Controller
     public function show(int $id): View|RedirectResponse
     {
         $occurrence = $this->occurrenceService->findOrFail($id);
-        $occurrence->load(['imagens', 'priority', 'statusHistory.fromStatus', 'statusHistory.toStatus', 'statusHistory.changedBy']);
+        $this->authorize('view', $occurrence);
+
+        $occurrence->load(['imagens', 'priority', 'statusHistory.fromStatus', 'statusHistory.toStatus', 'statusHistory.changedBy', 'activities.causer']);
         $formData = $this->occurrenceService->getFormData();
 
         return view('admin.pages.occurrences.show', [
@@ -58,6 +72,8 @@ class OccurrencesController extends Controller
     public function edit(int $id): View|RedirectResponse
     {
         $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('update', $occurrence);
+
         $formData = $this->occurrenceService->getFormData();
 
         return view('admin.pages.occurrences.edit', [
@@ -72,14 +88,25 @@ class OccurrencesController extends Controller
 
     public function update(StoreUpdateOccurrences $request, int $id): RedirectResponse
     {
+        $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('update', $occurrence);
+
         $anexos = $request->hasFile('anexo') ? $request->allFiles()['anexo'] : [];
-        $this->occurrenceService->updateForAdmin($id, $request->validated(), is_array($anexos) ? $anexos : [$anexos]);
+        $this->occurrenceService->updateForAdmin(
+            $id,
+            $request->validated(),
+            is_array($anexos) ? $anexos : [$anexos],
+            $request->input('anexo_phase')
+        );
 
         return redirect()->route('occurrences.index')->with('messageSuccess', 'Ocorrência atualizada com sucesso.');
     }
 
     public function destroy(int $id): RedirectResponse
     {
+        $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('delete', $occurrence);
+
         $this->occurrenceService->deleteForAdmin($id);
 
         return redirect()->route('occurrences.index')->with('messageSuccess', 'Excluído com sucesso');
@@ -87,6 +114,8 @@ class OccurrencesController extends Controller
 
     public function search(Request $request): View
     {
+        $this->authorize('viewAny', Occurrences::class);
+
         $filters = $request->all();
         $occurrences = $this->occurrenceService->search($request->get('filter'));
 
@@ -103,6 +132,8 @@ class OccurrencesController extends Controller
     public function driverRoute(int $id): JsonResponse
     {
         $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('view', $occurrence);
+
         $occurrence->load('driver');
 
         $positions = DriverPosition::forOccurrence($id)

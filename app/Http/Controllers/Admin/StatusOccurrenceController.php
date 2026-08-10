@@ -15,6 +15,7 @@ class StatusOccurrenceController extends Controller
     public function __construct(StatusOccurrence $statusOccurrence)
     {
         $this->repository = $statusOccurrence;
+        $this->middleware(['can:statusOccurrences']);
     }
 
 
@@ -25,7 +26,7 @@ class StatusOccurrenceController extends Controller
      */
     public function index()
     {
-        $statusOccurrences = $this->repository->paginate();
+        $statusOccurrences = $this->repository->orderBy('sort_order')->paginate();
         return view('admin.pages.statusOccurrences.index', compact('statusOccurrences'));
     }
 

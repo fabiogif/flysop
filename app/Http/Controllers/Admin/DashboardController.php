@@ -8,6 +8,7 @@ use App\Models\Occurrences;
 use App\Services\Contracts\DashboardServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DashboardController extends Controller
 {
@@ -19,17 +20,48 @@ class DashboardController extends Controller
     public function home()
     {
         $stats = $this->dashboardService->getStats();
+        $charts = $this->dashboardService->getChartsData();
 
-        return view('admin.pages.home.index', $stats);
+        return view('admin.pages.home.index', $stats + ['charts' => $charts]);
     }
 
     /**
-     * Retorna ocorrências recentes para atualização em tempo real (polling).
+     * Exporta métricas de uso da organização em CSV.
+     */
+    public function exportUsage(): StreamedResponse
+    {
+        $stats = $this->dashboardService->getStats();
+        $filename = 'uso-organizacao-' . now()->format('Y-m-d-His') . '.csv';
+
+        return response()->streamDownload(function () use ($stats) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, ['metrica', 'valor']);
+            foreach ($stats as $key => $value) {
+                if (is_scalar($value)) {
+                    fputcsv($out, [$key, $value]);
+                }
+            }
+            fclose($out);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    /**
+     * Retorna ocorrências recentes para atualização em tempo real (polling/push) e
+     * alimenta o mapa do dashboard. Aceita filtros opcionais (Fase 4): status_occurrences_id,
+     * type_occurrences_id, priority_id, driver_id, date_from, date_to (sobre created_at).
      */
     public function occurrencesRecent(Request $request): JsonResponse
     {
         $limit = (int) $request->get('limit', 10);
-        $occurrences = Occurrences::with(['statusOccurence', 'typeOccurrence'])
+        $occurrences = Occurrences::with(['statusOccurence', 'typeOccurrence', 'priority'])
+            ->when($request->filled('status_occurrences_id'), fn ($q) => $q->where('status_occurrences_id', $request->status_occurrences_id))
+            ->when($request->filled('type_occurrences_id'), fn ($q) => $q->where('type_occurrences_id', $request->type_occurrences_id))
+            ->when($request->filled('priority_id'), fn ($q) => $q->where('priority_id', $request->priority_id))
+            ->when($request->filled('driver_id'), fn ($q) => $q->where('driver_id', $request->driver_id))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->orderBy('updated_at', 'desc')
             ->limit($limit)
             ->get()
@@ -42,11 +74,29 @@ class DashboardController extends Controller
                 'longitude' => $o->longitude ? (float) $o->longitude : null,
                 'status' => $o->statusOccurence?->name ?? '—',
                 'type' => $o->typeOccurrence?->name ?? '—',
+                'priority' => $o->priority?->name,
+                'priority_color' => $o->priority?->color,
                 'updated_at' => $o->updated_at?->toIso8601String(),
                 'updated_at_human' => $o->updated_at?->diffForHumans(),
             ]);
 
         return response()->json(['occurrences' => $occurrences]);
+    }
+
+    /**
+     * Pontos para o mapa de calor (Fase 4): todas as ocorrências com lat/lng, sem limite de
+     * "recentes" — usado separadamente do card de lista para não sobrecarregar o polling.
+     */
+    public function occurrencesHeatmap(Request $request): JsonResponse
+    {
+        $points = Occurrences::whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->get(['latitude', 'longitude'])
+            ->map(fn ($o) => ['lat' => (float) $o->latitude, 'lng' => (float) $o->longitude]);
+
+        return response()->json(['points' => $points]);
     }
 
     /**

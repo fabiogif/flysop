@@ -230,6 +230,11 @@ return [
             'icon' => 'fas fa-tachometer-alt',
         ],
         [
+            'text' => 'Notificações',
+            'url' => 'admin/notifications',
+            'icon' => 'fas fa-bell',
+        ],
+        [
             'text' => 'Empresas',
             'url' => 'admin/tenants',
             'icon' => 'fas fa-building',
@@ -266,6 +271,18 @@ return [
             'can' => 'users'
         ],
         [
+            'text' => 'Organização',
+            'url' => 'admin/settings/organisation',
+            'icon' => 'fas fa-cog',
+            'can' => 'settings'
+        ],
+        [
+            'text' => 'Auditoria',
+            'url' => 'admin/audit',
+            'icon' => 'fas fa-clipboard-list',
+            'can' => 'audit'
+        ],
+        [
             'text' => 'Status de Ocorrências',
             'url' => 'admin/statusOccurrences',
             'icon' => 'fas fa-layer-group',
@@ -300,6 +317,18 @@ return [
             'url' => 'admin/drivers',
             'icon' => 'fas fa-truck',
             'can' => 'drivers'
+        ],
+        [
+            'text' => 'Departamentos',
+            'url' => 'admin/departments',
+            'icon' => 'fas fa-building',
+            'can' => 'departments'
+        ],
+        [
+            'text' => 'Equipes',
+            'url' => 'admin/teams',
+            'icon' => 'fas fa-people-group',
+            'can' => 'teams'
         ],
         [
             'text' => 'Painel Motorista',

@@ -28,8 +28,8 @@ services:
             - .env
         # DB_* vêm do .env (Supabase ou local). Para Postgres local: DB_HOST=pgsql, DB_PORT=5432, etc.
         ports:
-            - '8000:8000'
-        command: sh -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi && php artisan key:generate --force || true && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=8000"
+            - '0.0.0.0:8010:8000'
+        command: sh -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi && php artisan migrate --force || true && php artisan serve --host=0.0.0.0 --port=8000"
 
     queue:
         build:
@@ -51,6 +51,26 @@ services:
             - .env
         # Worker separado do processo web (Fase 0): QUEUE_CONNECTION=redis exige um consumidor rodando.
         command: sh -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi && php artisan queue:work redis --tries=3 --sleep=3"
+
+    scheduler:
+        build:
+            context: .
+            dockerfile: Dockerfile.dev
+        container_name: soprender-scheduler
+        restart: unless-stopped
+        working_dir: /var/www/html
+        volumes:
+            - ./:/var/www/html
+        networks:
+            - sail
+        depends_on:
+            pgsql:
+                condition: service_healthy
+        env_file:
+            - .env
+        # Sem isso, nenhum Schedule::command() em app/Console/Kernel.php roda (Fase 3): nem a
+        # limpeza de driver_positions nem a checagem de SLA. Loop simples de 1 min — sem cron no container.
+        command: sh -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi && while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"
 
     nginx:
         image: nginx:alpine
@@ -93,7 +113,7 @@ services:
         image: 'postgres:15'
         restart: unless-stopped
         ports:
-            - '${FORWARD_DB_PORT:-5432}:5432'
+            - '5433:5432'
         environment:
             PGPASSWORD: '${DB_PASSWORD:-secret}'
             POSTGRES_DB: '${DB_DATABASE:-laravel}'
@@ -119,7 +139,7 @@ services:
         image: 'mysql/mysql-server:8.0'
         restart: unless-stopped
         ports:
-            - '${FORWARD_DB_PORT:-3306}:3306'
+            - '3307:3306'
         environment:
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD:-secret}'
             MYSQL_ROOT_HOST: '%'
@@ -185,5 +205,4 @@ volumes:
 networks:
     sail:
         driver: bridge
-        driver_opts:
-            com.docker.network.enable_ipv6: "true"
+        enable_ipv6: false
