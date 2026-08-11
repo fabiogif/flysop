@@ -1,0 +1,70 @@
+---
+description: flySOP Project Standards
+alwaysApply: true
+---
+
+# flySOP Development Standards
+
+Always preserve the existing architecture — this project has two coexisting patterns (see `docs/specs/architecture.md`):
+
+1. "Camadas completas": Controller → FormRequest → Service → RepositoryInterface → Repository → Model
+2. "CRUD simples": Controller → FormRequest → Model (Eloquent direto)
+
+Never force pattern 1 onto a domain that already follows pattern 2, and vice-versa.
+
+---
+
+## Reuse First
+
+Before creating:
+
+- Controller
+- Service
+- Repository
+- FormRequest
+- Vue component
+- JS module
+
+Verify whether one already exists. Prefer extending existing modules. Avoid duplication — especially the remaining known duplication point: `StoreUpdateOccurrences` (exists in two namespaces). Driver position logic duplication was fixed: only `Driver\DriverPositionController` exists now, delegating to `App\Services\DriverPositionService`.
+
+---
+
+## Frontend
+
+Use the right sub-stack for the area (see `docs/specs/frontend.md`):
+
+- Admin CRUD → Blade + AdminLTE (Bootstrap 4/jQuery)
+- Public site → Blade + plain ES6 modules (no jQuery)
+- Realtime widgets → Vue 2 component, local state only
+
+---
+
+## Security
+
+Every new API route needs `auth:sanctum` unless there is a documented reason to leave it public. Several existing routes lack auth today (`docs/specs/security.md`) — that is a known gap, not a pattern to copy.
+
+---
+
+## Analysis Before Coding
+
+Before implementation always provide:
+
+- affected domain(s) and which pattern they follow
+- affected routes/APIs
+- affected database entities
+- affected Blade views / Vue components
+- security considerations (auth, tenant scope)
+- performance considerations (pagination, eager loading)
+
+If the impact is high (auth, schema, public API, multiple domains), stop and explain the risks before implementing.
+
+---
+
+## Definition of Done
+
+A task is complete only if:
+
+- the domain's existing pattern is preserved (camadas completas or CRUD simples)
+- no duplicate code was introduced
+- new API routes are authenticated (or justified otherwise)
+- a test covers the changed flow (`docs/specs/testing.md`)

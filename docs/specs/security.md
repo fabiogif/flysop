@@ -8,9 +8,12 @@
 
 ## Autorização
 
-- ACL própria via models `Permission`, `Role`, `Profile` (não é um pacote de terceiros tipo spatie/laravel-permission)
+- ACL própria via models `Permission`, `Role` (não é um pacote de terceiros tipo spatie/laravel-permission). `Profile` existe mas é **legado morto** — não ligado a `User`, não reativar (ver comentário em `app/Models/Profile.php`)
+- `app/Providers/AuthServiceProvider.php` registra dinamicamente um `Gate::define($permission->name, ...)` para cada linha de `permissions` (checa `$user->hasPermission()`) — é isso que faz `can:{permission}` (middleware) e `@can` (Blade) funcionarem para qualquer permissão cadastrada, sem precisar declarar Gate por Gate
+- `Gate::before` nesse mesmo provider dá acesso irrestrito a quem `isAdmin()` é `true` (exceto a ability `driver.panel`, que tem regra própria) — qualquer Policy nova é automaticamente ignorada para admin
 - Alguns controllers usam `$this->middleware(['can:{permission}'])` no construtor (ex.: `ProductController`) — nem todo controller admin tem essa checagem hoje; ao criar CRUD novo no admin, adicione a permissão seguindo esse padrão
-- "Admin" de plataforma (cross-tenant) é resolvido por **allowlist de e-mail hardcoded** em `config/tenant.php` (`ManagerTenant::isAdmin()`) — é um mecanismo frágil (exige deploy para adicionar/remover admin, e-mails ficam versionados no repo). Não expandir esse padrão para novas features de autorização; se precisar de mais um "super admin", prefira migrar para uma coluna/role no banco
+- Policies nativas do Laravel (`app/Policies/`, registradas em `AuthServiceProvider::$policies`) para autorização por registro (não só por módulo) — hoje só `OccurrencePolicy` (Fase 2 do plano de execução), cobrindo `viewAny/view/create/update/delete`. Antes da Fase 2, `OccurrencesController::destroy` não tinha **nenhuma** checagem além de `auth` — qualquer usuário logado podia excluir qualquer ocorrência
+- `App\Models\Traits\UserACLTrait::isAdmin()` (usado em ~10 pontos do código: Gate::before, `EnsureUserIsDriver`, controllers do painel motorista, `routes/channels.php`) hoje checa a role "Administrador" (`hasRole()`) **ou**, como fallback transitório, `config('acl.admin')` (allowlist de e-mail) — não remover o fallback sem confirmar que todo admin de produção já tem a role atribuída (`database/seeders/PermissionMenuSeeder.php` sincroniza role a partir da mesma config). **Atenção**: existe um segundo método `isAdmin()`, em `App\Tenant\ManagerTenant`, que checa `config('tenant.admins')` — esse é código morto (nenhum call site fora da própria classe); não confundir os dois nem "consertar" o errado
 
 ## Multi-tenant
 
@@ -44,7 +47,7 @@ Toda rota de API nova deve ter `auth:sanctum` a menos que exista uma razão docu
 ## Throttling
 
 - `throttle:api` no grupo `api` (Kernel)
-- `throttle:20,1` explícito na rota `driver/position` (web) — o endpoint equivalente da API (`Api/Driver/DriverLocationController`) não tem throttle dedicado, só o `throttle:api` genérico
+- `throttle:20,1` explícito na rota `driver/position` (web)
 
 ## Checklist rápido antes de merge
 

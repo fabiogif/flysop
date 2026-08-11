@@ -37,14 +37,18 @@
             <table class="table table-condensed">
                 <thead>
                     <tr>
+                        <th>Ordem</th>
                         <th>Nome</th>
+                        <th>Terminal</th>
                         <th width="250px">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($statusOccurrences as $statusOccurrence)
                         <tr>
+                            <td>{{ $statusOccurrence->sort_order }}</td>
                             <td>{{ $statusOccurrence->name }}</td>
+                            <td>{{ $statusOccurrence->is_terminal ? 'Sim' : 'Não' }}</td>
                             <td style="width: 10px">
                                 <a href="{{ route('statusOccurrences.edit', $statusOccurrence->id) }}"
                                     class="btn btn-warning"><i class="fas fa-edit"></i></a>

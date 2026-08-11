@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Driver;
 use App\Models\DriverPosition;
 use App\Models\Occurrences;
+use App\Models\Priority;
+use App\Models\StatusOccurrence;
+use App\Models\TypeOccurrence;
 use App\Services\Contracts\DashboardServiceInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -22,7 +26,14 @@ class DashboardController extends Controller
         $stats = $this->dashboardService->getStats();
         $charts = $this->dashboardService->getChartsData();
 
-        return view('admin.pages.home.index', $stats + ['charts' => $charts]);
+        $filterOptions = [
+            'statusOccurrences' => StatusOccurrence::orderBy('sort_order')->get(),
+            'typeOccurrences' => TypeOccurrence::orderBy('name')->get(),
+            'priorities' => Priority::orderBy('weight', 'desc')->get(),
+            'drivers' => Driver::where('tenant_id', auth()->user()->tenant_id)->orderBy('name')->get(),
+        ];
+
+        return view('admin.pages.home.index', $stats + ['charts' => $charts, 'filterOptions' => $filterOptions]);
     }
 
     /**

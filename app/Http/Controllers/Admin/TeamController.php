@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateTeam;
 use App\Models\Department;
 use App\Models\Team;
+use App\Models\TypeOccurrence;
 use Illuminate\Http\Request;
 
 class TeamController extends Controller
@@ -28,8 +29,9 @@ class TeamController extends Controller
     public function create()
     {
         $departments = Department::orderBy('name')->get();
+        $typeOccurrences = TypeOccurrence::orderBy('name')->get();
 
-        return view('admin.pages.teams.create', compact('departments'));
+        return view('admin.pages.teams.create', compact('departments', 'typeOccurrences'));
     }
 
     public function store(StoreUpdateTeam $request)
@@ -59,8 +61,9 @@ class TeamController extends Controller
         }
 
         $departments = Department::orderBy('name')->get();
+        $typeOccurrences = TypeOccurrence::orderBy('name')->get();
 
-        return view('admin.pages.teams.edit', ['team' => $team, 'departments' => $departments]);
+        return view('admin.pages.teams.edit', ['team' => $team, 'departments' => $departments, 'typeOccurrences' => $typeOccurrences]);
     }
 
     public function update(StoreUpdateTeam $request, $id)

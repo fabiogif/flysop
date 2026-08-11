@@ -10,6 +10,9 @@ use App\Models\Occurrences;
 use App\Models\Priority;
 use App\Models\StatusOccurrence;
 use App\Models\TypeOccurrence;
+use App\Events\OccurrenceUpdated;
+use App\Notifications\OccurrenceAssignedNotification;
+use App\Notifications\OccurrenceStatusChangedNotification;
 use App\Repositories\Contracts\OccurrenceRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
@@ -61,7 +64,7 @@ class OccurrenceService
 
         return [
             'typeOccurrences' => TypeOccurrence::orderBy('name')->get(),
-            'statusOccurrences' => StatusOccurrence::orderBy('name')->get(),
+            'statusOccurrences' => StatusOccurrence::orderBy('sort_order')->get(),
             'issuings' => Issuing::orderBy('name')->get(),
             'drivers' => $tenantId ? Driver::where('tenant_id', $tenantId)->orderBy('name')->get() : collect(),
             'priorities' => Priority::orderBy('weight', 'desc')->get(),
@@ -81,7 +84,7 @@ class OccurrenceService
     /**
      * Cria ocorrência pelo painel admin (com anexos).
      */
-    public function storeForAdmin(array $data, array $anexos = []): Occurrences
+    public function storeForAdmin(array $data, array $anexos = [], ?string $anexoPhase = null): Occurrences
     {
         $data['users_id'] = auth()->id();
         if (empty($data['clients_id'])) {
@@ -95,12 +98,28 @@ class OccurrenceService
 
         foreach ($anexos as $file) {
             if ($file instanceof UploadedFile && $file->isValid()) {
-                $url = $file->store('occurrence/occurrences');
-                $occurrence->imagens()->create(['url' => $url]);
+                $this->storeEvidence($occurrence, $file, $anexoPhase);
             }
         }
 
         return $occurrence;
+    }
+
+    /**
+     * Evidência antes/depois (Fase 3): grava quem enviou, quando e em qual fase do
+     * atendimento. Ponto único de criação de OccurrencesImagens — não duplicar este
+     * bloco em outro lugar (ex.: Api\OccurrenceApiController).
+     */
+    private function storeEvidence(Occurrences $occurrence, UploadedFile $file, ?string $phase): void
+    {
+        $url = $file->store('occurrence/occurrences');
+
+        $occurrence->imagens()->create([
+            'url' => $url,
+            'uploaded_by_user_id' => auth()->id(),
+            'phase' => $phase,
+            'captured_at' => now(),
+        ]);
     }
 
     /**
@@ -122,13 +141,31 @@ class OccurrenceService
             'note' => 'Ocorrência registrada.',
         ]);
 
+        if (! empty($data['driver_id'])) {
+            $this->notifyAssignment((int) $data['driver_id'], $occurrence);
+        }
+
+        broadcast(new OccurrenceUpdated($occurrence))->toOthers();
+
         return $occurrence;
+    }
+
+    /**
+     * Notifica o usuário do motorista atribuído (Fase 3 — notificações internas).
+     * Silenciosa se o motorista não tiver usuário vinculado (ver Driver::user()).
+     */
+    private function notifyAssignment(int $driverId, Occurrences $occurrence): void
+    {
+        $driver = Driver::find($driverId);
+        if ($driver && $driver->user) {
+            $driver->user->notify(new OccurrenceAssignedNotification($occurrence));
+        }
     }
 
     /**
      * Atualiza ocorrência pelo painel admin (anexos opcionais).
      */
-    public function updateForAdmin(int $id, array $data, array $anexos = []): void
+    public function updateForAdmin(int $id, array $data, array $anexos = [], ?string $anexoPhase = null): void
     {
         $occurrence = $this->findOrFail($id);
 
@@ -137,6 +174,7 @@ class OccurrenceService
             if ($statusAguardando) {
                 $data['status_occurrences_id'] = $statusAguardando->id;
             }
+            $this->notifyAssignment((int) $data['driver_id'], $occurrence);
         }
 
         $newStatusId = isset($data['status_occurrences_id']) ? (int) $data['status_occurrences_id'] : null;
@@ -159,8 +197,7 @@ class OccurrenceService
 
         foreach ($anexos as $file) {
             if ($file instanceof UploadedFile && $file->isValid()) {
-                $url = $file->store('occurrence/occurrences');
-                $occurrence->imagens()->create(['url' => $url]);
+                $this->storeEvidence($occurrence, $file, $anexoPhase);
             }
         }
     }
@@ -197,8 +234,8 @@ class OccurrenceService
     }
 
     /**
-     * Ponto único de mudança de status: atualiza a ocorrência e grava o histórico
-     * (occurrence_status_history). Nenhuma outra rotina deve escrever em
+     * Ponto único de mudança de status: valida a transição, atualiza a ocorrência e grava
+     * o histórico (occurrence_status_history). Nenhuma outra rotina deve escrever em
      * status_occurrences_id diretamente.
      */
     private function recordStatusChange(Occurrences $occurrence, int $newStatusId, ?string $note = null): Occurrences
@@ -208,6 +245,8 @@ class OccurrenceService
         if ((int) $fromStatusId === $newStatusId) {
             return $occurrence;
         }
+
+        $this->guardStatusTransition($occurrence, $fromStatusId, $newStatusId);
 
         $occurrence->update(['status_occurrences_id' => $newStatusId]);
 
@@ -219,7 +258,84 @@ class OccurrenceService
             'note' => $note,
         ]);
 
+        $this->notifyStatusChange($occurrence, $fromStatusId, $newStatusId);
+        $this->syncDriverStatus($occurrence, $newStatusId);
+        broadcast(new OccurrenceUpdated($occurrence))->toOthers();
+
         return $occurrence->fresh();
+    }
+
+    /**
+     * Notifica o motorista atribuído sobre a mudança de status (Fase 3). Silenciosa se
+     * não houver motorista atribuído ou se ele não tiver usuário vinculado.
+     */
+    private function notifyStatusChange(Occurrences $occurrence, ?int $fromStatusId, int $newStatusId): void
+    {
+        if (! $occurrence->driver_id || ! $occurrence->driver || ! $occurrence->driver->user) {
+            return;
+        }
+
+        // Não notificar o próprio motorista quando a mudança foi feita por ele mesmo.
+        if (auth()->id() === $occurrence->driver->user->id) {
+            return;
+        }
+
+        $fromName = $fromStatusId ? StatusOccurrence::find($fromStatusId)?->name : null;
+        $toName = StatusOccurrence::find($newStatusId)?->name ?? '—';
+
+        $occurrence->driver->user->notify(new OccurrenceStatusChangedNotification($occurrence, $fromName, $toName));
+    }
+
+    /**
+     * Reflete o status da ocorrência no status do motorista atribuído (Fase 5 — side effect
+     * explícito no Service, nunca em Model, ver docs/specs/modules.md). Silencioso se não
+     * houver motorista atribuído.
+     */
+    private function syncDriverStatus(Occurrences $occurrence, int $newStatusId): void
+    {
+        $driver = $occurrence->driver;
+        if (! $driver) {
+            return;
+        }
+
+        $statusName = StatusOccurrence::where('id', $newStatusId)->value('name');
+
+        $driverStatus = match ($statusName) {
+            'Em deslocamento' => Driver::STATUS_EM_DESLOCAMENTO,
+            'Equipe no local', 'Em atendimento' => Driver::STATUS_EM_ATENDIMENTO,
+            'Finalizada', 'Cancelada', 'Duplicada', 'Recusada' => Driver::STATUS_DISPONIVEL,
+            default => null,
+        };
+
+        if ($driverStatus !== null && $driverStatus !== $driver->status) {
+            $driver->update(['status' => $driverStatus]);
+        }
+    }
+
+    /**
+     * Uma ocorrência num status terminal (Finalizada/Cancelada/Duplicada) só pode mudar de
+     * status através de "Reaberta" — e só quem tem a permissão reopen (ver OccurrencePolicy).
+     * Qualquer outra transição a partir de um status terminal é bloqueada.
+     */
+    private function guardStatusTransition(Occurrences $occurrence, ?int $fromStatusId, int $newStatusId): void
+    {
+        if (! $fromStatusId) {
+            return;
+        }
+
+        $fromIsTerminal = (bool) StatusOccurrence::where('id', $fromStatusId)->value('is_terminal');
+        if (! $fromIsTerminal) {
+            return;
+        }
+
+        $reabertaId = StatusOccurrence::where('name', 'Reaberta')->value('id');
+        if ($newStatusId !== $reabertaId) {
+            abort(422, 'Esta ocorrência está num status final e só pode ser movida para "Reaberta".');
+        }
+
+        if (! auth()->check() || ! auth()->user()->can('reopen', $occurrence)) {
+            abort(403, 'Você não tem permissão para reabrir esta ocorrência.');
+        }
     }
 
     /**

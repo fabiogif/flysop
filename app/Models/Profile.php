@@ -5,6 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Legado: resquício de um modelo antigo de "planos" (permissionsPlan(), removida de
+ * UserACLTrait). Não está ligado a User hoje — ACL real é User<->Role<->Permission
+ * (ver app/Policies/OccurrencePolicy.php e RoleSeeder). Não reativar nem misturar com
+ * Policies novas; candidato a remoção quando as telas admin/profiles forem descontinuadas.
+ */
 class Profile extends Model
 {
     protected $fillable = ['name', 'description'];

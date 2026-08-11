@@ -1,0 +1,15 @@
+---
+description: Regras backend Laravel (controllers, services, repositories)
+globs: app/**/*.php
+alwaysApply: false
+---
+
+# Backend
+
+- Consulte `docs/specs/backend.md`.
+- Controllers finos nos domínios "camadas completas": auth via middleware, `FormRequest`, chamar Service, retornar view/Resource.
+- Domínios "CRUD simples": Controller pode injetar o Model direto e chamar Eloquent — é o padrão aceito, não promova para Service/Repository sem necessidade real.
+- `FormRequest` único `StoreUpdate{Entity}` (create + update) — verifique se já existe em `Http/Requests/` **e** `Http/Requests/Api/` antes de criar um novo.
+- Repository: `Contracts/*RepositoryInterface` + bind em `RepositoryServiceProvider` (provider único do projeto).
+- Sem HTML no controller; upload sempre validado (`hasFile()`/`isValid()`) antes de mover o arquivo.
+- Rotas de API: `auth:sanctum` por padrão em rota nova.

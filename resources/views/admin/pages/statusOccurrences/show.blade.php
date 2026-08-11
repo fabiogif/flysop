@@ -13,6 +13,8 @@
             <div class="row">
                 <ul>
                     <li><b>Nome:</b> {{ $statusOccurrence->name }}</li>
+                    <li><b>Ordem:</b> {{ $statusOccurrence->sort_order }}</li>
+                    <li><b>Terminal:</b> {{ $statusOccurrence->is_terminal ? 'Sim' : 'Não' }}</li>
                 </ul>
             </div>
             <!--row-->

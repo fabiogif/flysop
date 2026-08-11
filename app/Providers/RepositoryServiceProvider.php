@@ -8,6 +8,7 @@ use App\Repositories\{
     TenantRepository,
     OccurrenceRepository,
     TypeOccurrenceRepository,
+    DriverRepository,
 };
 use App\Repositories\Contracts\{
     ClientConsumerRepositoryInterface,
@@ -15,6 +16,7 @@ use App\Repositories\Contracts\{
     OccurrenceRepositoryInterface,
     TenantRepositoryInterface,
     TypeOccurrenceRepositoryInterface,
+    DriverRepositoryInterface,
 };
 use App\Services\DashboardService;
 use App\Services\Contracts\DashboardServiceInterface;
@@ -53,6 +55,10 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(
             DashboardServiceInterface::class,
             DashboardService::class
+        );
+        $this->app->bind(
+            DriverRepositoryInterface::class,
+            DriverRepository::class
         );
     }
 

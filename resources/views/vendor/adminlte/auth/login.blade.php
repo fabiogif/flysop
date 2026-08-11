@@ -42,12 +42,18 @@
 
         {{-- Password field --}}
         <div class="input-group mb-3">
-            <input type="password" name="password" class="form-control {{ $errors->has('password') ? 'is-invalid' : '' }}"
+            <input type="password" name="password" id="password" class="form-control {{ $errors->has('password') ? 'is-invalid' : '' }}"
                 placeholder="{{ __('adminlte::adminlte.password') }}">
             <div class="input-group-append">
                 <div class="input-group-text">
                     <span class="fas fa-lock {{ config('adminlte.classes_auth_icon', '') }}"></span>
                 </div>
+            </div>
+            <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary" id="toggle-password"
+                    title="Mostrar/ocultar senha" aria-label="Mostrar ou ocultar senha">
+                    <span class="fas fa-eye"></span>
+                </button>
             </div>
             @if ($errors->has('password'))
                 <div class="invalid-feedback">
@@ -100,4 +106,23 @@
             </a>
         </p>
     @endif --}}
+@stop
+
+@section('js')
+    <script>
+        $(function () {
+            $('#toggle-password').on('click', function () {
+                var $input = $('#password');
+                var $icon = $(this).find('span');
+
+                if ($input.attr('type') === 'password') {
+                    $input.attr('type', 'text');
+                    $icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    $input.attr('type', 'password');
+                    $icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+        });
+    </script>
 @stop

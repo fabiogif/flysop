@@ -30,7 +30,9 @@ class StoreUpdateStatusOccurrence extends FormRequest
             $id = 0;
         }
         return [
-            'name' => "required|min:3|max:255|unique:profiles,name,{$id},id",
+            'name' => "required|min:3|max:255|unique:status_occurrences,name,{$id},id",
+            'sort_order' => 'nullable|integer|min:0',
+            'is_terminal' => 'nullable|boolean',
         ];
     }
 }

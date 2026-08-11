@@ -79,7 +79,7 @@ class DashboardService implements DashboardServiceInterface
 
         $byStatus = Occurrences::join('status_occurrences', 'status_occurrences.id', '=', 'occurrences.status_occurrences_id')
             ->selectRaw('status_occurrences.name as name, COUNT(*) as total')
-            ->groupBy('status_occurrences.name')
+            ->groupBy('status_occurrences.name', 'status_occurrences.sort_order')
             ->orderBy('status_occurrences.sort_order')
             ->pluck('total', 'name');
 

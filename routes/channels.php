@@ -39,3 +39,13 @@ Broadcast::channel('occurrence.{id}', function ($user, $id) {
 
     return $user->driver && (int) $occurrence->driver_id === (int) $user->driver->id;
 });
+
+/**
+ * Canal privado do dashboard (Fase 4): notifica qualquer criação/mudança de status de
+ * ocorrência, para trocar o polling de 60s por atualização imediata. Mesma regra de
+ * acesso do módulo de ocorrências no admin (sem checagem de motorista — não é usado
+ * no painel do motorista).
+ */
+Broadcast::channel('occurrences-dashboard', function ($user) {
+    return $user && ($user->isAdmin() || $user->hasPermission('occurrences'));
+});

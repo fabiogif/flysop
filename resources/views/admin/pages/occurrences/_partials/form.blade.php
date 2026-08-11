@@ -171,6 +171,12 @@ $priorityId = $occurrences->priority_id ?? '';
                                 {{ $driver->name }}</option>
                         @endforeach
                     </select>
+                    @if (isset($occurrences))
+                        <button type="button" id="suggest-drivers-btn" class="btn btn-outline-secondary btn-sm mt-1">
+                            <i class="fas fa-route"></i> Sugerir mais próximo
+                        </button>
+                        <div id="suggest-drivers-results" class="mt-1 small"></div>
+                    @endif
                 </div>
             </div>
             <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
@@ -187,9 +193,21 @@ $priorityId = $occurrences->priority_id ?? '';
             </div>
         </div>
         <div class="row">
-            <div class="form-group">
-                <label>Anexo:</label>
-                <input type="file" name="anexo[]" multiple class="form-control">
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                <div class="form-group">
+                    <label>Anexo:</label>
+                    <input type="file" name="anexo[]" multiple class="form-control">
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                <div class="form-group">
+                    <label for="anexo_phase">Fase da evidência:</label>
+                    <select name="anexo_phase" id="anexo_phase" class="form-control">
+                        <option value="">Não classificada</option>
+                        <option value="antes" {{ old('anexo_phase') === 'antes' ? 'selected' : '' }}>Antes</option>
+                        <option value="depois" {{ old('anexo_phase') === 'depois' ? 'selected' : '' }}>Depois</option>
+                    </select>
+                </div>
             </div>
         </div>
         <div class="row">
@@ -433,3 +451,48 @@ $priorityId = $occurrences->priority_id ?? '';
     loadScript('initOccurrenceMapWidget');
 })();
 </script>
+
+@if (isset($occurrences))
+<script>
+(function() {
+    "use strict";
+    var btn = document.getElementById('suggest-drivers-btn');
+    var results = document.getElementById('suggest-drivers-results');
+    var driverSelect = document.getElementById('driver_id');
+    if (!btn || !results || !driverSelect) return;
+
+    var url = '{{ route('occurrences.suggest-drivers', $occurrences->id) }}';
+
+    btn.addEventListener('click', function() {
+        results.innerHTML = '<span class="text-muted">Calculando…</span>';
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+            .then(function(r) { return r.json().then(function(data) { return { status: r.status, data: data }; }); })
+            .then(function(res) {
+                if (res.status !== 200) {
+                    results.innerHTML = '<span class="text-warning">' + (res.data.message || 'Não foi possível calcular.') + '</span>';
+                    return;
+                }
+                var drivers = res.data.drivers || [];
+                if (!drivers.length) {
+                    results.innerHTML = '<span class="text-muted">Nenhum motorista disponível encontrado.</span>';
+                    return;
+                }
+                results.innerHTML = drivers.map(function(d) {
+                    return '<div class="d-flex justify-content-between align-items-center border-bottom py-1">' +
+                        '<span>' + d.name + (d.team_name ? ' <span class="text-muted">(' + d.team_name + ')</span>' : '') + ' — ' + d.distance_km + ' km</span>' +
+                        '<button type="button" class="btn btn-link btn-sm p-0 suggest-use-btn" data-driver-id="' + d.id + '">Usar</button>' +
+                        '</div>';
+                }).join('');
+                results.querySelectorAll('.suggest-use-btn').forEach(function(useBtn) {
+                    useBtn.addEventListener('click', function() {
+                        driverSelect.value = useBtn.getAttribute('data-driver-id');
+                    });
+                });
+            })
+            .catch(function() {
+                results.innerHTML = '<span class="text-danger">Erro ao buscar sugestões.</span>';
+            });
+    });
+})();
+</script>
+@endif

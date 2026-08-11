@@ -26,6 +26,9 @@ class Kernel extends ConsoleKernel
     {
         // Limpa posições de motoristas com mais de 24h (política de retenção da rota em tempo real)
         $schedule->command('driver-positions:clean --hours=24')->daily()->at('03:00');
+
+        // Notifica Administrador/Supervisor sobre ocorrências com SLA a até 2h do vencimento (Fase 3)
+        $schedule->command('occurrences:check-sla --hours=2')->hourly();
     }
 
     /**

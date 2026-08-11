@@ -1,0 +1,12 @@
+---
+description: Arquitetura do flySOP (Laravel monolito, dois padrões coexistentes)
+alwaysApply: true
+---
+
+# Architecture
+
+- Consulte `docs/specs/architecture.md` antes de alterar estrutura.
+- Projeto é um monolito Laravel (não monorepo) — não crie separação de "backend/frontend" em pastas/pacotes distintos.
+- Dois padrões coexistem por domínio: "camadas completas" (Controller→Service→RepositoryInterface→Model) e "CRUD simples" (Controller→Model direto). Siga o padrão do domínio que está tocando; não invente um terceiro.
+- Multi-tenant: sempre respeitar `tenant_id` via `TenantScope`/`TenantTrait`/`ManagerTenant`. Em rota sem autenticação, o scope automático não funciona — filtre manualmente se necessário.
+- Não introduza React, app mobile nativo, ou a ferramenta "graphify" (não fazem parte deste projeto).

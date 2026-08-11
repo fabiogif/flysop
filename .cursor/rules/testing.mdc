@@ -1,0 +1,13 @@
+---
+description: Padrões de teste Feature/Unit (PHPUnit)
+globs: tests/**/*.php
+alwaysApply: false
+---
+
+# Testing
+
+- Consulte `docs/specs/testing.md`.
+- Não há cobertura real hoje (só `ExampleTest.php` padrão do Laravel) — isso é uma lacuna, não um padrão a seguir.
+- Endpoint de API novo: teste Feature em `tests/Feature/Api/` cobrindo happy path, validação (422) e auth/tenant.
+- Regra de negócio em Service: teste Unit isolando o Service.
+- Não exigir coverage 100% nem E2E sem precedente.

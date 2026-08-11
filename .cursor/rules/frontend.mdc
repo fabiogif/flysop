@@ -1,0 +1,14 @@
+---
+description: Regras frontend Blade / AdminLTE / Vue 2 / site
+globs: resources/**/*.{blade.php,vue,js}
+alwaysApply: false
+---
+
+# Frontend
+
+- Consulte `docs/specs/frontend.md`.
+- Admin (`resources/views/admin/`): Blade + AdminLTE (Bootstrap 4/jQuery) — padrão para CRUD.
+- Site público (`resources/views/site/`, `resources/js/site/`): ES6 puro, sem jQuery — não reintroduzir jQuery aqui.
+- Widget com estado/tempo real: componente Vue 2 em `resources/js/components/`, seguindo `DriverTracker.vue` (props explícitas, sem store global).
+- Flash messages e nomes de rota: seguir a convenção do domínio vizinho (`docs/specs/naming.md`), não inventar uma quarta variante.
+- Não introduzir React, Vue 3 ou state manager global (Vuex/Redux).

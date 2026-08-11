@@ -21,16 +21,23 @@ class Driver extends Model
         'status',
         'tenant_id',
         'user_id',
+        'team_id',
     ];
 
     protected $casts = [
         'tenant_id' => 'integer',
         'user_id' => 'integer',
+        'team_id' => 'integer',
     ];
 
     public function tenant()
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 
     public function user()

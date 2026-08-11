@@ -117,10 +117,12 @@ Route::prefix('admin')
         Route::get('/', [App\Http\Controllers\Admin\DashboardController::class , 'home'])->name('admin.index');
         Route::get('/dashboard/export', [App\Http\Controllers\Admin\DashboardController::class , 'exportUsage'])->name('admin.dashboard.export');
         Route::get('/dashboard/occurrences-recent', [App\Http\Controllers\Admin\DashboardController::class , 'occurrencesRecent'])->name('admin.dashboard.occurrences-recent');
+        Route::get('/dashboard/occurrences-heatmap', [App\Http\Controllers\Admin\DashboardController::class , 'occurrencesHeatmap'])->name('admin.dashboard.occurrences-heatmap');
         Route::get('/dashboard/drivers-last-positions', [App\Http\Controllers\Admin\DashboardController::class , 'driversLastPositions'])->name('admin.dashboard.drivers-last-positions');
         //Ocorrencias
         Route::any('/occurrences/search', [App\Http\Controllers\Admin\OccurrencesController::class , 'search'])->name('occurrences.search');
         Route::get('/occurrences/{id}/driver-route', [App\Http\Controllers\Admin\OccurrencesController::class, 'driverRoute'])->name('occurrences.driver-route');
+        Route::get('/occurrences/{id}/suggest-drivers', [App\Http\Controllers\Admin\DispatchController::class, 'suggest'])->name('occurrences.suggest-drivers');
         Route::resource('occurrences', OccurrencesController::class);
 
         //Tipo de ocorrencia
@@ -153,6 +155,9 @@ Route::prefix('admin')
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+
+        //Busca global
+        Route::get('/search', [App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search.index');
     });
 
 

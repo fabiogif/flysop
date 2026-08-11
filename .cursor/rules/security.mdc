@@ -1,0 +1,14 @@
+---
+description: Segurança — multi-tenant, Sanctum, ACL e gaps conhecidos
+alwaysApply: true
+---
+
+# Security
+
+- Consulte `docs/specs/security.md`.
+- Rota de API nova: `auth:sanctum` por padrão (não `auth:api`, que é inconsistente/legado neste projeto).
+- Endpoints tenant: isolamento por `tenant_id` (via `TenantScope` quando autenticado; filtro explícito quando não).
+- Usar `can:{permission}` no construtor do controller quando o domínio equivalente já usa.
+- Vários endpoints em `routes/api.php` hoje não têm auth (`docs/specs/security.md` lista quais) — isso é um gap conhecido, não um padrão a seguir em rota nova.
+- Sem secrets no código; `.env` apenas. Não adicionar mais dados sensíveis hardcoded em `config/` (ver exceção já existente em `config/tenant.php`).
+- Upload: validar tipo/tamanho antes de mover o arquivo.

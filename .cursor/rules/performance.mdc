@@ -1,0 +1,13 @@
+---
+description: Performance — paginação, eager loading, polling
+globs: app/**/*.php
+alwaysApply: false
+---
+
+# Performance
+
+- Consulte `docs/specs/performance.md`.
+- Listagens paginadas; `with()`/`load()` nas relações usadas na view/resposta.
+- Sem cache de aplicação hoje — não introduzir `CacheService` sem necessidade medida.
+- Dashboard usa polling (`fetch()` a cada 15s), não WebSocket, para ocorrências recentes — não migrar sem necessidade validada.
+- Broadcasting (Pusher) só para posição do motorista — não expandir sem necessidade real.

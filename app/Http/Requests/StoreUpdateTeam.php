@@ -18,6 +18,7 @@ class StoreUpdateTeam extends FormRequest
         return [
             'name' => "required|min:2|max:255|unique:teams,name,{$id},id",
             'department_id' => 'nullable|exists:departments,id',
+            'type_occurrences_id' => 'nullable|exists:type_occurrences,id',
         ];
     }
 

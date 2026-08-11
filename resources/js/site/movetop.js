@@ -9,7 +9,13 @@ export function initMovetop() {
 
   const toggleVisibility = () => {
     const scroll = document.body.scrollTop || document.documentElement.scrollTop;
-    btn.style.display = scroll > SCROLL_THRESHOLD ? 'block' : 'none';
+    if (scroll > SCROLL_THRESHOLD) {
+      btn.hidden = false;
+      btn.style.display = 'block';
+    } else {
+      btn.hidden = true;
+      btn.style.display = 'none';
+    }
   };
 
   const scrollToTop = () => {

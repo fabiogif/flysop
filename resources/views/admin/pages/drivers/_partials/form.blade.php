@@ -35,6 +35,17 @@
             @error('status') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
         </div>
         <div class="form-group">
+            <label for="team_id">Equipe</label>
+            <select name="team_id" id="team_id" class="form-control {{ $errors->has('team_id') ? 'is-invalid' : '' }}">
+                <option value="">Nenhuma</option>
+                @foreach (\App\Models\Team::orderBy('name')->get() as $team)
+                    <option value="{{ $team->id }}" {{ (string) ($driver->team_id ?? old('team_id')) === (string) $team->id ? 'selected' : '' }}>
+                        {{ $team->name }}</option>
+                @endforeach
+            </select>
+            @error('team_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+        </div>
+        <div class="form-group">
             <button type="submit" class="btn btn-success">Salvar</button>
             <a href="{{ route('drivers.index') }}" class="btn btn-secondary">Cancelar</a>
         </div>

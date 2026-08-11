@@ -34,6 +34,7 @@ class StoreUpdateOccurrences extends FormRequest
             'clients_id' => ['nullable', 'exists:clients,id'],
             'anexo' => ['nullable', 'array'],
             'anexo.*' => ['nullable', 'file', 'image', 'max:5120'],
+            'anexo_phase' => ['nullable', 'in:antes,depois'],
         ];
 
         return $rules;

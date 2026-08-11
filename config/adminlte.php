@@ -235,6 +235,11 @@ return [
             'icon' => 'fas fa-bell',
         ],
         [
+            'text' => 'Busca',
+            'url' => 'admin/search',
+            'icon' => 'fas fa-search',
+        ],
+        [
             'text' => 'Empresas',
             'url' => 'admin/tenants',
             'icon' => 'fas fa-building',

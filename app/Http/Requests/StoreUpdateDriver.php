@@ -21,6 +21,7 @@ class StoreUpdateDriver extends FormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'cpf' => ['nullable', 'string', 'max:14'],
             'status' => ['required', 'in:disponivel,em_deslocamento,em_atendimento'],
+            'team_id' => ['nullable', 'exists:teams,id'],
         ];
     }
 

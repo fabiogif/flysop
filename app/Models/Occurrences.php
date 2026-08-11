@@ -4,14 +4,20 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Occurrences extends Model
 {
+    use LogsActivity;
     protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'clients_id', 'nameType', 'nameStatus'];
 
     protected $casts = [
         'due_at' => 'datetime',
     ];
+
+    // Coluna gerada pelo Postgres (busca global — Fase 4), nunca setada via PHP.
+    protected $hidden = ['search_vector'];
 
     use HasFactory;
 
@@ -23,6 +29,18 @@ class Occurrences extends Model
             ->paginate(10);
 
         return $result;
+    }
+
+    /**
+     * Busca global full-text (Fase 4): protocolo, título, nome e descrição, com relevância
+     * (ts_rank). Usada pelo Admin\SearchController — não pela busca da listagem de
+     * ocorrências (essa continua em Occurrence(), que usa ILIKE + full-text combinados).
+     */
+    public function scopeFullTextSearch($query, string $term)
+    {
+        return $query
+            ->whereRaw("search_vector @@ plainto_tsquery('portuguese', ?)", [$term])
+            ->orderByRaw("ts_rank(search_vector, plainto_tsquery('portuguese', ?)) DESC", [$term]);
     }
 
 
@@ -44,7 +62,10 @@ class Occurrences extends Model
 
             })->where(function ($queryFilter) use ($filter) {
             if ($filter) {
-                $queryFilter->where('occurrences.title', 'ILIKE', "%{$filter}%")->orWhere('occurrences.name', 'ILIKE', "%{$filter}%");
+                $queryFilter->where('occurrences.title', 'ILIKE', "%{$filter}%")
+                    ->orWhere('occurrences.name', 'ILIKE', "%{$filter}%")
+                    ->orWhere('occurrences.protocol', 'ILIKE', "%{$filter}%")
+                    ->orWhereRaw("occurrences.search_vector @@ plainto_tsquery('portuguese', ?)", [$filter]);
             }
         })->orderBy('occurrences.updated_at', 'desc')->orderBy('occurrences.created_at', 'desc')->paginate();
 
@@ -105,6 +126,22 @@ class Occurrences extends Model
     public function statusHistory()
     {
         return $this->hasMany(OccurrenceStatusHistory::class, 'occurrence_id')->orderByDesc('created_at');
+    }
+
+    /**
+     * Auditoria (Fase 3): quem editou quais campos. status_occurrences_id fica de fora
+     * porque já tem trilha própria e mais rica em occurrence_status_history (de/para,
+     * quem mudou, nota) — não duplicar aqui.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly([
+                'title', 'description', 'address', 'neighborhood', 'city', 'state', 'zip',
+                'type_occurrences_id', 'issuings_id', 'priority_id', 'driver_id', 'due_at',
+            ])
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
     }
 
     /**

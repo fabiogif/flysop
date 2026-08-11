@@ -1,0 +1,12 @@
+---
+description: Checklist de auditoria antes de concluir tarefas
+alwaysApply: true
+---
+
+# Review
+
+- Antes de concluir, execute a checklist de `docs/specs/audit.md`.
+- Verifique: padrão do domínio (camadas completas x CRUD simples), reuso, tenant/auth, validação, sem padrão inventado.
+- Verifique especialmente se a rota de API nova tem `auth:sanctum`.
+- Liste e corrija desvios bloqueantes antes de finalizar, ou documente por que não foram corrigidos agora.
+- Specs obrigatórias: `docs/specs/*` e `CLAUDE.md`.

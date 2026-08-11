@@ -34,17 +34,36 @@
                     <li><b>Telefone:</b> {{ $occurrences->phone }}</li>
                     <li><b>Endereço:</b> {{ $occurrences->address }}</li>
                     <li><b>Bairro/Cidade/UF:</b> {{ implode(' - ', array_filter([$occurrences->neighborhood, $occurrences->city, $occurrences->state])) ?: '—' }}</li>
-                    @foreach ($occurrencesImagens as $occurrencesImagen)
-                        <li
-                            style="padding:5px; background:#343a40!important;  border-radius:24px; list-style:none; margin:10px 0">
-                            <img style=" border-radius:24px "
-                                src="https://sopanexos.s3.amazonaws.com/{{ $occurrencesImagen->url }}"
-                                alt="{{ $occurrences->title }}" width="500" height="500" />
-                        </li>
-                    @endforeach
                 </ul>
             </div>
-            <!--row-->
+
+            @php
+                $phaseLabels = ['antes' => 'Antes', 'depois' => 'Depois'];
+            @endphp
+            @foreach (['antes', 'depois', ''] as $phaseKey)
+                @php
+                    $imagensDaFase = $occurrencesImagens->filter(fn ($img) => ($img->phase ?? '') === $phaseKey);
+                @endphp
+                @if ($imagensDaFase->isNotEmpty())
+                    <h5 class="mt-3">{{ $phaseLabels[$phaseKey] ?? 'Evidências (sem fase classificada)' }}</h5>
+                    <div class="row">
+                        @foreach ($imagensDaFase as $occurrencesImagen)
+                            <div class="col-lg-3 col-md-4 col-sm-6 col-xs-12 mb-3">
+                                <div style="padding:5px; background:#343a40!important; border-radius:12px;">
+                                    <img style="border-radius:8px; width: 100%;"
+                                        src="https://sopanexos.s3.amazonaws.com/{{ $occurrencesImagen->url }}"
+                                        alt="{{ $occurrences->title }}" />
+                                    <p class="text-white small mb-0 mt-1 px-1">
+                                        {{ $occurrencesImagen->uploadedBy->name ?? 'Sistema' }} —
+                                        {{ $occurrencesImagen->captured_at ? $occurrencesImagen->captured_at->format('d/m/Y H:i') : ($occurrencesImagen->created_at ? $occurrencesImagen->created_at->format('d/m/Y H:i') : '—') }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            @endforeach
+
             @include('admin.includes.alerts')
 
             <form action="{{ route('occurrences.destroy', $occurrences->id) }}" method="POST">
@@ -59,6 +78,47 @@
         <!--card-body-->
     </div>
     <!--card-->
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <span>Auditoria (campos alterados)</span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-condensed mb-0">
+                <thead>
+                    <tr>
+                        <th>Quem</th>
+                        <th>Quando</th>
+                        <th>Campo</th>
+                        <th>De</th>
+                        <th>Para</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse ($occurrences->activities->sortByDesc('created_at') as $activity)
+                        @php
+                            $old = $activity->properties->get('old', []);
+                            $attributes = $activity->properties->get('attributes', []);
+                        @endphp
+                        @forelse ($attributes as $field => $newValue)
+                            <tr>
+                                <td>{{ $activity->causer->name ?? 'Sistema' }}</td>
+                                <td>{{ $activity->created_at ? $activity->created_at->format('d/m/Y H:i') : '—' }}</td>
+                                <td>{{ $field }}</td>
+                                <td>{{ $old[$field] ?? '—' }}</td>
+                                <td>{{ $newValue ?? '—' }}</td>
+                            </tr>
+                        @empty
+                        @endforelse
+                    @empty
+                        <tr>
+                            <td colspan="5">Sem alterações registradas.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 
     <div class="card mt-3">
         <div class="card-header">

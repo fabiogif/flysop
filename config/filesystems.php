@@ -12,7 +12,10 @@ return [
     |
     */
 
-    'default' => env('FILESYSTEM_DRIVER', 's3'),
+    // FILESYSTEM_DRIVER era o nome da variável no Laravel 7; o .env deste projeto usa
+    // FILESYSTEM_DISK (Laravel 8+). Com o nome antigo, a var nunca era lida e o disco
+    // caía sempre no fallback 's3' sem credenciais — todo upload de anexo falhava.
+    'default' => env('FILESYSTEM_DISK', 'local'),
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
