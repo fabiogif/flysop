@@ -19,7 +19,7 @@
     <div class="ciop-auth">
         <aside
             class="ciop-auth-visual"
-            style="--ciop-auth-bg: url('{{ asset('images/landing/geo-1.jpg') }}')"
+            style="--ciop-auth-bg: url('{{ asset('images/landing/geo-2.jpg') }}')"
             aria-hidden="false"
         >
             <div class="ciop-auth-visual-inner">

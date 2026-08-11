@@ -6,7 +6,7 @@
     {{-- Hero: uma composição, brand em primeiro plano --}}
     <section id="home" class="ciop-hero" aria-labelledby="hero-title">
         <div class="ciop-hero-media" aria-hidden="true">
-            <img src="{{ asset('images/geo.jpg') }}" alt="Celular com mapa de navegação urbana em tempo real" class="ciop-hero-img" width="1920" height="1080" fetchpriority="high">
+            <img src="{{ asset('images/landing/geo-1.jpg') }}" alt="Celular com mapa de navegação urbana em tempo real" class="ciop-hero-img" width="1920" height="1080" fetchpriority="high">
             <div class="ciop-hero-veil"></div>
             <div class="ciop-hero-grid"></div>
         </div>
@@ -27,7 +27,7 @@
         </div>
     </section>
 
-    {{-- Paralaxe: obras públicas --}}
+    {{-- Paralaxe: obras / ocorrências públicas --}}
     <section id="obras" class="ciop-parallax ciop-parallax-obras" data-parallax aria-labelledby="obras-title">
         <div class="ciop-parallax-media" aria-hidden="true">
             <div
@@ -45,11 +45,11 @@
             <div class="ciop-parallax-veil"></div>
         </div>
         <div class="container ciop-parallax-content reveal">
-            <p class="ciop-parallax-kicker">Operação em campo</p>
-            <h2 id="obras-title">Obras e ocorrências sob controle</h2>
+            <p class="ciop-parallax-kicker">Ocorrências urbanas</p>
+            <h2 id="obras-title">Buracos, alagamentos e demandas da prefeitura</h2>
             <p>
-                Do registro no mapa ao deslocamento das equipes: acompanhe intervenções urbanas
-                com prioridade, protocolo e visão operacional.
+                Registre e acompanhe ocorrências típicas de órgãos públicos: vias danificadas,
+                alagamentos, reparos e outras solicitações da população.
             </p>
         </div>
     </section>
@@ -146,10 +146,10 @@
         </div>
         <div class="container ciop-parallax-content reveal">
             <p class="ciop-parallax-kicker">Geolocalização</p>
-            <h2 id="mapa-title">Mapa operacional em tempo real</h2>
+            <h2 id="mapa-title">Mapa no celular, bairros e cidades</h2>
             <p>
-                Localize ocorrências, acompanhe agentes em deslocamento e oriente o atendimento
-                com coordenadas e visão espacial das cidades da Bahia.
+                Visualize a ocorrência no mapa do celular, na malha do bairro e na visão da cidade
+                para orientar equipes com coordenadas precisas.
             </p>
         </div>
     </section>
@@ -158,25 +158,33 @@
     <section id="cenas" class="ciop-section ciop-scenes" aria-labelledby="cenas-title">
         <div class="container">
             <header class="ciop-section-head reveal">
-                <h2 id="cenas-title">Campo e mapa</h2>
-                <p>Imagens da operação urbana e das cidades baianas que sustentam a central.</p>
+                <h2 id="cenas-title">Ocorrências e mapas</h2>
+                <p>Do buraco na via ao alagamento; do GPS no celular ao mapa do bairro.</p>
             </header>
             <div class="ciop-scene-grid">
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.08">
-                    <img src="{{ asset('images/landing/obras-1.jpg') }}" alt="Equipe em obra urbana com equipamentos" width="960" height="640" loading="lazy">
-                    <figcaption>Obras e intervenções em via pública</figcaption>
+                    <img src="{{ asset('images/landing/obras-1.jpg') }}" alt="Reparo de buraco em via pública com compactação de asfalto" width="960" height="640" loading="lazy">
+                    <figcaption>Reparo de buraco em via pública</figcaption>
                 </figure>
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.12">
-                    <img src="{{ asset('images/landing/geo-1.jpg') }}" alt="Celular com aplicativo de mapa em uso na cidade" width="960" height="640" loading="lazy">
-                    <figcaption>Mapa no celular em campo</figcaption>
+                    <img src="{{ asset('images/landing/geo-1.jpg') }}" alt="Celular com mapa de navegação GPS" width="960" height="640" loading="lazy">
+                    <figcaption>Mapa de navegação no celular</figcaption>
                 </figure>
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.1">
-                    <img src="{{ asset('images/landing/obras-2.jpg') }}" alt="Canteiro de obras com estruturas e trabalhadores" width="960" height="640" loading="lazy">
-                    <figcaption>Acompanhamento de equipes em campo</figcaption>
+                    <img src="{{ asset('images/landing/obras-2.jpg') }}" alt="Rua alagada com veículos e infraestrutura urbana" width="960" height="640" loading="lazy">
+                    <figcaption>Alagamento em via urbana</figcaption>
                 </figure>
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.14">
-                    <img src="{{ asset('images/landing/geo-2.jpg') }}" alt="Agente de limpeza urbana em operação na via pública" width="960" height="640" loading="lazy">
-                    <figcaption>Equipes em operação na via pública</figcaption>
+                    <img src="{{ asset('images/landing/geo-2.jpg') }}" alt="Mapa rodoviário de bairros e cidades" width="960" height="640" loading="lazy">
+                    <figcaption>Mapa de bairros e cidades</figcaption>
+                </figure>
+                <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.09">
+                    <img src="{{ asset('images/landing/obras-3.jpg') }}" alt="Asfalto rachado e remendos em via pública" width="960" height="640" loading="lazy">
+                    <figcaption>Via danificada — ocorrência de pavimento</figcaption>
+                </figure>
+                <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.13">
+                    <img src="{{ asset('images/landing/geo-3.jpg') }}" alt="Smartphone no painel do carro com rota no mapa" width="960" height="640" loading="lazy">
+                    <figcaption>GPS móvel em deslocamento</figcaption>
                 </figure>
             </div>
         </div>
