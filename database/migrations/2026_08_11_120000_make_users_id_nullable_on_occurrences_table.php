@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\DB;
  */
 return new class extends Migration
 {
+    // Ver comentario em 2026_08_10_203210_create_activity_log_table.php (pooler de producao).
+    public $withinTransaction = false;
+
     public function up()
     {
         DB::statement('ALTER TABLE occurrences ALTER COLUMN users_id DROP NOT NULL');

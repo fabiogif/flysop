@@ -6,6 +6,9 @@ use Illuminate\Database\Migrations\Migration;
 
 class AddEventColumnToActivityLogTable extends Migration
 {
+    // Ver comentario em 2026_08_10_203210_create_activity_log_table.php (pooler de producao).
+    public $withinTransaction = false;
+
     public function up()
     {
         Schema::connection(config('activitylog.database_connection'))->table(config('activitylog.table_name'), function (Blueprint $table) {

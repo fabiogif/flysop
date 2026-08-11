@@ -847,6 +847,36 @@ img {
     linear-gradient(105deg, rgba(12, 74, 68, 0.5) 0%, transparent 50%);
 }
 
+/* Fundo claro com ilustração (ocorrências urbanas) */
+.ciop-parallax-light {
+  color: var(--ciop-ink);
+  background: #dceef8;
+  min-height: min(78vh, 40rem);
+}
+
+.ciop-parallax-light .ciop-parallax-layer {
+  background-size: cover;
+  background-position: center 42%;
+}
+
+.ciop-parallax-light .ciop-parallax-veil {
+  background:
+    linear-gradient(180deg, rgba(220, 238, 248, 0.15) 0%, rgba(220, 238, 248, 0.2) 45%, rgba(7, 56, 52, 0.78) 100%);
+}
+
+.ciop-parallax-light .ciop-parallax-kicker {
+  color: var(--ciop-accent-2);
+}
+
+.ciop-parallax-light .ciop-parallax-content h2 {
+  color: #fff;
+  text-shadow: 0 1px 12px rgba(6, 28, 26, 0.35);
+}
+
+.ciop-parallax-light .ciop-parallax-content p {
+  color: rgba(255, 255, 255, 0.92);
+}
+
 .ciop-parallax-content {
   position: relative;
   z-index: 2;

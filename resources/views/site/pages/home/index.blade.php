@@ -28,19 +28,13 @@
     </section>
 
     {{-- Paralaxe: obras / ocorrências públicas --}}
-    <section id="obras" class="ciop-parallax ciop-parallax-obras" data-parallax aria-labelledby="obras-title">
+    <section id="obras" class="ciop-parallax ciop-parallax-obras ciop-parallax-light" data-parallax aria-labelledby="obras-title">
         <div class="ciop-parallax-media" aria-hidden="true">
             <div
                 class="ciop-parallax-layer"
                 data-parallax-layer
-                data-speed="0.35"
-                style="background-image: url('{{ asset('images/landing/obras-1.jpg') }}')"
-            ></div>
-            <div
-                class="ciop-parallax-layer ciop-parallax-layer-soft"
-                data-parallax-layer
-                data-speed="0.18"
-                style="background-image: url('{{ asset('images/landing/obras-2.jpg') }}')"
+                data-speed="0.28"
+                style="background-image: url('{{ asset('images/landing/obras-ilustracao.png') }}')"
             ></div>
             <div class="ciop-parallax-veil"></div>
         </div>
