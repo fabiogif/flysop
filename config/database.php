@@ -76,20 +76,6 @@ return [
             'search_path' => 'public',
             'sslmode' => 'prefer',
         ],
-        /*
-        'pgsql' => [
-        'driver' => 'pgsql',
-        'host' => 'database-1.c0nmcwwu70ko.us-east-1.rds.amazonaws.com',
-        'port' => 5432,
-        'database' => 'sopadmin',
-        'username' => 'postgres',
-        'password' => 'Duda0793',
-        'charset' => 'utf8',
-        'prefix' => '',
-        'schema' => 'public',
-        'sslmode' => 'require',
-        ],
-        */
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DATABASE_URL'),
