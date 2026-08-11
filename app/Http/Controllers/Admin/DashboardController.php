@@ -60,8 +60,10 @@ class DashboardController extends Controller
 
     /**
      * Retorna ocorrências recentes para atualização em tempo real (polling/push) e
-     * alimenta o mapa do dashboard. Aceita filtros opcionais (Fase 4): status_occurrences_id,
-     * type_occurrences_id, priority_id, driver_id, date_from, date_to (sobre created_at).
+     * alimenta o mapa do dashboard e o console de despacho. Aceita filtros opcionais:
+     * status_occurrences_id, type_occurrences_id, priority_id, driver_id, date_from,
+     * date_to (sobre created_at) — e os chips rápidos do console: open_only (status
+     * não-terminal) e no_driver (sem motorista atribuído).
      */
     public function occurrencesRecent(Request $request): JsonResponse
     {
@@ -73,6 +75,8 @@ class DashboardController extends Controller
             ->when($request->filled('driver_id'), fn ($q) => $q->where('driver_id', $request->driver_id))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->boolean('open_only'), fn ($q) => $q->whereHas('statusOccurence', fn ($q2) => $q2->where('is_terminal', false)))
+            ->when($request->boolean('no_driver'), fn ($q) => $q->whereNull('driver_id'))
             ->orderBy('updated_at', 'desc')
             ->limit($limit)
             ->get()
@@ -87,6 +91,8 @@ class DashboardController extends Controller
                 'type' => $o->typeOccurrence?->name ?? '—',
                 'priority' => $o->priority?->name,
                 'priority_color' => $o->priority?->color,
+                'driver_id' => $o->driver_id,
+                'protocol' => $o->protocol,
                 'updated_at' => $o->updated_at?->toIso8601String(),
                 'updated_at_human' => $o->updated_at?->diffForHumans(),
             ]);
@@ -97,13 +103,21 @@ class DashboardController extends Controller
     /**
      * Pontos para o mapa de calor (Fase 4): todas as ocorrências com lat/lng, sem limite de
      * "recentes" — usado separadamente do card de lista para não sobrecarregar o polling.
+     * Aplica os mesmos filtros de occurrencesRecent() — antes só respeitava date_from/date_to,
+     * então ligar "Críticas" + o toggle de calor mostrava calor de todas as prioridades.
      */
     public function occurrencesHeatmap(Request $request): JsonResponse
     {
         $points = Occurrences::whereNotNull('latitude')
             ->whereNotNull('longitude')
+            ->when($request->filled('status_occurrences_id'), fn ($q) => $q->where('status_occurrences_id', $request->status_occurrences_id))
+            ->when($request->filled('type_occurrences_id'), fn ($q) => $q->where('type_occurrences_id', $request->type_occurrences_id))
+            ->when($request->filled('priority_id'), fn ($q) => $q->where('priority_id', $request->priority_id))
+            ->when($request->filled('driver_id'), fn ($q) => $q->where('driver_id', $request->driver_id))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
+            ->when($request->boolean('open_only'), fn ($q) => $q->whereHas('statusOccurence', fn ($q2) => $q2->where('is_terminal', false)))
+            ->when($request->boolean('no_driver'), fn ($q) => $q->whereNull('driver_id'))
             ->get(['latitude', 'longitude'])
             ->map(fn ($o) => ['lat' => (float) $o->latitude, 'lng' => (float) $o->longitude]);
 

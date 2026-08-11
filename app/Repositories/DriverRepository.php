@@ -69,6 +69,10 @@ class DriverRepository implements DriverRepositoryInterface
             'team_name' => $row->team_name,
             'distance_km' => round((float) $row->distance_km, 2),
             'last_position_at' => $row->last_position_at,
+            // Necessário para desenhar o candidato no mapa do console de despacho — a query
+            // já buscava essas colunas, só não estavam sendo expostas na resposta.
+            'latitude' => (float) $row->last_latitude,
+            'longitude' => (float) $row->last_longitude,
         ]);
     }
 }

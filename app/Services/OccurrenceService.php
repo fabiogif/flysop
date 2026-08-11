@@ -310,6 +310,34 @@ class OccurrenceService
     }
 
     /**
+     * Atribuição enxuta de motorista (console de despacho, Fase "Operacional" do mapa) —
+     * mesma regra de negócio de updateForAdmin() quando driver_id muda (status vai para
+     * "Aguardando aceitação" + notifica o motorista), mas sem exigir o restante do
+     * formulário completo. Ponto único para esta ação vinda do mapa/console.
+     */
+    public function assignDriver(int $occurrenceId, int $driverId): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        if ((int) $occurrence->driver_id === $driverId) {
+            return $occurrence;
+        }
+
+        $occurrence->update(['driver_id' => $driverId]);
+
+        $statusAguardando = StatusOccurrence::where('name', 'Aguardando aceitação')->first();
+        if ($statusAguardando) {
+            $occurrence = $this->recordStatusChange($occurrence, $statusAguardando->id);
+        }
+
+        $this->notifyAssignment($driverId, $occurrence);
+
+        broadcast(new OccurrenceUpdated($occurrence))->toOthers();
+
+        return $occurrence;
+    }
+
+    /**
      * Gera o protocolo sequencial da ocorrência no formato OC-{ano}-{sequencial}.
      * Simplificação aceitável para o volume atual (painel único, sem concorrência alta);
      * não usa lock/sequência dedicada.

@@ -377,44 +377,125 @@
             var clusterer = null;
             var heatmapLayer = new google.maps.visualization.HeatmapLayer({ data: [], map: null, radius: 30 });
 
-            // Tempo real (Fase 4): ao invés de só depender do polling de 60s, escuta o canal
-            // de broadcast e refaz o fetch imediatamente quando alguma ocorrência muda.
-            // Polling continua rodando como fallback (ver setInterval mais abaixo).
+            // Tempo real: escuta o canal de broadcast e corrige só o marcador afetado
+            // (window.patchDashboardOccurrence, definida abaixo) — antes disparava um
+            // refreshAll() completo a cada evento, mesmo o payload já trazendo os dados
+            // prontos para atualizar 1 marcador. Polling continua como fallback (setInterval
+            // mais abaixo) para o caso de o Echo cair sem o front perceber.
             if (window.Echo) {
-                window.Echo.private('occurrences-dashboard').listen('OccurrenceUpdated', function () {
-                    refreshAll();
+                window.Echo.private('occurrences-dashboard').listen('OccurrenceUpdated', function (e) {
+                    if (typeof window.patchDashboardOccurrence === 'function') {
+                        window.patchDashboardOccurrence(e);
+                    } else {
+                        refreshAll();
+                    }
                 });
             }
+
+            var markersById = {};
 
             function clearMarkers() {
                 if (clusterer) { clusterer.clearMarkers(); }
                 markers.forEach(function (m) { m.setMap(null); });
                 markers = [];
+                markersById = {};
             }
+
+            // Pino SVG colorido pela prioridade, com a inicial do tipo de ocorrência —
+            // substitui o ícone estático "mapfiles/ms/icons" (que não diferenciava nada
+            // além de sempre desenhar vermelho, por um bug no ternário anterior).
+            function occurrenceMarkerIcon(color, typeLabel) {
+                var fill = color || '#6c757d';
+                var letter = (typeLabel || '?').trim().charAt(0).toUpperCase() || '?';
+                var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="38" viewBox="0 0 28 38">' +
+                    '<path d="M14 0C6.3 0 0 6.3 0 14c0 9.8 14 24 14 24s14-14.2 14-24C28 6.3 21.7 0 14 0z" fill="' + fill + '" stroke="rgba(0,0,0,.35)" stroke-width="1"/>' +
+                    '<circle cx="14" cy="14" r="9" fill="#fff"/>' +
+                    '<text x="14" y="18.5" font-size="11" text-anchor="middle" fill="' + fill + '" font-family="Arial,Helvetica,sans-serif" font-weight="700">' + letter + '</text>' +
+                    '</svg>';
+                return {
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                    scaledSize: new google.maps.Size(28, 38),
+                    anchor: new google.maps.Point(14, 38)
+                };
+            }
+            window.occurrenceMarkerIcon = occurrenceMarkerIcon;
+
+            function occurrenceInfoContent(o) {
+                return '<div class="p-2" style="min-width: 180px;">' +
+                    '<strong>' + (o.title || o.name || 'Ocorrência #' + o.id) + '</strong>' +
+                    '<p class="mb-1 small">' + (o.status || '—') + (o.type ? ' · ' + o.type : '') + (o.priority ? ' · <span style="color:' + (o.priority_color || '#6c757d') + '">' + o.priority + '</span>' : '') + '</p>' +
+                    (o.address ? '<p class="mb-1 small text-muted">' + o.address + '</p>' : '') +
+                    '<a href="/admin/occurrences/' + o.id + '" class="small">Ver detalhes</a></div>';
+            }
+
+            // Cria ou atualiza o marcador de UMA ocorrência (usado tanto no fetch completo
+            // quanto na atualização incremental via push — ver window.patchDashboardOccurrence).
+            function upsertOccurrenceMarker(o) {
+                var lat = o.latitude != null ? parseFloat(o.latitude) : NaN;
+                var lng = o.longitude != null ? parseFloat(o.longitude) : NaN;
+                var existing = markersById[o.id];
+
+                if (isNaN(lat) || isNaN(lng)) {
+                    if (existing) {
+                        if (clusterer && clusterer.removeMarker) clusterer.removeMarker(existing, true);
+                        existing.setMap(null);
+                        markers = markers.filter(function (m) { return m !== existing; });
+                        delete markersById[o.id];
+                    }
+                    return null;
+                }
+
+                var pos = { lat: lat, lng: lng };
+                var icon = occurrenceMarkerIcon(o.priority_color, o.type);
+                var title = o.title || o.name || 'Ocorrência #' + o.id;
+
+                if (existing) {
+                    existing.setPosition(pos);
+                    existing.setIcon(icon);
+                    existing.setTitle(title);
+                    if (existing.__infowindow) existing.__infowindow.setContent(occurrenceInfoContent(o));
+                    return { marker: existing, isNew: false };
+                }
+
+                var marker = new google.maps.Marker({ position: pos, title: title, icon: icon });
+                var infowindow = new google.maps.InfoWindow({ content: occurrenceInfoContent(o) });
+                marker.__infowindow = infowindow;
+                marker.addListener('click', function () { infowindow.open(map, marker); });
+                markersById[o.id] = marker;
+                markers.push(marker);
+
+                return { marker: marker, isNew: true };
+            }
+            window.upsertOccurrenceMarker = function (o) { return upsertOccurrenceMarker(o).marker; };
+
+            // Atualização incremental (push): corrige/insere 1 marcador sem refazer o fetch
+            // inteiro nem redesenhar o mapa — substitui o antigo refreshAll() no listener do
+            // Echo. lastOccurrences (lista lateral) também é corrigida no mesmo passo. Só
+            // marcadores GENUINAMENTE novos precisam ser anexados ao mapa/cluster aqui —
+            // um existente já está visível, só foi reposicionado/recolorido no lugar.
+            window.patchDashboardOccurrence = function (o) {
+                var result = upsertOccurrenceMarker(o);
+                if (result.marker && result.isNew && !heatmapMode) {
+                    if (clusterer && clusterer.addMarker) {
+                        clusterer.addMarker(result.marker);
+                    } else {
+                        result.marker.setMap(map);
+                    }
+                }
+                var idx = lastOccurrences.findIndex(function (item) { return item.id === o.id; });
+                if (idx >= 0) lastOccurrences[idx] = o; else lastOccurrences.unshift(o);
+                if (typeof render === 'function') render(lastOccurrences.slice(0, 10));
+                if (heatmapMode) fetchHeatmap();
+            };
 
             window.updateDashboardMap = function (occurrences) {
                 clearMarkers();
                 var bounds = null;
                 (occurrences || []).forEach(function (o) {
-                    var lat = o.latitude != null ? parseFloat(o.latitude) : NaN;
-                    var lng = o.longitude != null ? parseFloat(o.longitude) : NaN;
-                    if (isNaN(lat) || isNaN(lng)) return;
-                    var pos = { lat: lat, lng: lng };
-                    var marker = new google.maps.Marker({
-                        position: pos,
-                        title: o.title || o.name || 'Ocorrência #' + o.id,
-                        icon: 'http://maps.google.com/mapfiles/ms/icons/' + (o.priority_color ? 'red' : 'red') + '-dot.png'
-                    });
-                    var content = '<div class="p-2" style="min-width: 180px;">' +
-                        '<strong>' + (o.title || o.name || 'Ocorrência #' + o.id) + '</strong>' +
-                        '<p class="mb-1 small">' + (o.status || '—') + (o.type ? ' · ' + o.type : '') + (o.priority ? ' · <span style="color:' + (o.priority_color || '#6c757d') + '">' + o.priority + '</span>' : '') + '</p>' +
-                        (o.address ? '<p class="mb-1 small text-muted">' + o.address + '</p>' : '') +
-                        '<a href="/admin/occurrences/' + o.id + '" class="small">Ver detalhes</a></div>';
-                    var infowindow = new google.maps.InfoWindow({ content: content });
-                    marker.addListener('click', function () { infowindow.open(map, marker); });
-                    markers.push(marker);
+                    var result = upsertOccurrenceMarker(o);
+                    if (!result.marker) return;
                     if (!bounds) bounds = new google.maps.LatLngBounds();
-                    bounds.extend(pos);
+                    bounds.extend(result.marker.getPosition());
                 });
 
                 if (!heatmapMode) {

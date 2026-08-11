@@ -263,7 +263,8 @@
             <div class="card-body p-0">
                 <driver-tracker occurrence-id="{{ $occurrences->id }}"
                     occurrence-lat="{{ $occurrences->latitude ?: '-12.95307' }}"
-                    occurrence-lng="{{ $occurrences->longitude ?: '-38.49706' }}" :height="400">
+                    occurrence-lng="{{ $occurrences->longitude ?: '-38.49706' }}"
+                    route-history-url="{{ route('occurrences.driver-route', $occurrences->id) }}" :height="400">
                 </driver-tracker>
             </div>
         </div>

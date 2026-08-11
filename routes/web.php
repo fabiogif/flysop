@@ -125,6 +125,9 @@ Route::prefix('admin')
         Route::any('/occurrences/search', [App\Http\Controllers\Admin\OccurrencesController::class , 'search'])->name('occurrences.search');
         Route::get('/occurrences/{id}/driver-route', [App\Http\Controllers\Admin\OccurrencesController::class, 'driverRoute'])->name('occurrences.driver-route');
         Route::get('/occurrences/{id}/suggest-drivers', [App\Http\Controllers\Admin\DispatchController::class, 'suggest'])->name('occurrences.suggest-drivers');
+        Route::post('/occurrences/{id}/assign-driver', [App\Http\Controllers\Admin\DispatchController::class, 'assign'])->name('occurrences.assign-driver');
+        //Central de despacho (mapa + lista)
+        Route::get('/dispatch', [App\Http\Controllers\Admin\DispatchController::class, 'console'])->name('dispatch.console');
         Route::get('/occurrences/{id}/pdf', [App\Http\Controllers\Admin\OccurrencesController::class, 'pdf'])->name('occurrences.pdf');
         Route::post('/occurrences/{id}/dismiss-duplicate', [App\Http\Controllers\Admin\OccurrencesController::class, 'dismissDuplicate'])->name('occurrences.dismiss-duplicate');
         Route::delete('/occurrences/{id}/forget', [App\Http\Controllers\Admin\OccurrencesController::class, 'forget'])->name('occurrences.forget');

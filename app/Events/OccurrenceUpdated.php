@@ -35,11 +35,34 @@ class OccurrenceUpdated implements ShouldBroadcast
         return 'OccurrenceUpdated';
     }
 
+    /**
+     * Payload completo (não só {id, protocol}) para o front poder corrigir um único
+     * marcador (setIcon/setPosition) em vez de refazer o fetch inteiro a cada evento —
+     * mesmo formato usado por DashboardController::occurrencesRecent(), para os dois
+     * consumidores (dashboard e console de despacho) reaproveitarem a mesma função de
+     * renderização de marcador. loadMissing() porque, depois de passar pela fila
+     * (SerializesModels), o model chega aqui sem as relações que estavam carregadas
+     * no momento do dispatch.
+     */
     public function broadcastWith(): array
     {
+        $this->occurrence->loadMissing(['statusOccurence', 'typeOccurrence', 'priority']);
+
         return [
             'id' => $this->occurrence->id,
             'protocol' => $this->occurrence->protocol,
+            'title' => $this->occurrence->title,
+            'name' => $this->occurrence->name,
+            'address' => $this->occurrence->address,
+            'latitude' => $this->occurrence->latitude ? (float) $this->occurrence->latitude : null,
+            'longitude' => $this->occurrence->longitude ? (float) $this->occurrence->longitude : null,
+            'status' => $this->occurrence->statusOccurence?->name ?? '—',
+            'type' => $this->occurrence->typeOccurrence?->name ?? '—',
+            'priority' => $this->occurrence->priority?->name,
+            'priority_color' => $this->occurrence->priority?->color,
+            'driver_id' => $this->occurrence->driver_id,
+            'updated_at' => $this->occurrence->updated_at?->toIso8601String(),
+            'updated_at_human' => $this->occurrence->updated_at?->diffForHumans(),
         ];
     }
 }

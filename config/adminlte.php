@@ -255,6 +255,12 @@ return [
             'can' => 'occurrences',
         ],
         [
+            'text' => 'Central de Despacho',
+            'url' => 'admin/dispatch',
+            'icon' => 'fas fa-satellite-dish',
+            'can' => 'occurrences',
+        ],
+        [
             'text' => 'Parâmetros',
             'icon' => 'fas fa-sliders-h',
             'can' => ['statusOccurrences', 'typeOccurrences', 'priorities', 'issuings'],

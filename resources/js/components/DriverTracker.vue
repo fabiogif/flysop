@@ -25,6 +25,10 @@ export default {
     height: {
       type: Number,
       default: 400
+    },
+    routeHistoryUrl: {
+      type: String,
+      default: null
     }
   },
   data() {
@@ -47,7 +51,9 @@ export default {
   },
   mounted() {
     this.initMap();
-    this.listenForDriverPosition();
+    this.loadRouteHistory().then(() => {
+      this.listenForDriverPosition();
+    });
   },
   beforeDestroy() {
     if (window.Echo) {
@@ -85,6 +91,45 @@ export default {
         strokeWeight: 4,
         map: this.map
       });
+    },
+
+    // Carrega o trajeto já percorrido antes de assinar o canal ao vivo — sem isso a
+    // polyline nascia vazia e só ganhava forma a partir do primeiro evento recebido
+    // depois que a tela foi aberta (OccurrencesController::driverRoute() já existia
+    // pronto no back-end, mas nenhum front o chamava).
+    loadRouteHistory() {
+      if (!this.routeHistoryUrl || typeof window.axios === 'undefined') {
+        return Promise.resolve();
+      }
+      return window.axios.get(this.routeHistoryUrl)
+        .then((response) => {
+          const data = response.data || {};
+          const route = Array.isArray(data.route) ? data.route : [];
+          this.routePoints = route
+            .filter((p) => p && p.lat != null && p.lng != null)
+            .map((p) => ({ lat: parseFloat(p.lat), lng: parseFloat(p.lng) }));
+          if (this.routePoints.length) {
+            this.polyline.setPath(this.routePoints);
+          }
+          if (data.last_position) {
+            const pos = { lat: parseFloat(data.last_position.lat), lng: parseFloat(data.last_position.lng) };
+            this.lastUpdatedAt = data.last_position.created_at;
+            this.driverInfo = data.driver;
+            this.driverMarker = new google.maps.Marker({
+              position: pos,
+              map: this.map,
+              title: data.driver ? data.driver.name : 'Motorista',
+              icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+            });
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(this.occurrenceMarker.getPosition());
+            bounds.extend(this.driverMarker.getPosition());
+            this.map.fitBounds(bounds);
+          }
+        })
+        .catch((error) => {
+          console.warn('Não foi possível carregar o histórico de rota.', error);
+        });
     },
 
     listenForDriverPosition() {

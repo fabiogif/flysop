@@ -340,7 +340,7 @@
 @php
     $initialLat = isset($occurrences) && $occurrences->latitude ? (float) $occurrences->latitude : -12.95307;
     $initialLng = isset($occurrences) && $occurrences->longitude ? (float) $occurrences->longitude : -38.49706;
-    $mapsKey = config('services.google.maps_key') ?: env('GOOGLE_MAPS_API_KEY') ?: 'AIzaSyAKZUfI6dgn5kzjDSu9MKT84yhMW5UR5M0';
+    $mapsKey = config('services.google.maps_key') ?: env('GOOGLE_MAPS_API_KEY', '');
 @endphp
 <script>
 (function() {
