@@ -28,10 +28,14 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 .ciop-body {
   margin: 0;
+  overflow-x: hidden;
+  max-width: 100%;
   font-family: var(--font-body);
   color: var(--ciop-ink);
   background: var(--ciop-paper);
