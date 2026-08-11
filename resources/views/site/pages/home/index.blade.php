@@ -167,16 +167,16 @@
                     <figcaption>Obras e intervenções em via pública</figcaption>
                 </figure>
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.12">
-                    <img src="{{ asset('images/landing/geo-1.jpg') }}" alt="Elevador Lacerda em Salvador, Bahia" width="960" height="640" loading="lazy">
-                    <figcaption>Salvador — Elevador Lacerda</figcaption>
+                    <img src="{{ asset('images/landing/geo-1.jpg') }}" alt="Celular com aplicativo de mapa em uso na cidade" width="960" height="640" loading="lazy">
+                    <figcaption>Mapa no celular em campo</figcaption>
                 </figure>
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.1">
                     <img src="{{ asset('images/landing/obras-2.jpg') }}" alt="Canteiro de obras com estruturas e trabalhadores" width="960" height="640" loading="lazy">
                     <figcaption>Acompanhamento de equipes em campo</figcaption>
                 </figure>
                 <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.14">
-                    <img src="{{ asset('images/landing/geo-2.jpg') }}" alt="Farol da Barra em Salvador, Bahia" width="960" height="640" loading="lazy">
-                    <figcaption>Salvador — Farol da Barra</figcaption>
+                    <img src="{{ asset('images/landing/geo-2.jpg') }}" alt="Agente de limpeza urbana em operação na via pública" width="960" height="640" loading="lazy">
+                    <figcaption>Equipes em operação na via pública</figcaption>
                 </figure>
             </div>
         </div>
