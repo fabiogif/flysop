@@ -6,7 +6,7 @@
     {{-- Hero: uma composição, brand em primeiro plano --}}
     <section id="home" class="ciop-hero" aria-labelledby="hero-title">
         <div class="ciop-hero-media" aria-hidden="true">
-            <img src="{{ asset('images/geo.jpg') }}" alt="" class="ciop-hero-img" width="1920" height="1080" fetchpriority="high">
+            <img src="{{ asset('images/geo.jpg') }}" alt="Celular com mapa de navegação urbana em tempo real" class="ciop-hero-img" width="1920" height="1080" fetchpriority="high">
             <div class="ciop-hero-veil"></div>
             <div class="ciop-hero-grid"></div>
         </div>
