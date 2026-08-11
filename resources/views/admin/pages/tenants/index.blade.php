@@ -2,75 +2,88 @@
 @section('title', 'Empresa')
 
 @section('content_header')
-<ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Painel de Controle</a> </li>
-    <li class="breadcrumb-item active"><a href="{{ route('tenants.index') }}">Empresa</a> </li>
-</ol>
-
-<h1 class="m-0 text-dark">Empresa
-    <a href="{{ route('tenants.create') }}" class="btn btn-primary mr-5">
-        <i class="fas fa-save"></i>
-        <span class=m-4>Adicionar</span>
-    </a>
-</h1>
+    @include('admin.includes.page-header', [
+        'title' => 'Empresa',
+        'breadcrumbs' => [
+            ['label' => 'Painel de Controle', 'url' => route('admin.index')],
+            ['label' => 'Empresa'],
+        ],
+        'actionsHtml' => '<a href="'.route('tenants.create').'" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar</a>',
+    ])
 @stop
 
 @section('content')
-<div class="card">
-    @include('admin.includes.alerts')
+    <div class="card">
+        @include('admin.includes.alerts')
 
-    <div class="card-header">
-        <form action="{{ route('tenants.search') }}" method="POST" class="form form-inline">
-            @csrf
-            <div class="form-group">
-                <input type="text" class="form-control mr-2" name="filter" placeholder="Nome ou CNPJ" value="{{ $filters['filter'] ?? '' }}">
-                <button type="submit" class="btn btn-info">
-                    <i class="fas fa-search"></i>
-                    <span class=m-4>Pesquisar</span>
-                </button>
+        @include('admin.includes.search-toolbar', [
+            'action' => route('tenants.search'),
+            'placeholder' => 'Nome ou CNPJ',
+            'filters' => $filters ?? [],
+        ])
+
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover ciop-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Logo</th>
+                            <th>Nome</th>
+                            <th>Url</th>
+                            <th>CNPJ</th>
+                            <th>E-mail</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($tenants as $tenant)
+                            <tr>
+                                <td>
+                                    @if ($tenant->logo)
+                                        <img src="{{ Storage::disk('s3')->url($tenant->logo) }}" alt="{{ $tenant->name }}"
+                                            style="max-height: 36px; max-width: 80px; object-fit: contain;">
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>{{ $tenant->name }}</td>
+                                <td>{{ $tenant->url }}</td>
+                                <td>{{ $tenant->cnpj }}</td>
+                                <td>{{ $tenant->email }}</td>
+                                <td>
+                                    @if ($tenant->active == '1')
+                                        <span class="badge badge-success">Ativo</span>
+                                    @else
+                                        <span class="badge badge-secondary">Inativo</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    <div class="ciop-actions">
+                                        <a href="{{ route('tenants.show', $tenant->id) }}" class="btn btn-outline-info btn-sm" title="Ver">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('tenants.edit', $tenant->id) }}" class="btn btn-outline-warning btn-sm" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="ciop-empty">Nenhum registro encontrado.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </form>
+        </div>
+        <div class="card-footer">
+            @if (isset($filters))
+                {!! $tenants->appends($filters)->links() !!}
+            @else
+                {!! $tenants->links() !!}
+            @endif
+        </div>
     </div>
-
-
-    <div class="card-body">
-        <table class="table table-condensed">
-            <thead>
-                <tr>
-                    <th style="max-width:150px">Logo</th>
-                    <th>Nome</th>
-                    <th>Url</th>
-                    <th>CNPJ</th>
-                    <th>E-mail</th>
-                    <th>Status</th>
-                    <th width="150px">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach ($tenants as $tenant)
-                <tr>
-                    <td></td>
-                    <td>{{ $tenant->name }}</td>
-                    <td>{{ $tenant->url }}</td>
-                    <td>{{ $tenant->cnpj }}</td>
-                    <td>{{ $tenant->email }}</td>
-                    <td>{{ $tenant->active == '1' ? 'Ativo' : 'Inativo' }}</td>
-                    <td style=" width: 10px">
-                        <a href="{{ route('tenants.edit', $tenant->id) }}" class="btn btn-warning"><i class="fas fa-edit"></i></a>
-                        <a href="{{ route('tenants.show', $tenant->id) }}" class="btn btn-info"><i class="fas fa-search"></i></a>
-                        </a>
-                    </td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer">
-        @if (isset($filters))
-        {!! $tenants->appends($filters)->links() !!}
-        @else
-        {!! $tenants->links() !!}
-        @endif
-    </div>
-</div>
-@stop
+@endsection

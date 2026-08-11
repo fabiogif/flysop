@@ -16,32 +16,22 @@ class OccurrencesFactory extends Factory
 
     public function definition(): array
     {
-        $user = User::first();
-        $client = Client::first();
-        $issuing = Issuing::first();
-        $typeOccurrence = TypeOccurrence::first();
-        $statusOccurrence = StatusOccurrence::first();
-
-        if (!$user || !$client || !$issuing || !$typeOccurrence || !$statusOccurrence) {
-            throw new \RuntimeException('Execute seeders de User, Client, Issuing, TypeOccurrence e StatusOccurrence antes de OccurrenceTableSeeder.');
-        }
-
         return [
-            'title' => $this->faker->sentence(),
-            'description' => $this->faker->paragraph(),
+            'title' => $this->faker->sentence(4),
+            'description' => $this->faker->sentence(12),
             'name' => $this->faker->name(),
             'cpf' => $this->faker->numerify('###.###.###-##'),
             'rg' => $this->faker->numerify('##.###.###-#'),
-            'email' => $this->faker->email(),
-            'address' => $this->faker->address(),
-            'phone' => $this->faker->phoneNumber(),
-            'latitude' => $this->faker->latitude(),
-            'longitude' => $this->faker->longitude(),
-            'users_id' => $user->id,
-            'clients_id' => $client->id,
-            'issuings_id' => $issuing->id,
-            'type_occurrences_id' => $typeOccurrence->id,
-            'status_occurrences_id' => $statusOccurrence->id,
+            'email' => $this->faker->safeEmail(),
+            'address' => $this->faker->streetAddress(),
+            'phone' => $this->faker->numerify('(##) #####-####'),
+            'latitude' => $this->faker->latitude(-33, 5),
+            'longitude' => $this->faker->longitude(-73, -34),
+            'users_id' => User::factory(),
+            'clients_id' => Client::factory(),
+            'issuings_id' => Issuing::factory(),
+            'type_occurrences_id' => TypeOccurrence::factory(),
+            'status_occurrences_id' => StatusOccurrence::factory(),
         ];
     }
 }

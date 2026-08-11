@@ -66,20 +66,94 @@
     var nodes = document.querySelectorAll('.reveal');
     if (!nodes.length) return;
 
+    var markVisible = function (el) {
+      el.classList.add('is-visible');
+    };
+
+    // Garante conteúdo legível mesmo se o observer falhar
+    var fallback = window.setTimeout(function () {
+      nodes.forEach(markVisible);
+    }, 800);
+
     if (!('IntersectionObserver' in window)) {
-      nodes.forEach(function (el) { el.classList.add('is-visible'); });
+      nodes.forEach(markVisible);
+      window.clearTimeout(fallback);
       return;
     }
 
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
         if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
+        markVisible(entry.target);
         observer.unobserve(entry.target);
       });
-    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+    }, { threshold: 0.05, rootMargin: '0px 0px 15% 0px' });
 
-    nodes.forEach(function (el) { observer.observe(el); });
+    nodes.forEach(function (el) {
+      var rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.95) {
+        markVisible(el);
+      } else {
+        observer.observe(el);
+      }
+    });
+
+    window.setTimeout(function () {
+      window.clearTimeout(fallback);
+    }, 900);
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  function initParallax() {
+    if (prefersReducedMotion()) return;
+
+    var bands = document.querySelectorAll('[data-parallax]');
+    var scenes = document.querySelectorAll('[data-parallax-scene]');
+    if (!bands.length && !scenes.length) return;
+
+    var ticking = false;
+
+    var update = function () {
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+
+      bands.forEach(function (band) {
+        var rect = band.getBoundingClientRect();
+        var visible = rect.bottom > 0 && rect.top < vh;
+        if (!visible) return;
+
+        var progress = (vh / 2 - (rect.top + rect.height / 2)) / vh;
+        var layers = band.querySelectorAll('[data-parallax-layer]');
+        layers.forEach(function (layer) {
+          var speed = parseFloat(layer.getAttribute('data-speed') || '0.3');
+          var y = progress * speed * 120;
+          layer.style.transform = 'translate3d(0, ' + y.toFixed(2) + 'px, 0)';
+        });
+      });
+
+      scenes.forEach(function (scene) {
+        var rect = scene.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > vh) return;
+        var speed = parseFloat(scene.getAttribute('data-speed') || '0.1');
+        var progress = (vh / 2 - (rect.top + rect.height / 2)) / vh;
+        var y = progress * speed * 80;
+        scene.style.transform = 'translate3d(0, ' + y.toFixed(2) + 'px, 0)';
+      });
+
+      ticking = false;
+    };
+
+    var onScroll = function () {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    update();
   }
 
   function init() {
@@ -87,6 +161,7 @@
     initNavbarToggler();
     initMovetop();
     initReveal();
+    initParallax();
   }
 
   if (document.readyState === 'loading') {

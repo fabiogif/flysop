@@ -29,6 +29,9 @@ class Kernel extends ConsoleKernel
 
         // Notifica Administrador/Supervisor sobre ocorrências com SLA a até 2h do vencimento (Fase 3)
         $schedule->command('occurrences:check-sla --hours=2')->hourly();
+
+        // Retenção/anonimização LGPD (Fase 6): ocorrências finalizadas há mais de 2 anos
+        $schedule->command('occurrences:anonymize-old --days=730')->monthly();
     }
 
     /**

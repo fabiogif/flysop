@@ -1,244 +1,336 @@
 @include('admin.includes.alerts')
-<?php
-if (!isset($occurrences)) {
-    $typeoccurrences_id = '';
-    $status_occurrences_id = '';
-    $issuingsId = '';
-    $driverId = '';
-} else {
-    $typeoccurrences_id = $occurrences->type_occurrences_id;
-    $status_occurrences_id = $occurrences->status_occurrences_id;
-    $issuingsId = $occurrences->issuings_id;
-    $driverId = $occurrences->driver_id ?? '';
-}
-$drivers = $drivers ?? collect();
-$priorities = $priorities ?? collect();
-$priorityId = $occurrences->priority_id ?? '';
-?>
-<div class="row">
-    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="name">Nome Completo:</label>
-                    <input type="text" name="name" id="name" class="form-control {{ $errors->has('name') ? 'is-invalid' : '' }}"
-                        placeholder="Informe o Nome Completo" value="{{ $occurrences->name ?? old('name') }}">
-                    @error('name') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="title">Título:</label>
-                    <input type="text" name="title" id="title" class="form-control {{ $errors->has('title') ? 'is-invalid' : '' }}" placeholder="Informe o título"
-                        value="{{ $occurrences->title ?? old('title') }}">
-                    @error('title') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="location-input">Endereço:</label>
-                    <input type="text" name="address" id="location-input" class="form-control {{ $errors->has('address') ? 'is-invalid' : '' }}"
-                        placeholder="Digite o endereço ou clique no mapa para marcar" autocomplete="off" required
-                        value="{{ $occurrences->address ?? old('address') }}">
-                    @error('address') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label for="sublocality-input">Bairro:</label>
-                    <input type="text" name="neighborhood" id="sublocality-input" readonly class="form-control"
-                        placeholder="Preenchido pelo mapa" value="{{ $occurrences->neighborhood ?? old('neighborhood') }}">
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label for="locality-input">Cidade:</label>
-                    <input type="text" name="city" id="locality-input" readonly class="form-control"
-                        value="{{ $occurrences->city ?? old('city') }}">
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label for="administrative_area_level_1-input">Estado:</label>
-                    <input type="text" name="state" class="form-control" readonly
-                        id="administrative_area_level_1-input"
-                        value="{{ $occurrences->state ?? old('state') }}">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="postal_code-input">CEP:</label>
-                    <input type="text" name="zip" id="postal_code-input" readonly class="form-control"
-                        placeholder="Preenchido pelo mapa" value="{{ $occurrences->zip ?? old('zip') }}">
-                </div>
-            </div>
-        </div>
-        <input type="hidden" value="Brasil" id="country-input" name="country">
+@php
+    if (!isset($occurrences)) {
+        $typeoccurrences_id = old('type_occurrences_id', '');
+        $status_occurrences_id = old('status_occurrences_id', '');
+        $issuingsId = old('issuings_id', '');
+        $driverId = old('driver_id', '');
+        $priorityId = old('priority_id', '');
+    } else {
+        $typeoccurrences_id = old('type_occurrences_id', $occurrences->type_occurrences_id);
+        $status_occurrences_id = old('status_occurrences_id', $occurrences->status_occurrences_id);
+        $issuingsId = old('issuings_id', $occurrences->issuings_id);
+        $driverId = old('driver_id', $occurrences->driver_id ?? '');
+        $priorityId = old('priority_id', $occurrences->priority_id ?? '');
+    }
+    $drivers = $drivers ?? collect();
+    $priorities = $priorities ?? collect();
+@endphp
 
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="email">E-mail:</label>
-                    <input type="email" name="email" id="email" class="form-control {{ $errors->has('email') ? 'is-invalid' : '' }}" placeholder="Informe o e-mail"
-                        value="{{ $occurrences->email ?? old('email') }}">
-                    @error('email') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+<div class="occurrence-form">
+    <div class="row">
+        <div class="col-lg-7">
+            {{-- Solicitante --}}
+            <div class="card occurrence-form-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-user text-muted mr-1"></i> Solicitante
+                    </h3>
                 </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="phone">Telefone:</label>
-                    <input type="tel" name="phone" class="form-control phone" placeholder="Informe o Telefone"
-                        required value="{{ $occurrences->phone ?? old('phone') }}">
-                </div>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="latitude">Latitude:</label>
-                    <input type="text" name="latitude" class="form-control" id="latitude" readonly
-                        placeholder="Clique no mapa" value="{{ $occurrences->latitude ?? old('latitude') }}">
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="longitude">Longitude:</label>
-                    <input type="text" name="longitude" class="form-control" id="longitude" readonly
-                        placeholder="Clique no mapa" value="{{ $occurrences->longitude ?? old('longitude') }}">
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="status_occurrences_id">Status Ocorrência:</label>
-                    <select name="status_occurrences_id" id="status_occurrences_id" class="form-control {{ $errors->has('status_occurrences_id') ? 'is-invalid' : '' }}">
-                        <option value="">Selecione o status...</option>
-                        @foreach ($statusOccurrences as $key => $statusOccurrence)
-                            <option value="{{ $statusOccurrence->id }}"
-                                {{ (string)$statusOccurrence->id === (string)($status_occurrences_id ?? old('status_occurrences_id')) ? 'selected' : '' }}>
-                                {{ $statusOccurrence->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('status_occurrences_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="type_occurrences_id">Tipo Ocorrência:</label>
-                    <select name="type_occurrences_id" class="form-control" required>
-                        <option value="">Selecione...</option>
-                        @foreach ($typeOccurrences as $key => $typeOccurrence)
-                            <option value="{{ $typeOccurrence->id }}"
-                                {{ $typeOccurrence->id == $typeoccurrences_id ? 'selected' : '' }}>
-                                {{ $typeOccurrence->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="issuings_id">Órgão:</label>
-                    <select name="issuings_id" id="issuings_id" class="form-control" required>
-                        <option value="">Selecione...</option>
-                        @foreach ($issuings as $key => $issuing)
-                            <option value="{{ $issuing->id }}" {{ $issuing->id == $issuingsId ? 'selected' : '' }}>
-                                {{ $issuing->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="driver_id">Motorista:</label>
-                    <select name="driver_id" id="driver_id" class="form-control">
-                        <option value="">Nenhum</option>
-                        @foreach ($drivers as $driver)
-                            <option value="{{ $driver->id }}" {{ (string)($driverId ?? old('driver_id')) === (string)$driver->id ? 'selected' : '' }}>
-                                {{ $driver->name }}</option>
-                        @endforeach
-                    </select>
-                    @if (isset($occurrences))
-                        <button type="button" id="suggest-drivers-btn" class="btn btn-outline-secondary btn-sm mt-1">
-                            <i class="fas fa-route"></i> Sugerir mais próximo
-                        </button>
-                        <div id="suggest-drivers-results" class="mt-1 small"></div>
-                    @endif
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="priority_id">Prioridade:</label>
-                    <select name="priority_id" id="priority_id" class="form-control">
-                        <option value="">Não definida</option>
-                        @foreach ($priorities as $priority)
-                            <option value="{{ $priority->id }}" {{ (string)($priorityId ?? old('priority_id')) === (string)$priority->id ? 'selected' : '' }}>
-                                {{ $priority->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
-                <div class="form-group">
-                    <label>Anexo:</label>
-                    <input type="file" name="anexo[]" multiple class="form-control">
-                </div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
-                <div class="form-group">
-                    <label for="anexo_phase">Fase da evidência:</label>
-                    <select name="anexo_phase" id="anexo_phase" class="form-control">
-                        <option value="">Não classificada</option>
-                        <option value="antes" {{ old('anexo_phase') === 'antes' ? 'selected' : '' }}>Antes</option>
-                        <option value="depois" {{ old('anexo_phase') === 'depois' ? 'selected' : '' }}>Depois</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-8 col-md-8 col-sm-6 col-xs-12">
-                <div class="form-group">
-                    <label for="description">Descrição:</label>
-                    <textarea cols="40" rows="5" name="description" id="description" required class="form-control">{{ $occurrences->description ?? old('description') }}</textarea>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
-            <div class="form-group">
-                <button type="submit" class="btn btn-block btn-success">Salvar</button>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-6">
-        <div class="card">
-            <div class="card-body">
-                <p class="text-muted small mb-2">
-                    <strong>Localização:</strong> Clique no mapa para marcar o ponto ou digite o endereço no campo "Endereço". O endereço será preenchido automaticamente ao marcar no mapa. Você também pode arrastar o marcador para ajustar.
-                </p>
-                <div id="occurrence-map-container" class="position-relative" style="min-height: 450px;">
-                    <div id="occurrence-map-loading" class="position-absolute top-0 left-0 right-0 bottom-0 d-flex align-items-center justify-content-center bg-light border rounded">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary mb-2" role="status" aria-hidden="true"></div>
-                            <p class="mb-0 text-muted">Carregando mapa…</p>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label for="name">Nome completo <span class="text-danger">*</span></label>
+                                <input type="text" name="name" id="name"
+                                    class="form-control {{ $errors->has('name') ? 'is-invalid' : '' }}"
+                                    placeholder="Nome de quem reporta a ocorrência"
+                                    value="{{ old('name', $occurrences->name ?? '') }}" required>
+                                @error('name') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-md-0">
+                                <label for="email">E-mail <span class="text-danger">*</span></label>
+                                <input type="email" name="email" id="email"
+                                    class="form-control {{ $errors->has('email') ? 'is-invalid' : '' }}"
+                                    placeholder="email@exemplo.com"
+                                    value="{{ old('email', $occurrences->email ?? '') }}" required>
+                                @error('email') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-0">
+                                <label for="phone">Telefone <span class="text-danger">*</span></label>
+                                <input type="tel" name="phone" id="phone"
+                                    class="form-control phone {{ $errors->has('phone') ? 'is-invalid' : '' }}"
+                                    placeholder="(00) 00000-0000"
+                                    value="{{ old('phone', $occurrences->phone ?? '') }}" required>
+                                @error('phone') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
                         </div>
                     </div>
-                    <div id="occurrence-map" style="height: 450px; display: none;"></div>
-                    <p id="occurrence-map-geocode-status" class="small text-muted mt-2 mb-0" style="display: none;" role="status" aria-live="polite">Buscando endereço…</p>
+                </div>
+            </div>
+
+            {{-- Classificação e conteúdo --}}
+            <div class="card occurrence-form-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-clipboard-list text-muted mr-1"></i> Ocorrência
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="title">Título <span class="text-danger">*</span></label>
+                        <input type="text" name="title" id="title"
+                            class="form-control {{ $errors->has('title') ? 'is-invalid' : '' }}"
+                            placeholder="Resumo curto da ocorrência"
+                            value="{{ old('title', $occurrences->title ?? '') }}" required>
+                        @error('title') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="row">
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="form-group">
+                                <label for="type_occurrences_id">Tipo <span class="text-danger">*</span></label>
+                                <select name="type_occurrences_id" id="type_occurrences_id"
+                                    class="form-control {{ $errors->has('type_occurrences_id') ? 'is-invalid' : '' }}"
+                                    required>
+                                    <option value="">Selecione…</option>
+                                    @foreach ($typeOccurrences as $typeOccurrence)
+                                        <option value="{{ $typeOccurrence->id }}"
+                                            {{ (string) $typeOccurrence->id === (string) $typeoccurrences_id ? 'selected' : '' }}>
+                                            {{ $typeOccurrence->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('type_occurrences_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="form-group">
+                                <label for="issuings_id">Órgão <span class="text-danger">*</span></label>
+                                <select name="issuings_id" id="issuings_id"
+                                    class="form-control {{ $errors->has('issuings_id') ? 'is-invalid' : '' }}"
+                                    required>
+                                    <option value="">Selecione…</option>
+                                    @foreach ($issuings as $issuing)
+                                        <option value="{{ $issuing->id }}"
+                                            {{ (string) $issuing->id === (string) $issuingsId ? 'selected' : '' }}>
+                                            {{ $issuing->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('issuings_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="form-group">
+                                <label for="status_occurrences_id">Status <span class="text-danger">*</span></label>
+                                <select name="status_occurrences_id" id="status_occurrences_id"
+                                    class="form-control {{ $errors->has('status_occurrences_id') ? 'is-invalid' : '' }}"
+                                    required>
+                                    <option value="">Selecione…</option>
+                                    @foreach ($statusOccurrences as $statusOccurrence)
+                                        <option value="{{ $statusOccurrence->id }}"
+                                            {{ (string) $statusOccurrence->id === (string) $status_occurrences_id ? 'selected' : '' }}>
+                                            {{ $statusOccurrence->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error('status_occurrences_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-xl-3">
+                            <div class="form-group">
+                                <label for="priority_id">Prioridade</label>
+                                <select name="priority_id" id="priority_id" class="form-control">
+                                    <option value="">Não definida</option>
+                                    @foreach ($priorities as $priority)
+                                        <option value="{{ $priority->id }}"
+                                            {{ (string) $priority->id === (string) $priorityId ? 'selected' : '' }}>
+                                            {{ $priority->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="driver_id">Motorista</label>
+                        <div class="d-flex flex-wrap align-items-start">
+                            <select name="driver_id" id="driver_id" class="form-control flex-grow-1" style="min-width: 12rem;">
+                                <option value="">Nenhum</option>
+                                @foreach ($drivers as $driver)
+                                    <option value="{{ $driver->id }}"
+                                        {{ (string) $driver->id === (string) $driverId ? 'selected' : '' }}>
+                                        {{ $driver->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @if (isset($occurrences))
+                                <button type="button" id="suggest-drivers-btn"
+                                    class="btn btn-outline-secondary ml-0 ml-sm-2 mt-2 mt-sm-0">
+                                    <i class="fas fa-route"></i> Sugerir mais próximo
+                                </button>
+                            @endif
+                        </div>
+                        @if (isset($occurrences))
+                            <div id="suggest-drivers-results" class="mt-2 small"></div>
+                        @endif
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="description">Descrição <span class="text-danger">*</span></label>
+                        <textarea name="description" id="description" rows="5" required
+                            class="form-control {{ $errors->has('description') ? 'is-invalid' : '' }}"
+                            placeholder="Detalhe o que ocorreu, contexto e observações relevantes">{{ old('description', $occurrences->description ?? '') }}</textarea>
+                        @error('description') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                    </div>
+                </div>
+            </div>
+
+            {{-- Localização (campos; mapa ao lado) --}}
+            <div class="card occurrence-form-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-map-marker-alt text-muted mr-1"></i> Localização
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="location-input">Endereço <span class="text-danger">*</span></label>
+                        <input type="text" name="address" id="location-input"
+                            class="form-control {{ $errors->has('address') ? 'is-invalid' : '' }}"
+                            placeholder="Digite o endereço ou marque no mapa"
+                            autocomplete="off" required
+                            value="{{ old('address', $occurrences->address ?? '') }}">
+                        @error('address') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                        <small class="form-text text-muted">Autocomplete do Google ou clique/arraste o marcador no mapa.</small>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="sublocality-input">Bairro</label>
+                                <input type="text" name="neighborhood" id="sublocality-input" readonly
+                                    class="form-control form-control-sm bg-light"
+                                    placeholder="Via mapa"
+                                    value="{{ old('neighborhood', $occurrences->neighborhood ?? '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="locality-input">Cidade</label>
+                                <input type="text" name="city" id="locality-input" readonly
+                                    class="form-control form-control-sm bg-light"
+                                    value="{{ old('city', $occurrences->city ?? '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="administrative_area_level_1-input">UF</label>
+                                <input type="text" name="state" id="administrative_area_level_1-input" readonly
+                                    class="form-control form-control-sm bg-light"
+                                    value="{{ old('state', $occurrences->state ?? '') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-group">
+                                <label for="postal_code-input">CEP</label>
+                                <input type="text" name="zip" id="postal_code-input" readonly
+                                    class="form-control form-control-sm bg-light"
+                                    placeholder="—"
+                                    value="{{ old('zip', $occurrences->zip ?? '') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 col-md-4">
+                            <div class="form-group mb-0">
+                                <label for="latitude">Latitude</label>
+                                <input type="text" name="latitude" id="latitude" readonly
+                                    class="form-control form-control-sm bg-light"
+                                    placeholder="—"
+                                    value="{{ old('latitude', $occurrences->latitude ?? '') }}">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-4">
+                            <div class="form-group mb-0">
+                                <label for="longitude">Longitude</label>
+                                <input type="text" name="longitude" id="longitude" readonly
+                                    class="form-control form-control-sm bg-light"
+                                    placeholder="—"
+                                    value="{{ old('longitude', $occurrences->longitude ?? '') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" value="Brasil" id="country-input" name="country">
+                </div>
+            </div>
+
+            {{-- Evidências --}}
+            <div class="card occurrence-form-section">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-images text-muted mr-1"></i> Evidências
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group mb-md-0">
+                                <label for="anexo">Anexos (imagens)</label>
+                                <div class="custom-file">
+                                    <input type="file" name="anexo[]" id="anexo" multiple accept="image/*"
+                                        class="custom-file-input {{ $errors->has('anexo') || $errors->has('anexo.*') ? 'is-invalid' : '' }}">
+                                    <label class="custom-file-label" for="anexo" data-browse="Escolher">
+                                        Selecione uma ou mais imagens
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Até 5 MB por imagem.</small>
+                                @error('anexo.*') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-0">
+                                <label for="anexo_phase">Fase da evidência</label>
+                                <select name="anexo_phase" id="anexo_phase" class="form-control">
+                                    <option value="">Não classificada</option>
+                                    <option value="antes" {{ old('anexo_phase') === 'antes' ? 'selected' : '' }}>Antes</option>
+                                    <option value="depois" {{ old('anexo_phase') === 'depois' ? 'selected' : '' }}>Depois</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="occurrence-form-actions">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> Salvar
+                </button>
+                <a href="{{ route('occurrences.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </div>
+
+        {{-- Mapa --}}
+        <div class="col-lg-5">
+            <div class="card occurrence-form-map">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-map text-muted mr-1"></i> Mapa
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">
+                        Clique no mapa para marcar o ponto ou arraste o marcador. O endereço será preenchido automaticamente.
+                    </p>
+                    <div id="occurrence-map-container" class="position-relative occurrence-map-frame">
+                        <div id="occurrence-map-loading"
+                            class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center bg-light border rounded">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-2" role="status" aria-hidden="true"></div>
+                                <p class="mb-0 text-muted">Carregando mapa…</p>
+                            </div>
+                        </div>
+                        <div id="occurrence-map" class="occurrence-map-canvas" style="display: none;"></div>
+                        <p id="occurrence-map-geocode-status" class="small text-muted mt-2 mb-0" style="display: none;"
+                            role="status" aria-live="polite">Buscando endereço…</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -306,7 +398,7 @@ $priorityId = $occurrences->priority_id ?? '';
     function showMapError(msg) {
         var loadingEl = getEl(LOADING_ID);
         if (loadingEl) {
-            loadingEl.style.display = 'block';
+            loadingEl.style.display = 'flex';
             loadingEl.innerHTML = '<div class="p-3 text-center text-danger"><p class="mb-0">' + (msg || 'Não foi possível carregar o mapa.') + '</p><p class="small mt-2">Verifique a chave da API (GOOGLE_MAPS_API_KEY no .env), ative "Maps JavaScript API" e "Geocoding API" no Google Cloud Console.</p></div>';
         }
     }
@@ -420,6 +512,7 @@ $priorityId = $occurrences->priority_id ?? '';
             function showMapAndHideLoading() {
                 mapEl.style.display = 'block';
                 if (loadingEl) loadingEl.style.display = 'none';
+                google.maps.event.trigger(map, 'resize');
             }
 
             if (hasExistingPosition) {
@@ -449,6 +542,20 @@ $priorityId = $occurrences->priority_id ?? '';
     };
 
     loadScript('initOccurrenceMapWidget');
+
+    var anexoInput = getEl('anexo');
+    if (anexoInput) {
+        anexoInput.addEventListener('change', function() {
+            var label = document.querySelector('label.custom-file-label[for="anexo"]');
+            if (!label) return;
+            var files = anexoInput.files;
+            if (!files || !files.length) {
+                label.textContent = 'Selecione uma ou mais imagens';
+                return;
+            }
+            label.textContent = files.length === 1 ? files[0].name : (files.length + ' arquivos selecionados');
+        });
+    }
 })();
 </script>
 

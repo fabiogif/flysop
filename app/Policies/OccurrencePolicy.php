@@ -56,4 +56,12 @@ class OccurrencePolicy
     {
         return $user->hasRole('Supervisor');
     }
+
+    /**
+     * Direito ao esquecimento (LGPD, Fase 6) — irreversível, mesma régua da exclusão.
+     */
+    public function forget(User $user, Occurrences $occurrence): bool
+    {
+        return $user->hasRole('Supervisor');
+    }
 }

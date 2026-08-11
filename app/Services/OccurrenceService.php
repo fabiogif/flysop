@@ -18,10 +18,18 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class OccurrenceService
 {
+    /**
+     * Limiares da detecção de duplicidade (Fase 6): mesmo tipo, dentro de 300m e criada
+     * nas últimas 48h. Sugestão para revisão humana — nunca mescla/atribui sozinho.
+     */
+    private const DUPLICATE_RADIUS_KM = 0.3;
+    private const DUPLICATE_WINDOW_HOURS = 48;
+
     public function __construct(
         protected OccurrenceRepositoryInterface $repository
     ) {
@@ -42,8 +50,24 @@ class OccurrenceService
         return $this->repository->getOccurrenceByClientId($clientId);
     }
 
+    /**
+     * Criação pública (API sem login, formulário do cidadão) — corrige bug pré-existente:
+     * a coluna "clients_id" é NOT NULL mas nunca era preenchida aqui, derrubando toda
+     * submissão pública com erro 500. Sem multi-tenant expandido, aplica o mesmo default
+     * usado em storeForAdmin() quando não há tenant: o primeiro client cadastrado.
+     */
     public function createNewOccurrence(array $data): Model
     {
+        if (empty($data['clients_id'])) {
+            $data['clients_id'] = Client::query()->value('id') ?? 1;
+        }
+
+        if (empty($data['status_occurrences_id'])) {
+            $data['status_occurrences_id'] = StatusOccurrence::where('is_terminal', false)
+                ->orderBy('sort_order')
+                ->value('id');
+        }
+
         return $this->createOccurrenceWithDefaults($data);
     }
 
@@ -145,9 +169,92 @@ class OccurrenceService
             $this->notifyAssignment((int) $data['driver_id'], $occurrence);
         }
 
+        $this->detectPossibleDuplicate($occurrence);
+
         broadcast(new OccurrenceUpdated($occurrence))->toOthers();
 
         return $occurrence;
+    }
+
+    /**
+     * Sugere duplicidade (Fase 6): mesmo tipo + dentro de 300m + criada nas últimas 48h.
+     * Marca só a mais próxima; nunca funde/cancela automaticamente — fica para revisão
+     * humana (ver Admin\OccurrencesController@dismissDuplicate).
+     */
+    private function detectPossibleDuplicate(Occurrences $occurrence): void
+    {
+        if (! $occurrence->latitude || ! $occurrence->longitude || ! $occurrence->type_occurrences_id) {
+            return;
+        }
+
+        $rows = DB::select(
+            <<<'SQL'
+                SELECT id, protocol,
+                    (6371 * acos(LEAST(1.0, GREATEST(-1.0,
+                        cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?))
+                        + sin(radians(?)) * sin(radians(latitude))
+                    )))) AS distance_km
+                FROM occurrences
+                WHERE id != ?
+                    AND type_occurrences_id = ?
+                    AND latitude IS NOT NULL AND longitude IS NOT NULL
+                    AND created_at >= ?
+                ORDER BY distance_km ASC
+                LIMIT 1
+            SQL,
+            [
+                (float) $occurrence->latitude,
+                (float) $occurrence->longitude,
+                (float) $occurrence->latitude,
+                $occurrence->id,
+                $occurrence->type_occurrences_id,
+                now()->subHours(self::DUPLICATE_WINDOW_HOURS),
+            ]
+        );
+
+        $closest = $rows[0] ?? null;
+        if ($closest && (float) $closest->distance_km <= self::DUPLICATE_RADIUS_KM) {
+            $occurrence->update(['possible_duplicate_of_id' => $closest->id]);
+        }
+    }
+
+    /**
+     * Atendente/Supervisor confirma que não é duplicata — só limpa a sugestão, não afeta status.
+     */
+    public function dismissDuplicateFlag(int $occurrenceId): void
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+        $occurrence->update(['possible_duplicate_of_id' => null]);
+    }
+
+    /**
+     * Direito ao esquecimento (LGPD, Fase 6): remove os campos pessoais estruturados
+     * (nome, CPF, RG, e-mail, telefone). Título/descrição/protocolo/histórico ficam —
+     * são o conteúdo operacional do atendimento, não dado pessoal por si só, e removê-los
+     * quebraria a rastreabilidade do serviço público prestado.
+     *
+     * Desliga o log de auditoria durante o update de propósito: registrar o CPF/e-mail
+     * antigo no activity log (diff automático) recriaria o problema que estamos resolvendo.
+     * Em vez disso grava uma entrada manual sem os valores.
+     */
+    public function forgetPersonalData(int $id): void
+    {
+        $occurrence = $this->findOrFail($id);
+
+        $occurrence->disableLogging();
+        $occurrence->update([
+            'name' => '[Removido - LGPD]',
+            'cpf' => null,
+            'rg' => null,
+            'email' => null,
+            'phone' => null,
+        ]);
+        $occurrence->enableLogging();
+
+        activity()
+            ->causedBy(auth()->user())
+            ->performedOn($occurrence)
+            ->log('Dados pessoais removidos a pedido do titular (LGPD).');
     }
 
     /**

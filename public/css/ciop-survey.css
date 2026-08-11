@@ -1,0 +1,202 @@
+:root {
+  --ciop-ink: #122026;
+  --ciop-muted: #5e717a;
+  --ciop-paper: #eef3f4;
+  --ciop-teal: #0b4f4a;
+  --ciop-teal-deep: #073834;
+  --ciop-accent: #1fa8a0;
+  --ciop-danger: #c0392b;
+  --ciop-radius: 0.75rem;
+  --font-display: "Syne", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body.ciop-survey-body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--ciop-ink);
+  background:
+    radial-gradient(1200px 500px at 10% -10%, rgba(31, 168, 160, 0.18), transparent 60%),
+    linear-gradient(180deg, #f7fbfb 0%, var(--ciop-paper) 100%);
+  -webkit-font-smoothing: antialiased;
+}
+
+.ciop-survey-shell {
+  width: min(40rem, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2rem 0 3rem;
+}
+
+.ciop-survey-brand {
+  margin-bottom: 1.25rem;
+}
+
+.ciop-survey-brand a {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--ciop-teal);
+  text-decoration: none;
+}
+
+.ciop-survey-card {
+  background: #fff;
+  border-radius: var(--ciop-radius);
+  box-shadow: 0 18px 40px rgba(7, 56, 52, 0.1);
+  padding: 1.5rem 1.4rem 1.75rem;
+}
+
+.ciop-survey-card-center {
+  text-align: center;
+  padding-top: 2.5rem;
+  padding-bottom: 2.5rem;
+}
+
+.ciop-survey-card h1 {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 3vw, 1.85rem);
+  letter-spacing: -0.02em;
+}
+
+.ciop-survey-lead {
+  margin: 0 0 1.4rem;
+  color: var(--ciop-muted);
+  line-height: 1.5;
+}
+
+.ciop-survey-alert {
+  background: #fdecea;
+  color: var(--ciop-danger);
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 1rem;
+  font-size: 0.92rem;
+}
+
+.ciop-survey-field {
+  border: 0;
+  margin: 0 0 1.25rem;
+  padding: 0;
+}
+
+.ciop-survey-field legend {
+  font-weight: 700;
+  margin-bottom: 0.55rem;
+  font-size: 0.98rem;
+}
+
+.ciop-survey-field .req {
+  color: var(--ciop-danger);
+  margin-left: 0.15rem;
+}
+
+.ciop-survey-field textarea,
+.ciop-survey-field input[type="text"] {
+  width: 100%;
+  border: 1px solid #c9d5d8;
+  border-radius: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  color: inherit;
+  background: #fff;
+}
+
+.ciop-survey-field textarea:focus {
+  outline: none;
+  border-color: var(--ciop-accent);
+  box-shadow: 0 0 0 0.15rem rgba(31, 168, 160, 0.22);
+}
+
+.ciop-survey-field.is-invalid textarea,
+.ciop-survey-field.is-invalid .ciop-survey-choice,
+.ciop-survey-field.is-invalid .ciop-survey-scale label span {
+  border-color: var(--ciop-danger);
+}
+
+.ciop-survey-choices {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ciop-survey-choice {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid #c9d5d8;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+  cursor: pointer;
+}
+
+.ciop-survey-choice:hover {
+  border-color: var(--ciop-accent);
+}
+
+.ciop-survey-scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ciop-survey-scale label {
+  cursor: pointer;
+}
+
+.ciop-survey-scale input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ciop-survey-scale span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid #c9d5d8;
+  font-weight: 700;
+}
+
+.ciop-survey-scale input:checked + span {
+  background: var(--ciop-teal);
+  border-color: var(--ciop-teal);
+  color: #fff;
+}
+
+.ciop-survey-hint {
+  margin: 0.4rem 0 0;
+  color: var(--ciop-muted);
+  font-size: 0.82rem;
+}
+
+.ciop-survey-error {
+  margin: 0.4rem 0 0;
+  color: var(--ciop-danger);
+  font-size: 0.86rem;
+}
+
+.ciop-survey-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.85rem 1.2rem;
+  background: var(--ciop-teal);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ciop-survey-submit:hover {
+  background: var(--ciop-accent);
+}

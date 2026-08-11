@@ -17,7 +17,9 @@ use App\Http\Controllers\Admin\DriverController;
 use App\Http\Controllers\Admin\PriorityController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\TeamController;
+use App\Http\Controllers\Admin\SurveyController;
 use App\Http\Controllers\Admin\NotificationController;
+use App\Http\Controllers\PublicSurveyController;
 use App\Http\Controllers\Admin\UserInvitationController;
 use App\Http\Controllers\Admin\OrganisationSettingsController;
 use App\Http\Controllers\Admin\AuditLogController;
@@ -123,6 +125,9 @@ Route::prefix('admin')
         Route::any('/occurrences/search', [App\Http\Controllers\Admin\OccurrencesController::class , 'search'])->name('occurrences.search');
         Route::get('/occurrences/{id}/driver-route', [App\Http\Controllers\Admin\OccurrencesController::class, 'driverRoute'])->name('occurrences.driver-route');
         Route::get('/occurrences/{id}/suggest-drivers', [App\Http\Controllers\Admin\DispatchController::class, 'suggest'])->name('occurrences.suggest-drivers');
+        Route::get('/occurrences/{id}/pdf', [App\Http\Controllers\Admin\OccurrencesController::class, 'pdf'])->name('occurrences.pdf');
+        Route::post('/occurrences/{id}/dismiss-duplicate', [App\Http\Controllers\Admin\OccurrencesController::class, 'dismissDuplicate'])->name('occurrences.dismiss-duplicate');
+        Route::delete('/occurrences/{id}/forget', [App\Http\Controllers\Admin\OccurrencesController::class, 'forget'])->name('occurrences.forget');
         Route::resource('occurrences', OccurrencesController::class);
 
         //Tipo de ocorrencia
@@ -151,6 +156,12 @@ Route::prefix('admin')
         Route::any('/teams/search', [TeamController::class, 'search'])->name('teams.search');
         Route::resource('teams', TeamController::class);
 
+        //Pesquisas
+        Route::any('/surveys/search', [SurveyController::class, 'search'])->name('surveys.search');
+        Route::post('/surveys/{id}/toggle', [SurveyController::class, 'toggle'])->name('surveys.toggle');
+        Route::get('/surveys/{id}/responses', [SurveyController::class, 'responses'])->name('surveys.responses');
+        Route::resource('surveys', SurveyController::class);
+
         //Notificações internas
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
@@ -158,6 +169,11 @@ Route::prefix('admin')
 
         //Busca global
         Route::get('/search', [App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search.index');
+
+        //Relatórios
+        Route::get('/reports', [App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+        Route::post('/reports', [App\Http\Controllers\Admin\ReportController::class, 'store'])->name('reports.store');
+        Route::get('/reports/{id}/download', [App\Http\Controllers\Admin\ReportController::class, 'download'])->name('reports.download');
     });
 
 
@@ -174,6 +190,10 @@ Route::middleware(['auth', 'ensure.driver'])->prefix('driver')->name('driver.')-
 Route::get('/', [App\Http\Controllers\Site\SiteController::class , 'index'])->name('site.home');
 //Route::get('/', [App\Http\Controllers\HomeController::class , 'index'])->name('login');
 
+// Pesquisas públicas (anônimas) por token
+Route::get('/p/{token}', [PublicSurveyController::class, 'show'])->name('public.surveys.show');
+Route::post('/p/{token}', [PublicSurveyController::class, 'store'])->name('public.surveys.store');
+Route::get('/p/{token}/obrigado', [PublicSurveyController::class, 'thanks'])->name('public.surveys.thanks');
 
 /*Route::get('/home', function () {
  return view('home'); })->name('home')->middleware('auth'); */

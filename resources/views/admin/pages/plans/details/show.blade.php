@@ -1,41 +1,46 @@
 @extends('adminlte::page')
 
-@section('title', "Detalhes do Detalhe{{ $plan->name }}")
+@section('title', 'Detalhes do Detalhe')
 
 @section('content_header')
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Painel de Controle</a> </li>
-        <li class="breadcrumb-item active"><a href="{{ route('plans.index') }}">Planos</a> </li>
-        <li class="breadcrumb-item active"><a href="{{ route('plans.show', $plan->url) }}">{{ $plan->name }}</a> </li>
-        <li class="breadcrumb-item active">
-            <a href="{{ route('details.plans.index', $plan->url) }}" class="active">Detalhes</a>
-        </li>
-        <li class="breadcrumb-item active">
-            <a href="{{ route('details.plans.index', $plan->url) }}" class="active">Detalhes do Detalhe</a>
-        </li>
-    </ol>
-
-
-    <h1 class="m-0 text-dark">Alterar Detalhe - <b> {{ $details->name }} </b></h1>
+    @include('admin.includes.page-header', [
+        'title' => $details->name,
+        'breadcrumbs' => [
+            ['label' => 'Painel de Controle', 'url' => route('admin.index')],
+            ['label' => 'Planos', 'url' => route('plans.index')],
+            ['label' => $plan->name, 'url' => route('plans.show', $plan->url)],
+            ['label' => 'Detalhes', 'url' => route('details.plans.index', $plan->url)],
+            ['label' => $details->name],
+        ],
+        'actionsHtml' => '<a href="'.route('details.plans.edit', [$plan->id, $details->id]).'" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Editar</a>',
+    ])
 @stop
 
 @section('content')
+    @include('admin.includes.alerts')
+
     <div class="card">
-        <div class="card-header">
-            <ul>
-                <li><b>Nome:</b> {{ $details->name }}</li>
-            </ul>
-            <div class="card-footer">
-                <form action="{{ route('details.plans.delete', [$plan->id, $details->id]) }}" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit" class="btn btn-danger">
-                        <i class="far fa-trash-alt"></i>
-                        <span class=m-4>Excluir</span>
-                    </button>
-                </form>
-            </div>
+        <div class="card-body">
+            <dl class="ciop-detail-grid">
+                <div class="ciop-detail-item">
+                    <dt>Nome</dt>
+                    <dd>{{ $details->name }}</dd>
+                </div>
+            </dl>
         </div>
-        <!--card-header-->
+        <div class="card-footer ciop-detail-footer">
+            <a href="{{ route('details.plans.index', $plan->url) }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <div class="ciop-detail-footer-spacer"></div>
+            <form action="{{ route('details.plans.delete', [$plan->id, $details->id]) }}" method="POST" class="d-inline"
+                onsubmit="return confirm('Excluir este detalhe?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="far fa-trash-alt"></i> Excluir
+                </button>
+            </form>
+        </div>
     </div>
-@endsection()
+@endsection

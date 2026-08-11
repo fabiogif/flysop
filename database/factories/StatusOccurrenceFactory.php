@@ -9,16 +9,12 @@ class StatusOccurrenceFactory extends Factory
 {
     protected $model = StatusOccurrence::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array
-     */
-    public function definition()
+    public function definition(): array
     {
         return [
-            'name' => "Aberta",
-            'created_at' => now(),
+            'name' => $this->faker->unique()->words(2, true),
+            'is_terminal' => false,
+            'sort_order' => $this->faker->numberBetween(0, 100),
         ];
     }
 }

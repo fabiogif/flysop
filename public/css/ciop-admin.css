@@ -1,0 +1,876 @@
+/**
+ * CIOP — tema do login e painel (AdminLTE 3)
+ * Tokens alinhados à landing: teal profundo + tipografia Syne/Figtree
+ */
+:root {
+  --ciop-ink: #122026;
+  --ciop-ink-soft: #3a4a52;
+  --ciop-muted: #5e717a;
+  --ciop-paper: #eef3f4;
+  --ciop-paper-2: #e2eaec;
+  --ciop-teal: #0b4f4a;
+  --ciop-teal-deep: #073834;
+  --ciop-accent: #1fa8a0;
+  --ciop-accent-2: #c4a35a;
+  --ciop-white: #f7fbfb;
+  --ciop-danger: #c0392b;
+  --ciop-radius: 0.65rem;
+  --ciop-radius-lg: 1rem;
+  --ciop-shadow: 0 18px 40px rgba(7, 56, 52, 0.14);
+  --ciop-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-display: "Syne", system-ui, sans-serif;
+  --font-body: "Figtree", system-ui, sans-serif;
+  --ciop-sidebar-w: 250px;
+}
+
+/* —— Base tipografia / body —— */
+body.login-page,
+body.register-page,
+body.ciop-panel {
+  font-family: var(--font-body);
+  color: var(--ciop-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+body.login-page,
+body.register-page {
+  background: var(--ciop-teal-deep) !important;
+  height: auto !important;
+  min-height: 100vh;
+  display: block !important;
+}
+
+/* —— Auth split layout —— */
+.ciop-auth {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  min-height: 100vh;
+  width: 100%;
+}
+
+.ciop-auth-visual {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  color: #fff;
+  background: var(--ciop-teal-deep);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  min-height: 100vh;
+}
+
+.ciop-auth-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: var(--ciop-auth-bg, none);
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.04);
+}
+
+.ciop-auth-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(7, 56, 52, 0.35) 0%, rgba(7, 56, 52, 0.82) 55%, rgba(6, 28, 26, 0.95) 100%),
+    linear-gradient(90deg, rgba(11, 79, 74, 0.55) 0%, transparent 60%);
+}
+
+.ciop-auth-visual-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 28rem;
+}
+
+.ciop-auth-kicker {
+  margin: 0 0 0.65rem;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ciop-accent-2);
+}
+
+.ciop-auth-visual h1 {
+  margin: 0 0 0.75rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  color: #fff;
+}
+
+.ciop-auth-visual p {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.ciop-auth-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(31, 168, 160, 0.12), transparent 42%),
+    radial-gradient(circle at 88% 82%, rgba(196, 163, 90, 0.1), transparent 40%),
+    var(--ciop-paper);
+  min-height: 100vh;
+}
+
+.ciop-auth-shell {
+  width: 100%;
+  max-width: 26rem;
+}
+
+.ciop-auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  text-decoration: none !important;
+  color: var(--ciop-ink);
+}
+
+.ciop-auth-brand img {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.7rem;
+  box-shadow: 0 8px 18px rgba(11, 79, 74, 0.25);
+}
+
+.ciop-auth-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.ciop-auth-brand-text strong {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.ciop-auth-brand-text span {
+  font-size: 0.82rem;
+  color: var(--ciop-muted);
+}
+
+.ciop-auth-card-inner {
+  border: 0 !important;
+  border-radius: var(--ciop-radius-lg) !important;
+  box-shadow: var(--ciop-shadow) !important;
+  background: #fff !important;
+  overflow: hidden;
+}
+
+.ciop-auth-card-inner .card-header {
+  border: 0;
+  background: transparent;
+  padding: 1.5rem 1.5rem 0.25rem;
+}
+
+.ciop-auth-card-inner .card-title {
+  float: none !important;
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ciop-ink);
+  letter-spacing: -0.02em;
+}
+
+.ciop-auth-card-inner .card-body {
+  padding: 1.25rem 1.5rem 1.5rem !important;
+}
+
+.ciop-auth-card-inner .card-footer {
+  background: transparent;
+  border-top: 1px solid var(--ciop-paper-2);
+  padding: 1rem 1.5rem 1.25rem;
+}
+
+.ciop-auth-card-inner .card-footer a {
+  color: var(--ciop-teal);
+  font-weight: 600;
+}
+
+.ciop-auth-card-inner .card-footer a:hover {
+  color: var(--ciop-accent);
+}
+
+.ciop-auth-field {
+  margin-bottom: 1rem;
+}
+
+.ciop-auth-field label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ciop-ink-soft);
+}
+
+.ciop-auth-input {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+.ciop-auth-input .form-control {
+  height: 2.85rem;
+  border-radius: var(--ciop-radius);
+  border: 1px solid #c9d5d8;
+  padding: 0.55rem 2.75rem 0.55rem 0.9rem;
+  font-size: 1rem;
+  background: #fff;
+  transition: border-color 0.2s var(--ciop-ease), box-shadow 0.2s var(--ciop-ease);
+}
+
+.ciop-auth-input .form-control:focus {
+  border-color: var(--ciop-accent);
+  box-shadow: 0 0 0 3px rgba(31, 168, 160, 0.2);
+}
+
+.ciop-auth-input .ciop-auth-icon,
+.ciop-auth-input .ciop-auth-toggle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  border: 0;
+  background: transparent;
+  color: var(--ciop-muted);
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.ciop-auth-input .ciop-auth-icon {
+  right: 0.15rem;
+  pointer-events: none;
+}
+
+.ciop-auth-input.has-toggle .form-control {
+  padding-right: 4.5rem;
+}
+
+.ciop-auth-input .ciop-auth-toggle {
+  right: 0.15rem;
+  cursor: pointer;
+}
+
+.ciop-auth-input .ciop-auth-toggle:hover,
+.ciop-auth-input .ciop-auth-toggle:focus {
+  color: var(--ciop-teal);
+  outline: none;
+}
+
+.ciop-auth-input.has-toggle .ciop-auth-icon {
+  right: 2.35rem;
+}
+
+.ciop-auth-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0.25rem 0 1.15rem;
+}
+
+.ciop-auth-meta .icheck-primary {
+  margin: 0;
+}
+
+.ciop-auth-meta .icheck-primary > input:first-child:checked + label::before {
+  background-color: var(--ciop-teal) !important;
+  border-color: var(--ciop-teal) !important;
+}
+
+.ciop-btn-login {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 2.9rem;
+  border: 0;
+  border-radius: var(--ciop-radius);
+  background: var(--ciop-teal) !important;
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  transition: background 0.2s var(--ciop-ease), transform 0.2s var(--ciop-ease);
+}
+
+.ciop-btn-login:hover,
+.ciop-btn-login:focus {
+  background: var(--ciop-accent) !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+}
+
+.ciop-auth-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ciop-auth-links a {
+  text-decoration: none;
+}
+
+/* Esconde login-box AdminLTE clássico */
+.ciop-auth-page .login-box,
+.ciop-auth-page .register-box {
+  width: 100%;
+  margin: 0;
+}
+
+.ciop-auth-page .login-logo,
+.ciop-auth-page .register-logo {
+  display: none;
+}
+
+/* —— Painel —— */
+body.ciop-panel {
+  background: var(--ciop-paper);
+}
+
+body.ciop-panel .wrapper {
+  background: var(--ciop-paper);
+}
+
+body.ciop-panel .main-header.ciop-topnav,
+body.ciop-panel .main-header.navbar {
+  border-bottom: 1px solid rgba(18, 32, 38, 0.08);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  background: rgba(247, 251, 251, 0.92) !important;
+  backdrop-filter: blur(10px);
+  min-height: 3.5rem;
+}
+
+body.ciop-panel .main-header .nav-link {
+  color: var(--ciop-ink-soft) !important;
+}
+
+body.ciop-panel .main-header .nav-link:hover {
+  color: var(--ciop-teal) !important;
+}
+
+body.ciop-panel .brand-link {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 3.5rem;
+  display: flex;
+  align-items: center;
+}
+
+body.ciop-panel .brand-link .brand-image,
+body.ciop-panel .ciop-brand-mark {
+  opacity: 1 !important;
+  box-shadow: none !important;
+  border-radius: 0.55rem !important;
+  max-height: 2.1rem;
+  margin-left: 0.35rem !important;
+  margin-right: 0.55rem !important;
+}
+
+body.ciop-panel .brand-text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+body.ciop-panel .main-sidebar.ciop-sidebar,
+body.ciop-panel .main-sidebar.sidebar-dark-primary {
+  background: linear-gradient(180deg, var(--ciop-teal-deep) 0%, #052e2b 100%) !important;
+  box-shadow: 8px 0 24px rgba(7, 56, 52, 0.18);
+}
+
+body.ciop-panel .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active,
+body.ciop-panel .sidebar-dark-primary .nav-sidebar > .nav-item.menu-open > .nav-link {
+  background: rgba(31, 168, 160, 0.22) !important;
+  color: #fff !important;
+}
+
+body.ciop-panel .nav-sidebar .nav-link {
+  border-radius: 0.5rem;
+  margin: 0.1rem 0.45rem;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+body.ciop-panel .nav-sidebar .nav-link:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+}
+
+body.ciop-panel .nav-sidebar .nav-icon {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.ciop-panel .nav-sidebar .nav-link.active .nav-icon,
+body.ciop-panel .nav-sidebar .nav-link:hover .nav-icon {
+  color: var(--ciop-accent) !important;
+}
+
+body.ciop-panel .content-wrapper {
+  background: var(--ciop-paper) !important;
+}
+
+body.ciop-panel .content-header {
+  padding: 1.1rem 0.5rem 0.35rem;
+}
+
+body.ciop-panel .content-header h1,
+body.ciop-panel .content-header .m-0 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ciop-ink);
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+}
+
+body.ciop-panel .content {
+  padding-top: 0.35rem;
+  padding-bottom: 1.5rem;
+}
+
+body.ciop-panel .card {
+  border: 0;
+  border-radius: var(--ciop-radius);
+  box-shadow: 0 10px 28px rgba(18, 32, 38, 0.06);
+  background: #fff;
+}
+
+body.ciop-panel .card-header {
+  background: transparent;
+  border-bottom: 1px solid var(--ciop-paper-2);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+body.ciop-panel .btn-primary {
+  background-color: var(--ciop-teal);
+  border-color: var(--ciop-teal);
+}
+
+body.ciop-panel .btn-primary:hover,
+body.ciop-panel .btn-primary:focus,
+body.ciop-panel .btn-primary:not(:disabled):not(.disabled):active {
+  background-color: var(--ciop-accent);
+  border-color: var(--ciop-accent);
+}
+
+body.ciop-panel .page-item.active .page-link {
+  background-color: var(--ciop-teal);
+  border-color: var(--ciop-teal);
+}
+
+body.ciop-panel .page-link {
+  color: var(--ciop-teal);
+}
+
+body.ciop-panel .table {
+  color: var(--ciop-ink);
+}
+
+body.ciop-panel .table thead th {
+  border-top: 0;
+  color: var(--ciop-muted);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+/* Tabelas e formulários não estouram em telas estreitas */
+body.ciop-panel .table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.ciop-panel .card-body {
+  overflow-x: auto;
+}
+
+body.ciop-panel .form-control:focus,
+body.ciop-panel .custom-select:focus {
+  border-color: var(--ciop-accent);
+  box-shadow: 0 0 0 0.15rem rgba(31, 168, 160, 0.22);
+}
+
+body.ciop-panel .small-box {
+  border-radius: var(--ciop-radius);
+  box-shadow: 0 10px 24px rgba(18, 32, 38, 0.07);
+}
+
+body.ciop-panel .small-box .icon {
+  opacity: 0.2;
+}
+
+/* Overlay mobile do sidebar */
+body.ciop-panel.sidebar-open::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1035;
+  background: rgba(6, 28, 26, 0.45);
+}
+
+@media (min-width: 992px) {
+  body.ciop-panel.sidebar-open::before {
+    content: none;
+  }
+}
+
+/* —— Responsivo auth —— */
+@media (max-width: 991.98px) {
+  .ciop-auth {
+    grid-template-columns: 1fr;
+  }
+
+  .ciop-auth-visual {
+    min-height: 34vh;
+    padding: 1.5rem 1.25rem 1.75rem;
+  }
+
+  .ciop-auth-visual h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .ciop-auth-panel {
+    min-height: auto;
+    padding: 1.25rem 1rem 2rem;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .ciop-auth-visual {
+    min-height: 28vh;
+  }
+
+  .ciop-auth-card-inner .card-header,
+  .ciop-auth-card-inner .card-body,
+  .ciop-auth-card-inner .card-footer {
+    padding-left: 1.1rem !important;
+    padding-right: 1.1rem !important;
+  }
+
+  .ciop-auth-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  body.ciop-panel .content-header,
+  body.ciop-panel .content > .container-fluid {
+    padding-left: 0.65rem;
+    padding-right: 0.65rem;
+  }
+
+  body.ciop-panel .card-body {
+    padding: 0.9rem;
+  }
+
+  body.ciop-panel .btn {
+    white-space: normal;
+  }
+
+  body.ciop-panel .breadcrumb {
+    font-size: 0.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ciop-btn-login,
+  .ciop-auth-input .form-control {
+    transition: none;
+  }
+
+  .ciop-btn-login:hover {
+    transform: none;
+  }
+}
+
+/* —— Formulário de ocorrência (criar / editar) —— */
+.occurrence-form .occurrence-form-section {
+  margin-bottom: 1rem;
+}
+
+.occurrence-form .occurrence-form-section .card-header {
+  padding: 0.75rem 1.1rem;
+}
+
+.occurrence-form .occurrence-form-section .card-title {
+  font-size: 0.95rem;
+  color: var(--ciop-ink);
+}
+
+.occurrence-form .occurrence-form-section .card-body {
+  overflow: visible;
+  padding: 1rem 1.1rem 1.15rem;
+}
+
+.occurrence-form .form-group label {
+  font-weight: 600;
+  font-size: 0.86rem;
+  color: var(--ciop-ink-soft);
+  margin-bottom: 0.3rem;
+}
+
+.occurrence-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.25rem 0 1.25rem;
+  padding: 0.85rem 0;
+  border-top: 1px solid var(--ciop-paper-2);
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(180deg, rgba(238, 243, 244, 0) 0%, var(--ciop-paper) 28%);
+  z-index: 5;
+}
+
+.occurrence-form-map {
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 992px) {
+  .occurrence-form-map {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+.occurrence-map-frame {
+  min-height: 420px;
+}
+
+.occurrence-map-canvas {
+  height: 420px;
+  width: 100%;
+  border-radius: calc(var(--ciop-radius) - 2px);
+  overflow: hidden;
+}
+
+#occurrence-map-loading {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  border-radius: calc(var(--ciop-radius) - 2px);
+}
+
+@media (max-width: 991.98px) {
+  .occurrence-map-frame,
+  .occurrence-map-canvas {
+    min-height: 280px;
+    height: 280px;
+  }
+}
+
+/* —— Listagens e detalhes (CRUD admin) —— */
+.ciop-page-head {
+  margin-bottom: 0.85rem;
+}
+
+.ciop-breadcrumb {
+  margin-bottom: 0.35rem;
+  background: transparent;
+  padding: 0;
+  font-size: 0.84rem;
+}
+
+.ciop-page-head-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.ciop-page-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ciop-ink);
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
+  line-height: 1.25;
+}
+
+.ciop-page-subtitle {
+  margin-top: 0.2rem;
+  color: var(--ciop-muted);
+  font-size: 0.92rem;
+}
+
+.ciop-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.ciop-page-actions .btn {
+  white-space: nowrap;
+}
+
+.ciop-toolbar {
+  padding: 0.85rem 1.1rem;
+  background: #fbfcfc;
+}
+
+.ciop-search-form {
+  max-width: 28rem;
+}
+
+.ciop-search-form .form-control {
+  border-right: 0;
+}
+
+body.ciop-panel .ciop-table {
+  margin-bottom: 0;
+}
+
+body.ciop-panel .ciop-table thead th {
+  white-space: nowrap;
+  vertical-align: middle;
+  border-bottom-width: 1px;
+}
+
+body.ciop-panel .ciop-table tbody td {
+  vertical-align: middle;
+}
+
+body.ciop-panel .ciop-table tbody tr:hover {
+  background: rgba(11, 79, 74, 0.035);
+}
+
+.ciop-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.ciop-actions .btn {
+  min-width: 2rem;
+}
+
+.ciop-empty {
+  text-align: center;
+  color: var(--ciop-muted);
+  padding: 1.75rem 1rem !important;
+  font-size: 0.95rem;
+}
+
+.ciop-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.85rem 1.25rem;
+}
+
+.ciop-detail-item {
+  min-width: 0;
+}
+
+.ciop-detail-item dt {
+  margin: 0 0 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ciop-muted);
+}
+
+.ciop-detail-item dd {
+  margin: 0;
+  color: var(--ciop-ink);
+  font-size: 0.98rem;
+  word-break: break-word;
+}
+
+.ciop-detail-item.ciop-detail-wide {
+  grid-column: 1 / -1;
+}
+
+.ciop-detail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  padding-top: 0.35rem;
+}
+
+.ciop-detail-footer .ciop-detail-footer-spacer {
+  flex: 1 1 auto;
+}
+
+.ciop-color-swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.25rem;
+  vertical-align: middle;
+  border: 1px solid rgba(18, 32, 38, 0.12);
+}
+
+.ciop-evidence-card {
+  background: var(--ciop-teal-deep);
+  border-radius: var(--ciop-radius);
+  padding: 0.4rem;
+  overflow: hidden;
+}
+
+.ciop-evidence-card img {
+  width: 100%;
+  border-radius: calc(var(--ciop-radius) - 2px);
+  display: block;
+}
+
+.ciop-evidence-meta {
+  color: rgba(247, 251, 251, 0.85);
+  font-size: 0.75rem;
+  margin: 0.4rem 0.25rem 0.15rem;
+}
+
+@media (max-width: 575.98px) {
+  .ciop-page-head-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ciop-page-actions {
+    width: 100%;
+  }
+
+  .ciop-page-actions .btn {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .ciop-search-form {
+    max-width: none;
+  }
+}

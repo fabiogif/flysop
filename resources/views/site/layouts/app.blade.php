@@ -9,8 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/style-starter.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/site-theme.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/site-theme.css') }}?v=7">
     @stack('styles')
 </head>
 <body class="ciop-body">
@@ -30,9 +29,10 @@
                 </button>
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ciop-nav-links ml-lg-auto">
+                        <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#obras">Obras</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#recursos">Recursos</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#mapa">Mapa</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#fluxo">Como funciona</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url('/') }}#para-quem">Para quem</a></li>
                         <li class="nav-item d-lg-none"><a class="nav-link" href="{{ route('login') }}">Acessar</a></li>
                     </ul>
                     <div class="ciop-nav-cta d-none d-lg-flex">
@@ -64,7 +64,7 @@
         <span aria-hidden="true">↑</span>
     </button>
 
-    <script src="{{ asset('js/site.js') }}" defer></script>
+    <script src="{{ asset('js/site.js') }}?v=7" defer></script>
     @stack('scripts')
 </body>
 </html>

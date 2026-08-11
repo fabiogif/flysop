@@ -10,7 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Occurrences extends Model
 {
     use LogsActivity;
-    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'clients_id', 'nameType', 'nameStatus'];
+    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'nameType', 'nameStatus'];
 
     protected $casts = [
         'due_at' => 'datetime',
@@ -105,7 +105,12 @@ class Occurrences extends Model
 
     public function typeOccurrence()
     {
-        return $this->belongsTo(TypeOccurrence::class);
+        return $this->belongsTo(TypeOccurrence::class, 'type_occurrences_id');
+    }
+
+    public function issuing()
+    {
+        return $this->belongsTo(Issuing::class, 'issuings_id');
     }
 
     public function imagens()
@@ -126,6 +131,15 @@ class Occurrences extends Model
     public function statusHistory()
     {
         return $this->hasMany(OccurrenceStatusHistory::class, 'occurrence_id')->orderByDesc('created_at');
+    }
+
+    /**
+     * Possível duplicata (Fase 6) — sugestão automática, nunca atribuída sem revisão humana.
+     * Ver OccurrenceService::detectPossibleDuplicate().
+     */
+    public function possibleDuplicateOf()
+    {
+        return $this->belongsTo(Occurrences::class, 'possible_duplicate_of_id');
     }
 
     /**

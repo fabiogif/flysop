@@ -18,111 +18,114 @@
     @php($password_reset_url = $password_reset_url ? url($password_reset_url) : '')
 @endif
 
-@section('auth_header', __('adminlte::adminlte.login_message'))
+@section('auth_header', 'Entrar no painel')
 
 @section('auth_body')
-    <form action="{{ $login_url }}" method="post">
+    <form action="{{ $login_url }}" method="post" novalidate>
         {{ csrf_field() }}
 
-        {{-- Email field --}}
-        <div class="input-group mb-3">
-            <input type="email" name="email" class="form-control {{ $errors->has('email') ? 'is-invalid' : '' }}"
-                value="{{ old('email') }}" placeholder="{{ __('adminlte::adminlte.email') }}" autofocus>
-            <div class="input-group-append">
-                <div class="input-group-text">
+        <div class="ciop-auth-field">
+            <label for="email">E-mail</label>
+            <div class="ciop-auth-input">
+                <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    class="form-control {{ $errors->has('email') ? 'is-invalid' : '' }}"
+                    value="{{ old('email') }}"
+                    placeholder="seu@email.gov.br"
+                    autocomplete="username"
+                    autofocus
+                    required
+                >
+                <span class="ciop-auth-icon" aria-hidden="true">
                     <span class="fas fa-envelope {{ config('adminlte.classes_auth_icon', '') }}"></span>
-                </div>
+                </span>
+                @if ($errors->has('email'))
+                    <div class="invalid-feedback d-block">
+                        <strong>{{ $errors->first('email') }}</strong>
+                    </div>
+                @endif
             </div>
-            @if ($errors->has('email'))
-                <div class="invalid-feedback">
-                    <strong>{{ $errors->first('email') }}</strong>
-                </div>
-            @endif
         </div>
 
-        {{-- Password field --}}
-        <div class="input-group mb-3">
-            <input type="password" name="password" id="password" class="form-control {{ $errors->has('password') ? 'is-invalid' : '' }}"
-                placeholder="{{ __('adminlte::adminlte.password') }}">
-            <div class="input-group-append">
-                <div class="input-group-text">
+        <div class="ciop-auth-field">
+            <label for="password">Senha</label>
+            <div class="ciop-auth-input has-toggle">
+                <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    class="form-control {{ $errors->has('password') ? 'is-invalid' : '' }}"
+                    placeholder="••••••••"
+                    autocomplete="current-password"
+                    required
+                >
+                <span class="ciop-auth-icon" aria-hidden="true">
                     <span class="fas fa-lock {{ config('adminlte.classes_auth_icon', '') }}"></span>
-                </div>
-            </div>
-            <div class="input-group-append">
-                <button type="button" class="btn btn-outline-secondary" id="toggle-password"
-                    title="Mostrar/ocultar senha" aria-label="Mostrar ou ocultar senha">
+                </span>
+                <button
+                    type="button"
+                    class="ciop-auth-toggle"
+                    id="toggle-password"
+                    title="Mostrar ou ocultar senha"
+                    aria-label="Mostrar ou ocultar senha"
+                    aria-pressed="false"
+                >
                     <span class="fas fa-eye"></span>
                 </button>
-            </div>
-            @if ($errors->has('password'))
-                <div class="invalid-feedback">
-                    <strong>{{ $errors->first('password') }}</strong>
-                </div>
-            @endif
-        </div>
-
-        {{-- Login field --}}
-        <div class="row">
-            <div class="col-7">
-                <div class="icheck-primary">
-                    <input type="checkbox" name="remember" id="remember">
-                    <label for="remember">{{ __('adminlte::adminlte.remember_me') }}</label>
-                </div>
-            </div>
-
-            <div class="col-5">
-                <button type=submit
-                    class="btn btn-block {{ config('adminlte.classes_auth_btn', 'btn-flat btn-primary') }}">
-                    <span class="fas fa-sign-in-alt"></span>
-                    {{ __('adminlte::adminlte.sign_in') }}
-                </button>
+                @if ($errors->has('password'))
+                    <div class="invalid-feedback d-block">
+                        <strong>{{ $errors->first('password') }}</strong>
+                    </div>
+                @endif
             </div>
         </div>
 
+        <div class="ciop-auth-meta">
+            <div class="icheck-primary">
+                <input type="checkbox" name="remember" id="remember">
+                <label for="remember">{{ __('adminlte::adminlte.remember_me') }}</label>
+            </div>
+        </div>
+
+        <button type="submit" class="btn {{ config('adminlte.classes_auth_btn', 'ciop-btn-login') }}">
+            <span class="fas fa-sign-in-alt" aria-hidden="true"></span>
+            {{ __('adminlte::adminlte.sign_in') }}
+        </button>
     </form>
 @stop
 
 @section('auth_footer')
-    {{-- Password reset link --}}
-    @if ($password_reset_url)
-        <p class="my-0">
-            <a href="{{ $password_reset_url }}">
-                {{ __('adminlte::adminlte.i_forgot_my_password') }}
-            </a>
-        </p>
-    @endif
-    <p class="my-0-1">
-        <a href="./">
-            Voltar
-        </a>
-    </p>
-
-    {{-- Register link --
-    @if ($register_url)
-        <p class="my-0-1">
-            <a href="{{ $register_url }}">
-                {{ __('adminlte::adminlte.register_a_new_membership') }}
-            </a>
-        </p>
-    @endif --}}
+    <ul class="ciop-auth-links">
+        @if ($password_reset_url)
+            <li>
+                <a href="{{ $password_reset_url }}">
+                    {{ __('adminlte::adminlte.i_forgot_my_password') }}
+                </a>
+            </li>
+        @endif
+        <li>
+            <a href="{{ url('/') }}">Voltar ao site</a>
+        </li>
+    </ul>
 @stop
 
 @section('js')
     <script>
-        $(function () {
-            $('#toggle-password').on('click', function () {
-                var $input = $('#password');
-                var $icon = $(this).find('span');
-
-                if ($input.attr('type') === 'password') {
-                    $input.attr('type', 'text');
-                    $icon.removeClass('fa-eye').addClass('fa-eye-slash');
-                } else {
-                    $input.attr('type', 'password');
-                    $icon.removeClass('fa-eye-slash').addClass('fa-eye');
-                }
+        (function () {
+            var btn = document.getElementById('toggle-password');
+            var input = document.getElementById('password');
+            if (!btn || !input) return;
+            btn.addEventListener('click', function () {
+                var show = input.getAttribute('type') === 'password';
+                input.setAttribute('type', show ? 'text' : 'password');
+                btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+                var icon = btn.querySelector('span');
+                if (!icon) return;
+                icon.classList.toggle('fa-eye', !show);
+                icon.classList.toggle('fa-eye-slash', show);
             });
-        });
+        })();
     </script>
 @stop

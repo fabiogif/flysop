@@ -1,36 +1,56 @@
 @extends('adminlte::page')
 
-@section('title', "Detalhes Plano { $plan->name }")
+@section('title', 'Detalhes do Plano')
 
 @section('content_header')
-    <h1 class="m-0 text-dark">Detalhes Plano <b>{{ $plan->name }}</b></h1>
+    @include('admin.includes.page-header', [
+        'title' => $plan->name,
+        'breadcrumbs' => [
+            ['label' => 'Painel de Controle', 'url' => route('admin.index')],
+            ['label' => 'Planos', 'url' => route('plans.index')],
+            ['label' => $plan->name],
+        ],
+        'actionsHtml' => '<a href="'.route('plans.edit', $plan->id).'" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Editar</a>',
+    ])
 @stop
 
 @section('content')
+    @include('admin.includes.alerts')
+
     <div class="card">
         <div class="card-body">
-            @csrf
-            <div class="row">
-                <ul>
-                    <li><b>Nome:</b> {{ $plan->name }}</li>
-                    <li><b>Preço:</b> R$ {{ number_format($plan->price, 2, ',', '.') }}</li>
-                    <li><b>Url:</b> {{ $plan->url }}</li>
-                    <li><b>Descrição:</b> {{ $plan->description }}</li>
-                </ul>
-            </div>
-            <!--row-->
-            @include('admin.includes.alerts')
-
-            <form action="{{ route('plans.destroy', $plan->id) }}" method="POST">
+            <dl class="ciop-detail-grid">
+                <div class="ciop-detail-item">
+                    <dt>Nome</dt>
+                    <dd>{{ $plan->name }}</dd>
+                </div>
+                <div class="ciop-detail-item">
+                    <dt>Preço</dt>
+                    <dd>R$ {{ number_format($plan->price, 2, ',', '.') }}</dd>
+                </div>
+                <div class="ciop-detail-item">
+                    <dt>Url</dt>
+                    <dd>{{ $plan->url }}</dd>
+                </div>
+                <div class="ciop-detail-item ciop-detail-wide">
+                    <dt>Descrição</dt>
+                    <dd>{{ $plan->description ?? '—' }}</dd>
+                </div>
+            </dl>
+        </div>
+        <div class="card-footer ciop-detail-footer">
+            <a href="{{ route('plans.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <div class="ciop-detail-footer-spacer"></div>
+            <form action="{{ route('plans.destroy', $plan->id) }}" method="POST" class="d-inline"
+                onsubmit="return confirm('Excluir este plano?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-danger">
-                    <i class="far fa-trash-alt"></i>
-                    <span class=m-4>Excluir</span>
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="far fa-trash-alt"></i> Excluir
                 </button>
             </form>
         </div>
-        <!--card-body-->
     </div>
-    <!--card-->
 @endsection

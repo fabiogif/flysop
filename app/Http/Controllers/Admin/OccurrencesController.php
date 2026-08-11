@@ -7,8 +7,10 @@ use App\Http\Requests\StoreUpdateOccurrences;
 use App\Models\DriverPosition;
 use App\Models\Occurrences;
 use App\Services\OccurrenceService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 
@@ -57,7 +59,23 @@ class OccurrencesController extends Controller
         $occurrence = $this->occurrenceService->findOrFail($id);
         $this->authorize('view', $occurrence);
 
-        $occurrence->load(['imagens', 'priority', 'statusHistory.fromStatus', 'statusHistory.toStatus', 'statusHistory.changedBy', 'activities.causer']);
+        // Log de acesso a dados sensíveis (LGPD, Fase 6) — log separado ('lgpd_access') do
+        // de auditoria de campos alterados, para não misturar "quem viu" com "quem editou".
+        activity('lgpd_access')->causedBy(auth()->user())->performedOn($occurrence)->log('Visualizou dados da ocorrência.');
+
+        $occurrence->load([
+            'imagens.uploadedBy',
+            'priority',
+            'statusOccurence',
+            'typeOccurrence',
+            'issuing',
+            'driver',
+            'statusHistory.fromStatus',
+            'statusHistory.toStatus',
+            'statusHistory.changedBy',
+            'activities.causer',
+            'possibleDuplicateOf',
+        ]);
         $formData = $this->occurrenceService->getFormData();
 
         return view('admin.pages.occurrences.show', [
@@ -123,6 +141,49 @@ class OccurrencesController extends Controller
             'occurrences' => $occurrences,
             'filters' => $filters,
         ]);
+    }
+
+    /**
+     * Ficha da ocorrência em PDF (Fase 6) — síncrono: é um único registro, gerar via fila
+     * seria complexidade desnecessária (ver App\Jobs\GenerateReportJob para os relatórios
+     * em lote, esses sim assíncronos).
+     */
+    public function pdf(int $id): Response
+    {
+        $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('view', $occurrence);
+
+        $occurrence->load(['statusOccurence', 'typeOccurrence', 'priority', 'driver', 'statusHistory.fromStatus', 'statusHistory.toStatus', 'statusHistory.changedBy']);
+
+        $pdf = Pdf::loadView('pdf.occurrence', ['occurrence' => $occurrence]);
+
+        return $pdf->download('ficha-' . ($occurrence->protocol ?? $occurrence->id) . '.pdf');
+    }
+
+    /**
+     * Confirma que não é duplicata (Fase 6) — só limpa a sugestão automática.
+     */
+    public function dismissDuplicate(int $id): RedirectResponse
+    {
+        $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('update', $occurrence);
+
+        $this->occurrenceService->dismissDuplicateFlag($id);
+
+        return redirect()->route('occurrences.show', $id)->with('messageSuccess', 'Marcada como não duplicata.');
+    }
+
+    /**
+     * Direito ao esquecimento (LGPD, Fase 6) — irreversível.
+     */
+    public function forget(int $id): RedirectResponse
+    {
+        $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('forget', $occurrence);
+
+        $this->occurrenceService->forgetPersonalData($id);
+
+        return redirect()->route('occurrences.show', $id)->with('messageSuccess', 'Dados pessoais removidos.');
     }
 
     /**

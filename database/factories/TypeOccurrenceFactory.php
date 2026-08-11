@@ -9,16 +9,10 @@ class TypeOccurrenceFactory extends Factory
 {
     protected $model = TypeOccurrence::class;
 
-    /**
-     * Define the model's default state.
-     *
-     * @return array
-     */
-    public function definition()
+    public function definition(): array
     {
         return [
-            'name' => "Alagamento",
-            'created_at' => now(),
+            'name' => $this->faker->unique()->words(2, true),
         ];
     }
 }

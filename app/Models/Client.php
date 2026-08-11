@@ -21,7 +21,8 @@ class Client extends Authenticatable
         'name',
         'email',
         'password',
-        'tenant_id'
+        'tenant_id',
+        'uuid',
     ];
     public function orders()
     {

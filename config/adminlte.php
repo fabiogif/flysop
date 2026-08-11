@@ -46,8 +46,8 @@ return [
      */
 
     'logo' => '<b>CIOP</b>',
-    'logo_img' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
-    'logo_img_class' => 'brand-image img-circle elevation-3',
+    'logo_img' => 'images/ciop-mark.svg',
+    'logo_img_class' => 'brand-image ciop-brand-mark',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
     'logo_img_alt' => 'CIOP - Central Inteligente de Ocorrências Públicas',
@@ -85,8 +85,8 @@ return [
 
     'layout_topnav' => null,
     'layout_boxed' => null,
-    'layout_fixed_sidebar' => null,
-    'layout_fixed_navbar' => null,
+    'layout_fixed_sidebar' => true,
+    'layout_fixed_navbar' => true,
     'layout_fixed_footer' => null,
 
     /*
@@ -101,12 +101,12 @@ return [
      |
      */
 
-    'classes_auth_card' => 'card-outline card-primary',
+    'classes_auth_card' => 'ciop-auth-card-inner',
     'classes_auth_header' => '',
     'classes_auth_body' => '',
     'classes_auth_footer' => '',
     'classes_auth_icon' => '',
-    'classes_auth_btn' => 'btn-flat btn-primary',
+    'classes_auth_btn' => 'ciop-btn-login',
 
     /*
      |--------------------------------------------------------------------------
@@ -120,15 +120,15 @@ return [
      |
      */
 
-    'classes_body' => '',
+    'classes_body' => 'ciop-panel',
     'classes_brand' => '',
     'classes_brand_text' => '',
     'classes_content_wrapper' => '',
     'classes_content_header' => '',
     'classes_content' => '',
-    'classes_sidebar' => 'sidebar-dark-primary elevation-4',
+    'classes_sidebar' => 'sidebar-dark-primary elevation-2 ciop-sidebar',
     'classes_sidebar_nav' => '',
-    'classes_topnav' => 'navbar-white navbar-light',
+    'classes_topnav' => 'navbar-white navbar-light ciop-topnav',
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
 
@@ -224,6 +224,7 @@ return [
      */
 
     'menu' => [
+        // Principal
         [
             'text' => 'Painel de Controle',
             'url' => 'admin/',
@@ -240,10 +241,121 @@ return [
             'icon' => 'fas fa-search',
         ],
         [
+            'text' => 'Relatórios',
+            'url' => 'admin/reports',
+            'icon' => 'fas fa-file-export',
+        ],
+
+        // Operação de ocorrências
+        ['header' => 'OCORRÊNCIAS'],
+        [
+            'text' => 'Ocorrências',
+            'url' => 'admin/occurrences',
+            'icon' => 'fas fa-clipboard-list',
+            'can' => 'occurrences',
+        ],
+        [
+            'text' => 'Parâmetros',
+            'icon' => 'fas fa-sliders-h',
+            'can' => ['statusOccurrences', 'typeOccurrences', 'priorities', 'issuings'],
+            'submenu' => [
+                [
+                    'text' => 'Status',
+                    'url' => 'admin/statusOccurrences',
+                    'icon' => 'fas fa-flag',
+                    'can' => 'statusOccurrences',
+                ],
+                [
+                    'text' => 'Tipos',
+                    'url' => 'admin/typeOccurrences',
+                    'icon' => 'fas fa-tags',
+                    'can' => 'typeOccurrences',
+                ],
+                [
+                    'text' => 'Prioridades',
+                    'url' => 'admin/priorities',
+                    'icon' => 'fas fa-exclamation-circle',
+                    'can' => 'priorities',
+                ],
+                [
+                    'text' => 'Órgãos',
+                    'url' => 'admin/issuings',
+                    'icon' => 'fas fa-landmark',
+                    'can' => 'issuings',
+                ],
+            ],
+        ],
+
+        // Pessoas e estrutura operacional
+        ['header' => 'EQUIPES'],
+        [
+            'text' => 'Motoristas',
+            'url' => 'admin/drivers',
+            'icon' => 'fas fa-truck',
+            'can' => 'drivers',
+        ],
+        [
+            'text' => 'Departamentos',
+            'url' => 'admin/departments',
+            'icon' => 'fas fa-sitemap',
+            'can' => 'departments',
+        ],
+        [
+            'text' => 'Equipes',
+            'url' => 'admin/teams',
+            'icon' => 'fas fa-people-group',
+            'can' => 'teams',
+        ],
+
+        // Contas e autorização
+        ['header' => 'ACESSO'],
+        [
+            'text' => 'Usuários',
+            'url' => 'admin/users',
+            'icon' => 'fas fa-users',
+            'can' => 'users',
+        ],
+        [
+            'text' => 'Perfis',
+            'url' => 'admin/profiles',
+            'icon' => 'fas fa-address-book',
+            'can' => 'profiles',
+        ],
+        [
+            'text' => 'Cargos',
+            'url' => 'admin/roles',
+            'icon' => 'fas fa-address-card',
+            'can' => 'roles',
+        ],
+        [
+            'text' => 'Permissões',
+            'url' => 'admin/permission',
+            'icon' => 'fas fa-lock',
+            'can' => 'permissions',
+        ],
+        [
+            'text' => 'Auditoria',
+            'url' => 'admin/audit',
+            'icon' => 'fas fa-history',
+            'can' => 'audit',
+        ],
+
+        // Engajamento
+        ['header' => 'ENGAJAMENTO'],
+        [
+            'text' => 'Pesquisas',
+            'url' => 'admin/surveys',
+            'icon' => 'fas fa-poll',
+            'can' => 'surveys',
+        ],
+
+        // Configuração do tenant / SaaS
+        ['header' => 'SISTEMA'],
+        [
             'text' => 'Empresas',
             'url' => 'admin/tenants',
             'icon' => 'fas fa-building',
-            'can' => 'tenants'
+            'can' => 'tenants',
         ],
         /*[
          'text' => 'Planos',
@@ -252,102 +364,26 @@ return [
          'can'  => 'plans'
          ],*/
         [
-            'text' => 'Perfis',
-            'url' => 'admin/profiles',
-            'icon' => 'fas fa-address-book',
-            'can' => 'profiles'
-        ],
-        [
-            'text' => 'Cargos',
-            'url' => 'admin/roles',
-            'icon' => 'fas fa-address-card',
-            'can' => 'roles'
-        ],
-        [
-            'text' => 'Permissões',
-            'url' => 'admin/permission',
-            'icon' => 'fas fa-lock',
-            'can' => 'permissions'
-        ],
-        [
-            'text' => 'Usuários',
-            'url' => 'admin/users',
-            'icon' => 'fas fa-users',
-            'can' => 'users'
-        ],
-        [
             'text' => 'Organização',
             'url' => 'admin/settings/organisation',
             'icon' => 'fas fa-cog',
-            'can' => 'settings'
+            'can' => 'settings',
         ],
-        [
-            'text' => 'Auditoria',
-            'url' => 'admin/audit',
-            'icon' => 'fas fa-clipboard-list',
-            'can' => 'audit'
-        ],
-        [
-            'text' => 'Status de Ocorrências',
-            'url' => 'admin/statusOccurrences',
-            'icon' => 'fas fa-layer-group',
-            'can' => 'statusOccurrences'
-        ],
-        [
-            'text' => 'Tipo de Ocorrências',
-            'url' => 'admin/typeOccurrences',
-            'icon' => 'fas fa-layer-group',
-            'can' => 'typeOccurrences'
-        ],
-        [
-            'text' => 'Prioridades',
-            'url' => 'admin/priorities',
-            'icon' => 'fas fa-exclamation-circle',
-            'can' => 'priorities'
-        ],
-        [
-            'text' => 'Orgãos',
-            'url' => 'admin/issuings',
-            'icon' => 'fas fa-layer-group',
-            'can' => 'issuings'
-        ],
-        [
-            'text' => 'Ocorrências',
-            'url' => 'admin/occurrences',
-            'icon' => 'fas fa-tablet',
-            'can' => 'occurrences'
-        ],
-        [
-            'text' => 'Motoristas',
-            'url' => 'admin/drivers',
-            'icon' => 'fas fa-truck',
-            'can' => 'drivers'
-        ],
-        [
-            'text' => 'Departamentos',
-            'url' => 'admin/departments',
-            'icon' => 'fas fa-building',
-            'can' => 'departments'
-        ],
-        [
-            'text' => 'Equipes',
-            'url' => 'admin/teams',
-            'icon' => 'fas fa-people-group',
-            'can' => 'teams'
-        ],
+
+        // Visão do motorista (mesmo sidebar AdminLTE)
+        ['header' => 'ÁREA DO MOTORISTA'],
         [
             'text' => 'Painel Motorista',
             'url' => 'driver/dashboard',
             'icon' => 'fas fa-id-card',
-            'can' => 'driver.panel'
+            'can' => 'driver.panel',
         ],
         [
             'text' => 'Minhas Ocorrências',
             'url' => 'driver/occurrences',
             'icon' => 'fas fa-list',
-            'can' => 'driver.panel'
+            'can' => 'driver.panel',
         ],
-
     ],
 
     /*

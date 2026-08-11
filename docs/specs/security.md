@@ -33,6 +33,14 @@ Os endpoints abaixo não tinham middleware de autenticação; validado com o tim
 
 Toda rota de API nova deve ter `auth:sanctum` a menos que exista uma razão documentada para ser pública (ex.: `/sanctum/token`, `/client`, `/clientConsumer`, `POST /occurrences` de cadastro público).
 
+## LGPD (Fase 6 do plano de execução)
+
+- Consentimento explícito: `App\Http\Requests\Api\StoreUpdateOccurrences` (formulário público, sem login) exige `lgpd_consent` (`required|accepted`). O request do admin (`App\Http\Requests\StoreUpdateOccurrences`) não exige — quem preenche é o atendente, não o titular dos dados
+- Log de acesso: `Admin\OccurrencesController::show()` grava em `activity('lgpd_access')` — log nomeado separado do log `default` de auditoria de campo (`spatie/laravel-activitylog`), para não misturar "quem viu" com "quem editou"
+- Direito ao esquecimento: `OccurrenceService::forgetPersonalData()`, ability `forget` do `OccurrencePolicy` (só Supervisor/Administrador), rota `DELETE /admin/occurrences/{id}/forget` — anonimiza nome/CPF/RG/e-mail/telefone com `disableLogging()`/`enableLogging()` ao redor do update, para o dado não ficar gravado no diff do audit log antes de ser apagado
+- Retenção/anonimização em lote: `App\Console\Commands\AnonymizeOldOccurrencesCommand` (`occurrences:anonymize-old --days=730`), agendado mensalmente em `app/Console/Kernel.php` — só atinge ocorrências com status terminal
+- PDF (`barryvdh/laravel-dompdf`) tem `enable_remote=false` em `config/dompdf.php` — a descrição da ocorrência é conteúdo enviado pelo cidadão, então renderizar URLs remotas no PDF seria um vetor de SSRF
+
 ## Validação e input
 
 - Validar via `FormRequest` (padrão) ou `validate()` inline (aceitável em endpoints pequenos como `DriverLocationController`)

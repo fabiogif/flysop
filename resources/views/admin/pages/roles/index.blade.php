@@ -2,65 +2,61 @@
 @section('title', 'Cargos')
 
 @section('content_header')
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ route('roles.index') }}">Painel de Controle</a> </li>
-        <li class="breadcrumb-item active"><a href="{{ route('roles.index') }}">Cargos</a> </li>
-    </ol>
-
-    <h1 class="m-0 text-dark">Cargos
-        <a href="{{ route('roles.create') }}" class="btn btn-primary mr-5">
-            <i class="fas fa-save"></i>
-            <span class=m-4>Adicionar</span>
-        </a>
-    </h1>
+    @include('admin.includes.page-header', [
+        'title' => 'Cargos',
+        'breadcrumbs' => [
+            ['label' => 'Painel de Controle', 'url' => route('admin.index')],
+            ['label' => 'Cargos'],
+        ],
+        'actionsHtml' => '<a href="'.route('roles.create').'" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Adicionar</a>',
+    ])
 @stop
 
 @section('content')
     <div class="card">
         @include('admin.includes.alerts')
 
-        <div class="card-header">
-            <form action="{{ route('roles.search') }}" method="POST" class="form form-inline">
-                @csrf
-                <div class="form-group">
-                    <input type="text" class="form-control mr-2" name="filter" placeholder="Nome"
-                        value="{{ $filters['filter'] ?? '' }}">
-                    <button type="submit" class="btn btn-info">
-                        <i class="fas fa-search"></i>
-                        <span class=m-4>Pesquisar</span>
-                    </button>
-                </div>
-            </form>
-        </div>
+        @include('admin.includes.search-toolbar', [
+            'action' => route('roles.search'),
+            'placeholder' => 'Nome',
+            'filters' => $filters ?? [],
+        ])
 
-
-        <div class="card-body">
-            <table class="table table-condensed">
-                <thead>
-                    <tr>
-                        <th>Nome</th>
-                        <th width="250px">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($roles as $role)
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover ciop-table mb-0">
+                    <thead>
                         <tr>
-                            <td>{{ $role->name }}</td>
-                            <td style="width: 10px">
-                                <a href="{{ route('roles.edit', $role->id) }}" title="Alterar" alt="Alterar"
-                                    class="btn btn-warning"><i class="fas fa-edit"></i></a>
-                                <a href="{{ route('roles.show', $role->id) }}" title="Visualizar" alt="Visualizar"
-                                    class="btn btn-info"><i class="fas fa-search"></i></a>
-                                <a href="{{ route('roles.permissions', $role->id) }}" title="Permissões" alt="Permissões"
-                                    class="btn btn-warning">
-                                    <i class="fas fa-lock"></i>
-                                </a>
-
-                            </td>
+                            <th>Nome</th>
+                            <th>Ações</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @forelse ($roles as $role)
+                            <tr>
+                                <td>{{ $role->name }}</td>
+                                <td>
+                                    <div class="ciop-actions">
+                                        <a href="{{ route('roles.show', $role->id) }}" class="btn btn-outline-info btn-sm" title="Ver">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ route('roles.edit', $role->id) }}" class="btn btn-outline-warning btn-sm" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ route('roles.permissions', $role->id) }}" class="btn btn-outline-secondary btn-sm" title="Permissões">
+                                            <i class="fas fa-lock"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="2" class="ciop-empty">Nenhum registro encontrado.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
         <div class="card-footer">
             @if (isset($filters))
@@ -70,4 +66,4 @@
             @endif
         </div>
     </div>
-@stop
+@endsection

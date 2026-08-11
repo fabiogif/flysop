@@ -27,6 +27,33 @@
         </div>
     </section>
 
+    {{-- Paralaxe: obras públicas --}}
+    <section id="obras" class="ciop-parallax ciop-parallax-obras" data-parallax aria-labelledby="obras-title">
+        <div class="ciop-parallax-media" aria-hidden="true">
+            <div
+                class="ciop-parallax-layer"
+                data-parallax-layer
+                data-speed="0.35"
+                style="background-image: url('{{ asset('images/landing/obras-1.jpg') }}')"
+            ></div>
+            <div
+                class="ciop-parallax-layer ciop-parallax-layer-soft"
+                data-parallax-layer
+                data-speed="0.18"
+                style="background-image: url('{{ asset('images/landing/obras-2.jpg') }}')"
+            ></div>
+            <div class="ciop-parallax-veil"></div>
+        </div>
+        <div class="container ciop-parallax-content reveal">
+            <p class="ciop-parallax-kicker">Operação em campo</p>
+            <h2 id="obras-title">Obras e ocorrências sob controle</h2>
+            <p>
+                Do registro no mapa ao deslocamento das equipes: acompanhe intervenções urbanas
+                com prioridade, protocolo e visão operacional.
+            </p>
+        </div>
+    </section>
+
     {{-- Recursos da aplicação --}}
     <section id="recursos" class="ciop-section" aria-labelledby="recursos-title">
         <div class="container">
@@ -96,6 +123,61 @@
                     <h3>API e canais</h3>
                     <p>Integração por API para consulta e operação conectada a sistemas externos.</p>
                 </article>
+            </div>
+        </div>
+    </section>
+
+    {{-- Paralaxe: geolocalização --}}
+    <section id="mapa" class="ciop-parallax ciop-parallax-geo" data-parallax aria-labelledby="mapa-title">
+        <div class="ciop-parallax-media" aria-hidden="true">
+            <div
+                class="ciop-parallax-layer"
+                data-parallax-layer
+                data-speed="0.32"
+                style="background-image: url('{{ asset('images/landing/geo-1.jpg') }}')"
+            ></div>
+            <div
+                class="ciop-parallax-layer ciop-parallax-layer-soft"
+                data-parallax-layer
+                data-speed="0.16"
+                style="background-image: url('{{ asset('images/landing/geo-2.jpg') }}')"
+            ></div>
+            <div class="ciop-parallax-veil ciop-parallax-veil-geo"></div>
+        </div>
+        <div class="container ciop-parallax-content reveal">
+            <p class="ciop-parallax-kicker">Geolocalização</p>
+            <h2 id="mapa-title">Mapa operacional em tempo real</h2>
+            <p>
+                Localize ocorrências, acompanhe agentes em deslocamento e oriente o atendimento
+                com coordenadas e visão espacial das cidades da Bahia.
+            </p>
+        </div>
+    </section>
+
+    {{-- Galeria visual obras + geo --}}
+    <section id="cenas" class="ciop-section ciop-scenes" aria-labelledby="cenas-title">
+        <div class="container">
+            <header class="ciop-section-head reveal">
+                <h2 id="cenas-title">Campo e mapa</h2>
+                <p>Imagens da operação urbana e das cidades baianas que sustentam a central.</p>
+            </header>
+            <div class="ciop-scene-grid">
+                <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.08">
+                    <img src="{{ asset('images/landing/obras-1.jpg') }}" alt="Equipe em obra urbana com equipamentos" width="960" height="640" loading="lazy">
+                    <figcaption>Obras e intervenções em via pública</figcaption>
+                </figure>
+                <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.12">
+                    <img src="{{ asset('images/landing/geo-1.jpg') }}" alt="Elevador Lacerda em Salvador, Bahia" width="960" height="640" loading="lazy">
+                    <figcaption>Salvador — Elevador Lacerda</figcaption>
+                </figure>
+                <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.1">
+                    <img src="{{ asset('images/landing/obras-2.jpg') }}" alt="Canteiro de obras com estruturas e trabalhadores" width="960" height="640" loading="lazy">
+                    <figcaption>Acompanhamento de equipes em campo</figcaption>
+                </figure>
+                <figure class="ciop-scene reveal" data-parallax-scene data-speed="0.14">
+                    <img src="{{ asset('images/landing/geo-2.jpg') }}" alt="Farol da Barra em Salvador, Bahia" width="960" height="640" loading="lazy">
+                    <figcaption>Salvador — Farol da Barra</figcaption>
+                </figure>
             </div>
         </div>
     </section>

@@ -1,34 +1,48 @@
 @extends('adminlte::page')
 
-@section('title', "Detalhes Mesa { $table->identify }")
+@section('title', 'Detalhes da Mesa')
 
 @section('content_header')
-    <h1 class="m-0 text-dark">Detalhes Mesa <b>{{ $table->identify }}</b></h1>
+    @include('admin.includes.page-header', [
+        'title' => $table->identify,
+        'breadcrumbs' => [
+            ['label' => 'Painel de Controle', 'url' => route('admin.index')],
+            ['label' => 'Mesas', 'url' => route('tables.index')],
+            ['label' => $table->identify],
+        ],
+        'actionsHtml' => '<a href="'.route('tables.edit', $table->id).'" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Editar</a>',
+    ])
 @stop
 
 @section('content')
+    @include('admin.includes.alerts')
+
     <div class="card">
         <div class="card-body">
-            @csrf
-            <div class="row">
-                <ul>
-                    <li><b>Indentificador:</b> {{ $table->identify }}</li>
-                    <li><b>Descrição:</b> {{ $table->description }}</li>
-                </ul>
-            </div>
-            <!--row-->
-            @include('admin.includes.alerts')
-
-            <form action="{{ route('tables.destroy', $table->id) }}" method="POST">
+            <dl class="ciop-detail-grid">
+                <div class="ciop-detail-item">
+                    <dt>Identificador</dt>
+                    <dd>{{ $table->identify }}</dd>
+                </div>
+                <div class="ciop-detail-item ciop-detail-wide">
+                    <dt>Descrição</dt>
+                    <dd>{{ $table->description ?? '—' }}</dd>
+                </div>
+            </dl>
+        </div>
+        <div class="card-footer ciop-detail-footer">
+            <a href="{{ route('tables.index') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+            <div class="ciop-detail-footer-spacer"></div>
+            <form action="{{ route('tables.destroy', $table->id) }}" method="POST" class="d-inline"
+                onsubmit="return confirm('Excluir esta mesa?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="btn btn-danger">
-                    <i class="far fa-trash-alt"></i>
-                    <span class=m-4>Excluir</span>
+                <button type="submit" class="btn btn-outline-danger btn-sm">
+                    <i class="far fa-trash-alt"></i> Excluir
                 </button>
             </form>
         </div>
-        <!--card-body-->
     </div>
-    <!--card-->
 @endsection
