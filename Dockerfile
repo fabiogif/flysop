@@ -26,6 +26,19 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# Producao serve via "php artisan serve" (SAPI cli) — o opcache do PHP vem habilitado
+# por padrao na imagem so para a SAPI web (opcache.enable_cli=Off), entao toda request
+# recompilava o framework inteiro do zero a cada acesso (achado ao investigar tempo de
+# resposta de ~2.5s mesmo com a maquina ja "quente"). memory_consumption reduzido de
+# 128 (padrao) para 64MB porque a maquina de producao tem so 256MB de RAM no total.
+RUN { \
+        echo 'opcache.enable=1'; \
+        echo 'opcache.enable_cli=1'; \
+        echo 'opcache.memory_consumption=64'; \
+        echo 'opcache.max_accelerated_files=10000'; \
+        echo 'opcache.validate_timestamps=0'; \
+    } > /usr/local/etc/php/conf.d/zz-opcache-cli.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app

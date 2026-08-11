@@ -74,7 +74,11 @@ return [
             'schema' => 'public',
             // Supabase: para não expor tabelas via Data API, crie o schema "laravel" no Table Editor e use 'search_path' => 'laravel'
             'search_path' => 'public',
-            'sslmode' => 'prefer',
+            // 'prefer' tenta negociar SSL antes de cair para texto plano — overhead
+            // desnecessário quando DB_HOST é loopback (127.0.0.1, caso de produção no
+            // Fly.io, que conecta via um pooler local). Configurável via env para não
+            // enfraquecer conexões que realmente saem da máquina.
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
         'sqlsrv' => [
             'driver' => 'sqlsrv',
