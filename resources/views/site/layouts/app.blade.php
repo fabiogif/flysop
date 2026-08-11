@@ -6,10 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="CIOP — Central Inteligente de Ocorrências Públicas. Protocolo, mapa, despacho, GPS do agente e acompanhamento operacional em tempo real.">
     <title>@yield('title', 'CIOP — Central Inteligente de Ocorrências Públicas')</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/ciop-mark.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('css/site-theme.css') }}?v=10">
+    <link rel="stylesheet" href="{{ asset('css/site-theme.css') }}?v=11">
     @stack('styles')
 </head>
 <body class="ciop-body">
@@ -19,6 +20,7 @@
         <nav class="navbar navbar-expand-lg ciop-nav" aria-label="Navegação principal">
             <div class="container ciop-nav-inner">
                 <a class="ciop-brand" href="{{ url('/') }}">
+                    <img src="{{ asset('images/ciop-mark.svg') }}" alt="" width="32" height="32" class="ciop-brand-logo">
                     <span class="ciop-brand-mark">CIOP</span>
                 </a>
                 <button class="navbar-toggler ciop-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"

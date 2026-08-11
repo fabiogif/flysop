@@ -140,8 +140,18 @@ img {
 }
 
 .ciop-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   text-decoration: none;
   color: #fff;
+}
+
+.ciop-brand-logo {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: block;
 }
 
 .ciop-brand-mark {
