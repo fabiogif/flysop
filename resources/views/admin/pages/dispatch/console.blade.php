@@ -121,7 +121,6 @@
 
     var recentUrl = '{{ route("admin.dashboard.occurrences-recent") }}';
     var csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '';
-    var API_KEY = @json(config('services.google.maps_key') ?: env('GOOGLE_MAPS_API_KEY', ''));
     var criticalPriorityId = '';
     (function pickCriticalPriority() {
         var best = null;
@@ -143,8 +142,8 @@
     var dispatchOverlay = { markers: [], lines: [] };
 
     function clearDispatchOverlay() {
-        dispatchOverlay.markers.forEach(function (m) { m.setMap(null); });
-        dispatchOverlay.lines.forEach(function (l) { l.setMap(null); });
+        dispatchOverlay.markers.forEach(function (m) { map.removeLayer(m); });
+        dispatchOverlay.lines.forEach(function (l) { map.removeLayer(l); });
         dispatchOverlay = { markers: [], lines: [] };
     }
 
@@ -153,11 +152,11 @@
             '<circle cx="11" cy="11" r="9" fill="#28a745" stroke="#fff" stroke-width="2"/>' +
             '<path d="M6 11l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
             '</svg>';
-        return {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-            scaledSize: new google.maps.Size(22, 22),
-            anchor: new google.maps.Point(11, 11)
-        };
+        return L.icon({
+            iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+            iconSize: [22, 22],
+            iconAnchor: [11, 11]
+        });
     }
 
     function currentFilters() {
@@ -221,31 +220,16 @@
     }
 
     // ---- Mapa ----
-    function loadMapScript(callback) {
-        if (window.google && window.google.maps) { window[callback](); return; }
-        if (!API_KEY || API_KEY.length < 10) {
-            var loadingEl = document.getElementById('dispatch-map-loading');
-            if (loadingEl) loadingEl.innerHTML = '<p class="text-warning mb-0">Chave do Google Maps não configurada. Defina GOOGLE_MAPS_API_KEY no .env.</p>';
-            return;
-        }
-        var s = document.createElement('script');
-        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(API_KEY) + '&callback=' + encodeURIComponent(callback);
-        s.async = true;
-        s.defer = true;
-        document.head.appendChild(s);
-    }
-
     window.initDispatchMap = function () {
         var mapEl = document.getElementById('dispatch-map');
         var loadingEl = document.getElementById('dispatch-map-loading');
-        if (!mapEl) return;
+        if (!mapEl || !window.L) return;
 
-        map = new google.maps.Map(mapEl, {
-            center: { lat: -12.95307, lng: -38.49706 },
-            zoom: 11,
-            fullscreenControl: true,
-            streetViewControl: false
-        });
+        map = L.map(mapEl, { zoomControl: true }).setView([-12.95307, -38.49706], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+        }).addTo(map);
 
         // Mesmo pino SVG (cor por prioridade, letra por tipo) usado no dashboard —
         // reimplementado aqui porque este é um bundle de página separado (padrão já
@@ -258,52 +242,49 @@
                 '<circle cx="14" cy="14" r="9" fill="#fff"/>' +
                 '<text x="14" y="18.5" font-size="11" text-anchor="middle" fill="' + fill + '" font-family="Arial,Helvetica,sans-serif" font-weight="700">' + letter + '</text>' +
                 '</svg>';
-            return {
-                url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-                scaledSize: new google.maps.Size(28, 38),
-                anchor: new google.maps.Point(14, 38)
-            };
+            return L.icon({
+                iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                iconSize: [28, 38],
+                iconAnchor: [14, 38],
+                popupAnchor: [0, -34]
+            });
         };
 
         function focusMarker(id) {
             var m = markersById[id];
             if (!m) return;
-            map.panTo(m.getPosition());
+            map.panTo(m.getLatLng());
             if (map.getZoom() < 15) map.setZoom(15);
-            if (m.__infowindow) m.__infowindow.open(map, m);
+            m.openPopup();
         }
         window.dispatchFocusMarker = focusMarker;
 
         window.dispatchUpdateMap = function (items) {
-            Object.keys(markersById).forEach(function (id) { markersById[id].setMap(null); });
+            Object.keys(markersById).forEach(function (id) { map.removeLayer(markersById[id]); });
             markersById = {};
-            var bounds = null;
+            var latlngs = [];
             (items || []).forEach(function (o) {
                 var lat = o.latitude != null ? parseFloat(o.latitude) : NaN;
                 var lng = o.longitude != null ? parseFloat(o.longitude) : NaN;
                 if (isNaN(lat) || isNaN(lng)) return;
-                var pos = { lat: lat, lng: lng };
-                var marker = new google.maps.Marker({
-                    map: map,
-                    position: pos,
+                var marker = L.marker([lat, lng], {
                     title: o.title || o.name || 'Ocorrência #' + o.id,
                     icon: occurrenceMarkerIconFn(o.priority_color, o.type)
-                });
-                var content = '<div class="p-2" style="min-width: 180px;">' +
+                }).addTo(map);
+                var content = '<div style="min-width: 180px;">' +
                     '<strong>' + (o.title || o.name || 'Ocorrência #' + o.id) + '</strong>' +
                     '<p class="mb-1 small">' + (o.status || '—') + (o.type ? ' · ' + o.type : '') + '</p>' +
                     (o.address ? '<p class="mb-1 small text-muted">' + o.address + '</p>' : '') +
                     '<a href="/admin/occurrences/' + o.id + '" class="small">Ver detalhes</a></div>';
-                var infowindow = new google.maps.InfoWindow({ content: content });
-                marker.__infowindow = infowindow;
-                marker.addListener('click', function () { infowindow.open(map, marker); selectItem(o.id); });
+                marker.bindPopup(content);
+                marker.on('click', function () { selectItem(o.id); });
                 markersById[o.id] = marker;
-                if (!bounds) bounds = new google.maps.LatLngBounds();
-                bounds.extend(pos);
+                latlngs.push([lat, lng]);
             });
-            if (bounds) map.fitBounds(bounds, 60);
+            if (latlngs.length) map.fitBounds(L.latLngBounds(latlngs), { padding: [60, 60], maxZoom: 16 });
             mapEl.style.display = 'block';
             if (loadingEl) loadingEl.style.display = 'none';
+            setTimeout(function () { map.invalidateSize(); }, 0);
         };
 
         // Tempo real: mesmo canal/evento do dashboard, mesma lógica de patch incremental.
@@ -312,14 +293,13 @@
                 var lat = o.latitude != null ? parseFloat(o.latitude) : NaN;
                 var lng = o.longitude != null ? parseFloat(o.longitude) : NaN;
                 if (!isNaN(lat) && !isNaN(lng)) {
-                    var pos = { lat: lat, lng: lng };
                     var existing = markersById[o.id];
                     if (existing) {
-                        existing.setPosition(pos);
+                        existing.setLatLng([lat, lng]);
                         existing.setIcon(occurrenceMarkerIconFn(o.priority_color, o.type));
                     } else {
-                        var marker = new google.maps.Marker({ map: map, position: pos, title: o.title || 'Ocorrência #' + o.id, icon: occurrenceMarkerIconFn(o.priority_color, o.type) });
-                        marker.addListener('click', function () { selectItem(o.id); });
+                        var marker = L.marker([lat, lng], { title: o.title || 'Ocorrência #' + o.id, icon: occurrenceMarkerIconFn(o.priority_color, o.type) }).addTo(map);
+                        marker.on('click', function () { selectItem(o.id); });
                         markersById[o.id] = marker;
                     }
                 }
@@ -343,24 +323,18 @@
     // ---- Despacho visual (sugestão + atribuição) ----
     function drawDispatchCandidates(occurrence, drivers) {
         clearDispatchOverlay();
-        var occPos = { lat: parseFloat(occurrence.latitude), lng: parseFloat(occurrence.longitude) };
+        var occPos = [parseFloat(occurrence.latitude), parseFloat(occurrence.longitude)];
+        var bounds = [occPos];
         drivers.forEach(function (d) {
             if (d.latitude == null || d.longitude == null) return;
-            var pos = { lat: parseFloat(d.latitude), lng: parseFloat(d.longitude) };
-            var marker = new google.maps.Marker({ map: map, position: pos, title: d.name + ' — ' + d.distance_km + ' km', icon: candidateMarkerIcon() });
-            var line = new google.maps.Polyline({
-                map: map,
-                path: [occPos, pos],
-                strokeOpacity: 0,
-                icons: [{ icon: { path: 'M 0,-1 0,1', strokeOpacity: .7, scale: 3 }, offset: '0', repeat: '10px' }]
-            });
+            var pos = [parseFloat(d.latitude), parseFloat(d.longitude)];
+            var marker = L.marker(pos, { title: d.name + ' — ' + d.distance_km + ' km', icon: candidateMarkerIcon() }).addTo(map);
+            var line = L.polyline([occPos, pos], { color: '#28a745', weight: 2, opacity: .7, dashArray: '6 6' }).addTo(map);
             dispatchOverlay.markers.push(marker);
             dispatchOverlay.lines.push(line);
+            bounds.push(pos);
         });
-        var bounds = new google.maps.LatLngBounds();
-        bounds.extend(occPos);
-        drivers.forEach(function (d) { if (d.latitude != null) bounds.extend({ lat: parseFloat(d.latitude), lng: parseFloat(d.longitude) }); });
-        map.fitBounds(bounds, 80);
+        map.fitBounds(L.latLngBounds(bounds), { padding: [80, 80] });
     }
 
     function renderCandidates(occurrenceId, drivers) {
@@ -465,7 +439,7 @@
                 return haversine(lat, lng, parseFloat(a.latitude), parseFloat(a.longitude)) - haversine(lat, lng, parseFloat(b.latitude), parseFloat(b.longitude));
             });
         renderList();
-        if (map) map.setCenter({ lat: lat, lng: lng });
+        if (map) map.setView([lat, lng], map.getZoom());
     }
 
     document.querySelectorAll('.dispatch-chip').forEach(function (chip) {
@@ -505,7 +479,14 @@
         setTimeout(function () { setChipActive(document.querySelector('.dispatch-chip[data-chip="all"]')); fetchRecent(); }, 0);
     });
 
-    loadMapScript('initDispatchMap');
+    // Leaflet já vem bundlado em app.js (window.L, ver resources/js/bootstrap.js) — sem
+    // script externo para carregar. app.js é um <script> comum (sem defer) no fim do
+    // <body>, então esperar o DOMContentLoaded garante que window.L já existe.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', window.initDispatchMap);
+    } else {
+        window.initDispatchMap();
+    }
     setInterval(fetchRecent, 60000);
 })();
 </script>

@@ -24,6 +24,18 @@ window.axios = require('axios');
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 
 /**
+ * Leaflet + plugins (cluster/heat) — substitui o Google Maps JS API (exigia billing
+ * habilitado no Google Cloud, sem alternativa gratuita real). Exposto em window.L para
+ * os scripts inline de cada página (padrão já usado no projeto: JS de mapa por página,
+ * sem módulo compartilhado — ver resources/views/admin/pages/home/index.blade.php etc.).
+ * OpenStreetMap como provedor de tiles (sem chave); Nominatim para geocoding — ambos
+ * gratuitos e sem cartão de crédito, ver docs/specs/modules.md para limites de uso.
+ */
+window.L = require('leaflet');
+require('leaflet.markercluster');
+require('leaflet.heat');
+
+/**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting
  * allows your team to easily build robust real-time web applications.

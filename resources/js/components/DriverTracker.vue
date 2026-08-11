@@ -8,6 +8,21 @@
 </template>
 
 <script>
+import L from 'leaflet';
+
+// Pinos SVG simples (ocorrência = vermelho, motorista = azul) — substitui os ícones
+// estáticos do Google (mapfiles/ms/icons), removidos junto da migração para Leaflet/OSM
+// (Google Maps passou a exigir billing habilitado, sem alternativa gratuita real).
+function dotIcon(color) {
+  const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22">' +
+    '<circle cx="11" cy="11" r="9" fill="' + color + '" stroke="#fff" stroke-width="2"/></svg>';
+  return L.icon({
+    iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+}
+
 export default {
   props: {
     occurrenceId: {
@@ -62,35 +77,19 @@ export default {
   },
   methods: {
     initMap() {
-      const occurrencePos = { 
-        lat: parseFloat(this.occurrenceLat), 
-        lng: parseFloat(this.occurrenceLng) 
-      };
+      const occurrencePos = [parseFloat(this.occurrenceLat), parseFloat(this.occurrenceLng)];
 
-      this.map = new google.maps.Map(this.$refs.mapElement, {
-        center: occurrencePos,
-        zoom: 15,
-        mapTypeControl: false,
-        streetViewControl: false
-      });
+      this.map = L.map(this.$refs.mapElement, { zoomControl: true }).setView(occurrencePos, 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+      }).addTo(this.map);
 
       // Marcador da ocorrência (destino)
-      this.occurrenceMarker = new google.maps.Marker({
-        position: occurrencePos,
-        map: this.map,
-        title: 'Local da Ocorrência',
-        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-      });
+      this.occurrenceMarker = L.marker(occurrencePos, { title: 'Local da Ocorrência', icon: dotIcon('#dc3545') }).addTo(this.map);
 
       // Rota (linha)
-      this.polyline = new google.maps.Polyline({
-        path: this.routePoints,
-        geodesic: true,
-        strokeColor: '#0000FF',
-        strokeOpacity: 1.0,
-        strokeWeight: 4,
-        map: this.map
-      });
+      this.polyline = L.polyline([], { color: '#0000FF', weight: 4 }).addTo(this.map);
     },
 
     // Carrega o trajeto já percorrido antes de assinar o canal ao vivo — sem isso a
@@ -107,24 +106,16 @@ export default {
           const route = Array.isArray(data.route) ? data.route : [];
           this.routePoints = route
             .filter((p) => p && p.lat != null && p.lng != null)
-            .map((p) => ({ lat: parseFloat(p.lat), lng: parseFloat(p.lng) }));
+            .map((p) => [parseFloat(p.lat), parseFloat(p.lng)]);
           if (this.routePoints.length) {
-            this.polyline.setPath(this.routePoints);
+            this.polyline.setLatLngs(this.routePoints);
           }
           if (data.last_position) {
-            const pos = { lat: parseFloat(data.last_position.lat), lng: parseFloat(data.last_position.lng) };
+            const pos = [parseFloat(data.last_position.lat), parseFloat(data.last_position.lng)];
             this.lastUpdatedAt = data.last_position.created_at;
             this.driverInfo = data.driver;
-            this.driverMarker = new google.maps.Marker({
-              position: pos,
-              map: this.map,
-              title: data.driver ? data.driver.name : 'Motorista',
-              icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-            });
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend(this.occurrenceMarker.getPosition());
-            bounds.extend(this.driverMarker.getPosition());
-            this.map.fitBounds(bounds);
+            this.driverMarker = L.marker(pos, { title: data.driver ? data.driver.name : 'Motorista', icon: dotIcon('#007bff') }).addTo(this.map);
+            this.map.fitBounds(L.latLngBounds([this.occurrenceMarker.getLatLng(), this.driverMarker.getLatLng()]), { padding: [40, 40] });
           }
         })
         .catch((error) => {
@@ -145,30 +136,22 @@ export default {
     },
 
     updateDriverLocation(data) {
-      const pos = { lat: parseFloat(data.latitude), lng: parseFloat(data.longitude) };
+      const pos = [parseFloat(data.latitude), parseFloat(data.longitude)];
       this.lastUpdatedAt = data.created_at;
       this.driverInfo = data.driver;
 
       // Adiciona ponto na rota
       this.routePoints.push(pos);
-      this.polyline.setPath(this.routePoints);
+      this.polyline.setLatLngs(this.routePoints);
 
       // Atualiza marcador
       if (!this.driverMarker) {
-        this.driverMarker = new google.maps.Marker({
-          position: pos,
-          map: this.map,
-          title: data.driver ? data.driver.name : 'Motorista',
-          icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-        });
-        
+        this.driverMarker = L.marker(pos, { title: data.driver ? data.driver.name : 'Motorista', icon: dotIcon('#007bff') }).addTo(this.map);
+
         // Ajustar zoom para mostrar ambos os marcadores
-        const bounds = new google.maps.LatLngBounds();
-        bounds.extend(this.occurrenceMarker.getPosition());
-        bounds.extend(this.driverMarker.getPosition());
-        this.map.fitBounds(bounds);
+        this.map.fitBounds(L.latLngBounds([this.occurrenceMarker.getLatLng(), this.driverMarker.getLatLng()]), { padding: [40, 40] });
       } else {
-        this.driverMarker.setPosition(pos);
+        this.driverMarker.setLatLng(pos);
       }
     }
   }

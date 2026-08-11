@@ -190,7 +190,7 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <div class="form-group">
+                    <div class="form-group position-relative">
                         <label for="location-input">Endereço <span class="text-danger">*</span></label>
                         <input type="text" name="address" id="location-input"
                             class="form-control {{ $errors->has('address') ? 'is-invalid' : '' }}"
@@ -198,7 +198,9 @@
                             autocomplete="off" required
                             value="{{ old('address', $occurrences->address ?? '') }}">
                         @error('address') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
-                        <small class="form-text text-muted">Autocomplete do Google ou clique/arraste o marcador no mapa.</small>
+                        <small class="form-text text-muted">Busca por endereço (OpenStreetMap) ou clique/arraste o marcador no mapa.</small>
+                        <div id="location-suggestions" class="list-group position-absolute w-100 shadow-sm"
+                            style="z-index: 1000; display: none; max-height: 220px; overflow-y: auto;"></div>
                     </div>
 
                     <div class="row">
@@ -340,7 +342,6 @@
 @php
     $initialLat = isset($occurrences) && $occurrences->latitude ? (float) $occurrences->latitude : -12.95307;
     $initialLng = isset($occurrences) && $occurrences->longitude ? (float) $occurrences->longitude : -38.49706;
-    $mapsKey = config('services.google.maps_key') ?: env('GOOGLE_MAPS_API_KEY', '');
 @endphp
 <script>
 (function() {
@@ -349,43 +350,12 @@
     var LOADING_ID = 'occurrence-map-loading';
     var GEOCODE_STATUS_ID = 'occurrence-map-geocode-status';
     var CENTER = { lat: {{ $initialLat }}, lng: {{ $initialLng }} };
-    var API_KEY = @json($mapsKey);
     var ZOOM = 17;
 
     function getEl(id) { return document.getElementById(id); }
     function getInput(name) {
         var el = getEl(name + '-input');
         return el || getEl(name);
-    }
-
-    function fillFormFromPlace(place) {
-        var locInput = getInput('location');
-        if (!locInput) return;
-        if (place.formatted_address) locInput.value = place.formatted_address;
-        if (!place.address_components) return;
-        var fmt = { street_number: 'short_name', route: 'long_name', locality: 'long_name',
-            sublocality_level_1: 'long_name',
-            administrative_area_level_1: 'short_name', country: 'long_name', postal_code: 'short_name' };
-        function comp(type) {
-            for (var i = 0; i < place.address_components.length; i++) {
-                var c = place.address_components[i];
-                if (c.types.indexOf(type) !== -1) return c[fmt[type]] || '';
-            }
-            return '';
-        }
-        if (!place.formatted_address) {
-            var street = (comp('street_number') + ' ' + comp('route')).trim();
-            locInput.value = street || '';
-        }
-        var localityEl = getInput('locality');
-        var stateEl = getInput('administrative_area_level_1');
-        var zipEl = getInput('postal_code');
-        var sublocalityEl = getInput('sublocality');
-        if (localityEl) localityEl.value = comp('locality');
-        if (stateEl) stateEl.value = comp('administrative_area_level_1');
-        if (zipEl) zipEl.value = comp('postal_code');
-        if (sublocalityEl) sublocalityEl.value = comp('sublocality_level_1');
-        if (getEl('country-input')) getEl('country-input').value = comp('country') || 'Brasil';
     }
 
     function setLatLng(lat, lng) {
@@ -395,124 +365,137 @@
         if (lngEl) lngEl.value = lng;
     }
 
-    function showMapError(msg) {
-        var loadingEl = getEl(LOADING_ID);
-        if (loadingEl) {
-            loadingEl.style.display = 'flex';
-            loadingEl.innerHTML = '<div class="p-3 text-center text-danger"><p class="mb-0">' + (msg || 'Não foi possível carregar o mapa.') + '</p><p class="small mt-2">Verifique a chave da API (GOOGLE_MAPS_API_KEY no .env), ative "Maps JavaScript API" e "Geocoding API" no Google Cloud Console.</p></div>';
-        }
-    }
-    function loadScript(callback) {
-        if (window.google && window.google.maps) { window[callback](); return; }
-        if (!API_KEY || API_KEY.length < 10) {
-            showMapError('Chave da API do Google Maps não configurada. Defina GOOGLE_MAPS_API_KEY no .env');
-            return;
-        }
-        var loadTimeout = setTimeout(function() {
-            if (getEl(LOADING_ID) && getEl(MAP_CONTAINER_ID) && getEl(MAP_CONTAINER_ID).style.display !== 'block') {
-                showMapError('O mapa demorou para carregar. Verifique a chave da API e a conexão.');
-            }
-        }, 12000);
-        var originalCallback = window[callback];
-        window[callback] = function() {
-            clearTimeout(loadTimeout);
-            if (originalCallback) originalCallback();
-        };
-        var s = document.createElement('script');
-        s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(API_KEY) + '&libraries=places&callback=' + encodeURIComponent(callback);
-        s.async = true;
-        s.defer = true;
-        s.onerror = function() {
-            clearTimeout(loadTimeout);
-            showMapError('Não foi possível carregar o script do mapa. Verifique sua conexão.');
-        };
-        document.head.appendChild(s);
+    function showGeocodeStatus(show) {
+        var el = getEl(GEOCODE_STATUS_ID);
+        if (el) el.style.display = show ? 'block' : 'none';
     }
 
-    window.initOccurrenceMapWidget = function initOccurrenceMapWidget() {
+    // Preenche os campos a partir de um resultado do Nominatim (OpenStreetMap) — mesmo
+    // formato usado tanto pela busca (search-as-you-type) quanto pelo reverse geocoding.
+    function fillFormFromNominatim(result) {
+        var addr = result.address || {};
+        var locInput = getInput('location');
+        if (locInput) {
+            var street = [addr.road, addr.house_number].filter(Boolean).join(', ');
+            locInput.value = street || result.display_name || locInput.value;
+        }
+        var localityEl = getInput('locality');
+        var stateEl = getInput('administrative_area_level_1');
+        var zipEl = getInput('postal_code');
+        var sublocalityEl = getInput('sublocality');
+        if (localityEl) localityEl.value = addr.city || addr.town || addr.village || addr.municipality || '';
+        if (stateEl) stateEl.value = addr.state || '';
+        if (zipEl) zipEl.value = addr.postcode || '';
+        if (sublocalityEl) sublocalityEl.value = addr.suburb || addr.neighbourhood || '';
+        if (getEl('country-input')) getEl('country-input').value = addr.country || 'Brasil';
+    }
+
+    // Nominatim (OpenStreetMap) — geocoding gratuito, sem chave/cartão. A política de uso
+    // público pede no máx. ~1 requisição/segundo; o debounce da busca (500ms) e o fato de
+    // reverse geocoding só disparar em clique/arraste (ação humana, não automática) já
+    // respeitam essa faixa. Para volume alto de produção, considerar hospedar uma
+    // instância própria do Nominatim.
+    function reverseGeocode(lat, lng) {
+        showGeocodeStatus(true);
+        fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=' + lat + '&lon=' + lng + '&addressdetails=1')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                showGeocodeStatus(false);
+                if (data && !data.error) fillFormFromNominatim(data);
+            })
+            .catch(function() { showGeocodeStatus(false); });
+    }
+
+    function initOccurrenceMapWidget() {
         try {
             var mapEl = getEl(MAP_CONTAINER_ID);
             var loadingEl = getEl(LOADING_ID);
-            if (!mapEl) return;
+            if (!mapEl || !window.L) return;
 
-            var map = new google.maps.Map(mapEl, {
-                center: CENTER,
-                zoom: ZOOM,
-                mapTypeControl: false,
-                fullscreenControl: true,
-                streetViewControl: true,
-                zoomControl: true
-            });
+            var map = L.map(mapEl, { zoomControl: true }).setView([CENTER.lat, CENTER.lng], ZOOM);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+            }).addTo(map);
 
-            var marker = new google.maps.Marker({
-                map: map,
-                position: CENTER,
-                draggable: true,
-                title: 'Arraste para ajustar'
-            });
+            var marker = L.marker([CENTER.lat, CENTER.lng], { draggable: true }).addTo(map);
 
             var hasExistingPosition = false;
             if (getEl('latitude').value && getEl('longitude').value) {
                 var lat = parseFloat(getEl('latitude').value);
                 var lng = parseFloat(getEl('longitude').value);
                 if (!isNaN(lat) && !isNaN(lng)) {
-                    var pos = { lat: lat, lng: lng };
-                    map.setCenter(pos);
-                    marker.setPosition(pos);
+                    map.setView([lat, lng], ZOOM);
+                    marker.setLatLng([lat, lng]);
                     hasExistingPosition = true;
                 }
             }
 
-            var geocoder = new google.maps.Geocoder();
-
-            function showGeocodeStatus(show) {
-                var el = getEl(GEOCODE_STATUS_ID);
-                if (el) el.style.display = show ? 'block' : 'none';
-            }
-            function reverseGeocodeAndFill(latLng) {
-                setLatLng(latLng.lat(), latLng.lng());
-                showGeocodeStatus(true);
-                geocoder.geocode({ location: latLng }, function(results, status) {
-                    showGeocodeStatus(false);
-                    if (status !== 'OK' || !results || !results[0]) return;
-                    var place = results[0];
-                    place.address_components = place.address_components || [];
-                    place.formatted_address = place.formatted_address || '';
-                    fillFormFromPlace(place);
-                });
-            }
-
-            map.addListener('click', function(e) {
-                marker.setPosition(e.latLng);
-                marker.setVisible(true);
-                reverseGeocodeAndFill(e.latLng);
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                setLatLng(e.latlng.lat, e.latlng.lng);
+                reverseGeocode(e.latlng.lat, e.latlng.lng);
             });
 
-            marker.addListener('dragend', function() {
-                reverseGeocodeAndFill(marker.getPosition());
+            marker.on('dragend', function() {
+                var pos = marker.getLatLng();
+                setLatLng(pos.lat, pos.lng);
+                reverseGeocode(pos.lat, pos.lng);
             });
 
+            // Busca de endereço (equivalente ao Places Autocomplete) via Nominatim /search.
             var locationInput = getInput('location');
-            if (locationInput) {
-                var autocomplete = new google.maps.places.Autocomplete(locationInput, {
-                    fields: ['address_components', 'geometry', 'formatted_address'],
-                    types: ['address']
+            var suggestionsBox = getEl('location-suggestions');
+            var searchTimeout = null;
+
+            function clearSuggestions() {
+                if (suggestionsBox) { suggestionsBox.innerHTML = ''; suggestionsBox.style.display = 'none'; }
+            }
+
+            function selectSuggestion(result) {
+                var lat = parseFloat(result.lat), lng = parseFloat(result.lon);
+                map.setView([lat, lng], ZOOM);
+                marker.setLatLng([lat, lng]);
+                setLatLng(lat, lng);
+                fillFormFromNominatim(result);
+                clearSuggestions();
+            }
+
+            function renderSuggestions(results) {
+                if (!suggestionsBox) return;
+                if (!results || !results.length) { clearSuggestions(); return; }
+                suggestionsBox.innerHTML = results.map(function(r, i) {
+                    return '<button type="button" class="list-group-item list-group-item-action small" data-idx="' + i + '">' + r.display_name + '</button>';
+                }).join('');
+                suggestionsBox.style.display = 'block';
+                Array.prototype.forEach.call(suggestionsBox.querySelectorAll('[data-idx]'), function(btn) {
+                    btn.addEventListener('click', function() {
+                        selectSuggestion(results[parseInt(btn.getAttribute('data-idx'), 10)]);
+                    });
                 });
-                autocomplete.addListener('place_changed', function() {
-                    var place = autocomplete.getPlace();
-                    if (!place.geometry) return;
-                    map.setCenter(place.geometry.location);
-                    marker.setPosition(place.geometry.location);
-                    marker.setVisible(true);
-                    fillFormFromPlace(place);
-                    setLatLng(place.geometry.location.lat(), place.geometry.location.lng());
+            }
+
+            if (locationInput) {
+                locationInput.addEventListener('input', function() {
+                    var q = locationInput.value.trim();
+                    clearTimeout(searchTimeout);
+                    if (q.length < 4) { clearSuggestions(); return; }
+                    searchTimeout = setTimeout(function() {
+                        fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&countrycodes=br&limit=5&q=' + encodeURIComponent(q))
+                            .then(function(r) { return r.json(); })
+                            .then(renderSuggestions)
+                            .catch(function() {});
+                    }, 500);
+                });
+                document.addEventListener('click', function(e) {
+                    if (suggestionsBox && e.target !== locationInput && !suggestionsBox.contains(e.target)) clearSuggestions();
                 });
             }
 
             function showMapAndHideLoading() {
                 mapEl.style.display = 'block';
                 if (loadingEl) loadingEl.style.display = 'none';
-                google.maps.event.trigger(map, 'resize');
+                setTimeout(function() { map.invalidateSize(); }, 0);
             }
 
             if (hasExistingPosition) {
@@ -522,9 +505,10 @@
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
                         var pos = { lat: position.coords.latitude, lng: position.coords.longitude };
-                        map.setCenter(pos);
-                        marker.setPosition(pos);
-                        reverseGeocodeAndFill(new google.maps.LatLng(pos.lat, pos.lng));
+                        map.setView([pos.lat, pos.lng], ZOOM);
+                        marker.setLatLng([pos.lat, pos.lng]);
+                        setLatLng(pos.lat, pos.lng);
+                        reverseGeocode(pos.lat, pos.lng);
                         showMapAndHideLoading();
                     },
                     function() {
@@ -536,12 +520,19 @@
                 showMapAndHideLoading();
             }
         } catch (e) {
-            var loadingEl = getEl(LOADING_ID);
-            if (loadingEl) loadingEl.innerHTML = '<div class="p-3 text-center text-danger"><p class="mb-0">Erro ao inicializar o mapa. Verifique a chave da API do Google Maps.</p></div>';
+            var loadingErrEl = getEl(LOADING_ID);
+            if (loadingErrEl) loadingErrEl.innerHTML = '<div class="p-3 text-center text-danger"><p class="mb-0">Erro ao inicializar o mapa.</p></div>';
         }
-    };
+    }
 
-    loadScript('initOccurrenceMapWidget');
+    // Leaflet já vem bundlado em app.js (window.L, ver resources/js/bootstrap.js) — sem
+    // script externo para carregar. app.js é um <script> comum (sem defer) no fim do
+    // <body>, então esperar o DOMContentLoaded garante que window.L já existe.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initOccurrenceMapWidget);
+    } else {
+        initOccurrenceMapWidget();
+    }
 
     var anexoInput = getEl('anexo');
     if (anexoInput) {

@@ -247,9 +247,6 @@
     </div>
 </div>
 
-@php
-    $dashboardMapsKey = config('services.google.maps_key') ?: env('GOOGLE_MAPS_API_KEY', '');
-@endphp
 <script>window.dashboardChartsData = @json($charts);</script>
 <!-- Rastreio Dashboard Vue App pode ser injetado aqui pelo app.js se usarmos um componente para a lista, caso contrario apenas Echo no JS -->
 <script>
@@ -260,7 +257,6 @@
         const heatmapUrl = '{{ route("admin.dashboard.occurrences-heatmap") }}';
         const driversUrl = '{{ route("admin.dashboard.drivers-last-positions") }}?minutes=30';
         const interval = 60000;
-        const API_KEY = @json($dashboardMapsKey);
         var lastOccurrences = [];
         var lastDriverPositions = [];
         var heatmapMode = false;
@@ -333,49 +329,21 @@
             if (heatmapMode) fetchHeatmap();
         }
 
-        function loadMapScript(callback) {
-            if (window.google && window.google.maps) { window[callback](); return; }
-            if (!API_KEY || API_KEY.length < 10) {
-                var loadingEl = document.getElementById('dashboard-map-loading');
-                if (loadingEl) loadingEl.innerHTML = '<p class="text-warning mb-0">Chave do Google Maps não configurada. Defina GOOGLE_MAPS_API_KEY no .env.</p>';
-                return;
-            }
-            var s = document.createElement('script');
-            s.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(API_KEY) + '&libraries=visualization&callback=' + encodeURIComponent(callback);
-            s.async = true;
-            s.defer = true;
-            document.head.appendChild(s);
-        }
-
-        function loadClustererScript(callback) {
-            if (window.markerClusterer) { callback(); return; }
-            var s = document.createElement('script');
-            s.src = 'https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js';
-            s.async = true;
-            s.onload = callback;
-            s.onerror = callback;
-            document.head.appendChild(s);
-        }
-
         window.initDashboardMap = function () {
             var mapEl = document.getElementById('dashboard-occurrences-map');
             var loadingEl = document.getElementById('dashboard-map-loading');
-            if (!mapEl) return;
+            if (!mapEl || !window.L) return;
 
-            var defaultCenter = { lat: -12.95307, lng: -38.49706 };
-            var map = new google.maps.Map(mapEl, {
-                center: defaultCenter,
-                zoom: 10,
-                fullscreenControl: true,
-                streetViewControl: false,
-                mapTypeControl: true,
-                zoomControl: true
-            });
+            var map = L.map(mapEl, { zoomControl: true }).setView([-12.95307, -38.49706], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+            }).addTo(map);
 
-            var markers = [];
-            var driverMarkers = [];
-            var clusterer = null;
-            var heatmapLayer = new google.maps.visualization.HeatmapLayer({ data: [], map: null, radius: 30 });
+            var clusterGroup = L.markerClusterGroup();
+            map.addLayer(clusterGroup);
+            var driverLayer = L.layerGroup().addTo(map);
+            var heatmapLayer = L.heatLayer([], { radius: 30 });
 
             // Tempo real: escuta o canal de broadcast e corrige só o marcador afetado
             // (window.patchDashboardOccurrence, definida abaixo) — antes disparava um
@@ -395,9 +363,7 @@
             var markersById = {};
 
             function clearMarkers() {
-                if (clusterer) { clusterer.clearMarkers(); }
-                markers.forEach(function (m) { m.setMap(null); });
-                markers = [];
+                clusterGroup.clearLayers();
                 markersById = {};
             }
 
@@ -412,16 +378,17 @@
                     '<circle cx="14" cy="14" r="9" fill="#fff"/>' +
                     '<text x="14" y="18.5" font-size="11" text-anchor="middle" fill="' + fill + '" font-family="Arial,Helvetica,sans-serif" font-weight="700">' + letter + '</text>' +
                     '</svg>';
-                return {
-                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-                    scaledSize: new google.maps.Size(28, 38),
-                    anchor: new google.maps.Point(14, 38)
-                };
+                return L.icon({
+                    iconUrl: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+                    iconSize: [28, 38],
+                    iconAnchor: [14, 38],
+                    popupAnchor: [0, -34]
+                });
             }
             window.occurrenceMarkerIcon = occurrenceMarkerIcon;
 
             function occurrenceInfoContent(o) {
-                return '<div class="p-2" style="min-width: 180px;">' +
+                return '<div style="min-width: 180px;">' +
                     '<strong>' + (o.title || o.name || 'Ocorrência #' + o.id) + '</strong>' +
                     '<p class="mb-1 small">' + (o.status || '—') + (o.type ? ' · ' + o.type : '') + (o.priority ? ' · <span style="color:' + (o.priority_color || '#6c757d') + '">' + o.priority + '</span>' : '') + '</p>' +
                     (o.address ? '<p class="mb-1 small text-muted">' + o.address + '</p>' : '') +
@@ -437,32 +404,25 @@
 
                 if (isNaN(lat) || isNaN(lng)) {
                     if (existing) {
-                        if (clusterer && clusterer.removeMarker) clusterer.removeMarker(existing, true);
-                        existing.setMap(null);
-                        markers = markers.filter(function (m) { return m !== existing; });
+                        clusterGroup.removeLayer(existing);
                         delete markersById[o.id];
                     }
-                    return null;
+                    return { marker: null, isNew: false };
                 }
 
-                var pos = { lat: lat, lng: lng };
                 var icon = occurrenceMarkerIcon(o.priority_color, o.type);
                 var title = o.title || o.name || 'Ocorrência #' + o.id;
 
                 if (existing) {
-                    existing.setPosition(pos);
+                    existing.setLatLng([lat, lng]);
                     existing.setIcon(icon);
-                    existing.setTitle(title);
-                    if (existing.__infowindow) existing.__infowindow.setContent(occurrenceInfoContent(o));
+                    if (existing.getPopup()) existing.getPopup().setContent(occurrenceInfoContent(o));
                     return { marker: existing, isNew: false };
                 }
 
-                var marker = new google.maps.Marker({ position: pos, title: title, icon: icon });
-                var infowindow = new google.maps.InfoWindow({ content: occurrenceInfoContent(o) });
-                marker.__infowindow = infowindow;
-                marker.addListener('click', function () { infowindow.open(map, marker); });
+                var marker = L.marker([lat, lng], { icon: icon, title: title });
+                marker.bindPopup(occurrenceInfoContent(o));
                 markersById[o.id] = marker;
-                markers.push(marker);
 
                 return { marker: marker, isNew: true };
             }
@@ -471,16 +431,12 @@
             // Atualização incremental (push): corrige/insere 1 marcador sem refazer o fetch
             // inteiro nem redesenhar o mapa — substitui o antigo refreshAll() no listener do
             // Echo. lastOccurrences (lista lateral) também é corrigida no mesmo passo. Só
-            // marcadores GENUINAMENTE novos precisam ser anexados ao mapa/cluster aqui —
-            // um existente já está visível, só foi reposicionado/recolorido no lugar.
+            // marcadores GENUINAMENTE novos precisam ser anexados ao cluster aqui — um
+            // existente já está visível, só foi reposicionado/recolorido no lugar.
             window.patchDashboardOccurrence = function (o) {
                 var result = upsertOccurrenceMarker(o);
                 if (result.marker && result.isNew && !heatmapMode) {
-                    if (clusterer && clusterer.addMarker) {
-                        clusterer.addMarker(result.marker);
-                    } else {
-                        result.marker.setMap(map);
-                    }
+                    clusterGroup.addLayer(result.marker);
                 }
                 var idx = lastOccurrences.findIndex(function (item) { return item.id === o.id; });
                 if (idx >= 0) lastOccurrences[idx] = o; else lastOccurrences.unshift(o);
@@ -490,34 +446,28 @@
 
             window.updateDashboardMap = function (occurrences) {
                 clearMarkers();
-                var bounds = null;
+                var latlngs = [];
                 (occurrences || []).forEach(function (o) {
                     var result = upsertOccurrenceMarker(o);
                     if (!result.marker) return;
-                    if (!bounds) bounds = new google.maps.LatLngBounds();
-                    bounds.extend(result.marker.getPosition());
+                    latlngs.push(result.marker.getLatLng());
                 });
 
                 if (!heatmapMode) {
-                    if (window.markerClusterer && window.markerClusterer.MarkerClusterer) {
-                        clusterer = new window.markerClusterer.MarkerClusterer({ map: map, markers: markers });
-                    } else {
-                        markers.forEach(function (m) { m.setMap(map); });
-                    }
+                    Object.keys(markersById).forEach(function (id) { clusterGroup.addLayer(markersById[id]); });
                 }
 
-                if (bounds && markers.length > 0) {
-                    map.fitBounds(bounds, markers.length === 1 ? 40 : 60);
+                if (latlngs.length > 0) {
+                    map.fitBounds(L.latLngBounds(latlngs), { padding: [60, 60], maxZoom: 16 });
                 }
                 mapEl.style.display = 'block';
                 if (loadingEl) loadingEl.style.display = 'none';
+                setTimeout(function () { map.invalidateSize(); }, 0);
             };
 
             window.updateDashboardHeatmap = function (points) {
-                var weighted = (points || []).map(function (p) {
-                    return new google.maps.LatLng(p.lat, p.lng);
-                });
-                heatmapLayer.setData(weighted);
+                var latlngs = (points || []).map(function (p) { return [p.lat, p.lng]; });
+                heatmapLayer.setLatLngs(latlngs);
             };
 
             var heatmapToggle = document.getElementById('dashboard-heatmap-toggle');
@@ -525,37 +475,32 @@
                 heatmapToggle.addEventListener('change', function () {
                     heatmapMode = heatmapToggle.checked;
                     if (heatmapMode) {
-                        clearMarkers();
-                        heatmapLayer.setMap(map);
+                        map.removeLayer(clusterGroup);
+                        heatmapLayer.addTo(map);
                         fetchHeatmap();
                     } else {
-                        heatmapLayer.setMap(null);
+                        map.removeLayer(heatmapLayer);
+                        map.addLayer(clusterGroup);
                         window.updateDashboardMap(lastOccurrences);
                     }
                 });
             }
 
             window.updateDashboardDriverMarkers = function (drivers) {
-                driverMarkers.forEach(function (m) { m.setMap(null); });
-                driverMarkers = [];
+                driverLayer.clearLayers();
                 (drivers || []).forEach(function (d) {
                     var lat = d.latitude != null ? parseFloat(d.latitude) : NaN;
                     var lng = d.longitude != null ? parseFloat(d.longitude) : NaN;
                     if (isNaN(lat) || isNaN(lng)) return;
-                    var pos = { lat: lat, lng: lng };
-                    var marker = new google.maps.Marker({
-                        map: map,
-                        position: pos,
-                        title: d.driver_name + ' – Ocorrência #' + (d.occurrence_id || '—'),
-                        icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                    var marker = L.circleMarker([lat, lng], {
+                        radius: 8, color: '#fff', weight: 2, fillColor: '#007bff', fillOpacity: 1
                     });
-                    var content = '<div class="p-2" style="min-width: 180px;">' +
+                    var content = '<div style="min-width: 180px;">' +
                         '<strong><i class="fas fa-car text-primary"></i> ' + (d.driver_name || 'Motorista') + '</strong>' +
                         '<p class="mb-1 small">Em deslocamento</p>' +
                         (d.occurrence_id ? '<a href="/admin/occurrences/' + d.occurrence_id + '" class="small">Ver ocorrência #' + d.occurrence_id + '</a>' : '') + '</div>';
-                    var infow = new google.maps.InfoWindow({ content: content });
-                    marker.addListener('click', function () { infow.open(map, marker); });
-                    driverMarkers.push(marker);
+                    marker.bindPopup(content);
+                    driverLayer.addLayer(marker);
                 });
             };
 
@@ -580,11 +525,15 @@
 
         refreshAll();
         setInterval(refreshAll, interval);
-        loadMapScript(function () {
-            loadClustererScript(function () {
-                window.initDashboardMap();
-            });
-        });
+
+        // Leaflet já vem bundlado em app.js (window.L, ver resources/js/bootstrap.js) —
+        // sem script externo para carregar. app.js é um <script> comum (sem defer) no fim
+        // do <body>, então esperar o DOMContentLoaded garante que window.L já existe.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', window.initDashboardMap);
+        } else {
+            window.initDashboardMap();
+        }
     })();
 </script>
 @stop
