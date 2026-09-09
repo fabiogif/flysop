@@ -6,6 +6,10 @@ use Illuminate\Support\Facades\Route;
 /* |-------------------------------------------------------------------------- | API Routes |-------------------------------------------------------------------------- | | Here is where you can register API routes for your application. These | routes are loaded by the RouteServiceProvider within a group which | is assigned the "api" middleware group. Enjoy building your API! | */
 Route::post('/sanctum/token', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'auth']);
 
+// Login leve do cidadão (app/site público): nome + celular obrigatórios, sem senha —
+// ver análise de impacto em docs/specs/flysop.md e app/Services/ClientService.php.
+Route::post('/auth/citizen', [App\Http\Controllers\Api\Auth\CitizenAuthController::class, 'auth']);
+
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/auth/me', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'me']);
     Route::post('/auth/logout', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'logout']);
@@ -45,4 +49,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/occurrences/getOccurrenceByClientId/{clientId}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'getOccurrenceByClientId']);
 
     Route::get('/typeOccurrence', [App\Http\Controllers\Api\TypeOccurrenceApiController::class, 'index']);
+
+    // Pesquisas (app/site público, cidadão logado) — espelha PublicSurveyController (Blade),
+    // reaproveita SurveyService/StoreSurveyResponse sem duplicar regra de negócio.
+    Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);
+    Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
+    Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);
 });

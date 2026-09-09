@@ -31,7 +31,8 @@ class OccurrenceService
     private const DUPLICATE_WINDOW_HOURS = 48;
 
     public function __construct(
-        protected OccurrenceRepositoryInterface $repository
+        protected OccurrenceRepositoryInterface $repository,
+        protected ClientService $clientService
     ) {
     }
 
@@ -53,13 +54,17 @@ class OccurrenceService
     /**
      * Criação pública (API sem login, formulário do cidadão) — corrige bug pré-existente:
      * a coluna "clients_id" é NOT NULL mas nunca era preenchida aqui, derrubando toda
-     * submissão pública com erro 500. Sem multi-tenant expandido, aplica o mesmo default
-     * usado em storeForAdmin() quando não há tenant: o primeiro client cadastrado.
+     * submissão pública com erro 500.
+     *
+     * Client de origem: se o app/site já mandou "clients_id" (cidadão logado via
+     * CitizenAuthController), usa esse. Se "is_anonymous" foi marcado, ou nenhum client foi
+     * informado, usa o placeholder "Anônimo" (ClientService::anonymousClient()) — visível e
+     * identificável no admin, em vez do antigo default arbitrário "primeiro client cadastrado".
      */
     public function createNewOccurrence(array $data): Model
     {
-        if (empty($data['clients_id'])) {
-            $data['clients_id'] = Client::query()->value('id') ?? 1;
+        if (!empty($data['is_anonymous']) || empty($data['clients_id'])) {
+            $data['clients_id'] = $this->clientService->anonymousClient()->id;
         }
 
         if (empty($data['status_occurrences_id'])) {

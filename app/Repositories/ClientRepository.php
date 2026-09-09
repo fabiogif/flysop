@@ -27,4 +27,16 @@ class ClientRepository implements ClientRepositoryInterface
     {
         return $this->entity->find($id);
     }
+
+    /**
+     * Idempotente: mesmo celular (por tenant) sempre retorna o mesmo Client, sem duplicar
+     * cadastro a cada novo login leve do cidadão (app/site público).
+     */
+    public function firstOrCreateByPhone(int $tenantId, string $phone, array $data)
+    {
+        return $this->entity->firstOrCreate(
+            ['tenant_id' => $tenantId, 'phone' => $phone],
+            $data
+        );
+    }
 }

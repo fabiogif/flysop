@@ -25,7 +25,10 @@ class StoreUpdateOccurrences extends FormRequest
     {
         return [
             'title' => "required|max:255",
-            'email' => "required|max:255",
+            // Antes "required": o login leve do cidadão (ver CitizenAuthController) nunca
+            // coleta e-mail — exigir aqui derrubaria toda submissão de quem só informou
+            // nome+celular.
+            'email' => "nullable|email|max:255",
             // type_occurrences_id/issuings_id são NOT NULL no banco e sempre foram exigidos
             // pelo formulário admin; a API pública nunca validava isso e toda submissão sem
             // esses campos derrubava com erro 500 (bug pré-existente, corrigido junto da LGPD).
@@ -35,6 +38,8 @@ class StoreUpdateOccurrences extends FormRequest
             // precisa confirmar que o cidadão foi informado e concordou com o tratamento
             // dos dados pessoais enviados nesta ocorrência.
             'lgpd_consent' => 'required|accepted',
+            // Ocorrência enviada como anônima (app/site público) — ver ClientService::anonymousClient().
+            'is_anonymous' => 'nullable|boolean',
         ];
     }
 
