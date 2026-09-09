@@ -1,12 +1,13 @@
 # fly.io / deploy – imagem oficial PHP (Debian), evita 404 em apt
-# Para nginx+php-fpm local use: Dockerfile.nginx
+# Para uso local via docker-compose use: Dockerfile.dev
 
-FROM php:8.2-cli AS base
+FROM php:8.2-fpm AS base
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         git \
         unzip \
+        nginx \
         libzip-dev \
         libpng-dev \
         libjpeg-dev \
@@ -26,18 +27,16 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Producao serve via "php artisan serve" (SAPI cli) — o opcache do PHP vem habilitado
-# por padrao na imagem so para a SAPI web (opcache.enable_cli=Off), entao toda request
-# recompilava o framework inteiro do zero a cada acesso (achado ao investigar tempo de
-# resposta de ~2.5s mesmo com a maquina ja "quente"). memory_consumption reduzido de
-# 128 (padrao) para 64MB porque a maquina de producao tem so 256MB de RAM no total.
+# opcache.enable_cli=1 evita recompilar o framework do zero nos comandos "php artisan"
+# de boot (config:cache/route:cache/view:cache, release_command). memory_consumption
+# reduzido de 128 (padrao) para 64MB porque a maquina de producao tem so 256MB de RAM.
 RUN { \
         echo 'opcache.enable=1'; \
         echo 'opcache.enable_cli=1'; \
         echo 'opcache.memory_consumption=64'; \
         echo 'opcache.max_accelerated_files=10000'; \
         echo 'opcache.validate_timestamps=0'; \
-    } > /usr/local/etc/php/conf.d/zz-opcache-cli.ini
+    } > /usr/local/etc/php/conf.d/zz-opcache.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -53,7 +52,18 @@ RUN composer dump-autoload --optimize \
 RUN chown -R www-data:www-data /app \
     && chmod -R 755 /app/storage /app/bootstrap/cache
 
+# Antes rodava tudo (inclusive JS/CSS/imagens) via "php artisan serve" — servidor de
+# dev single-threaded, sem front-end de webserver. Toda requisicao, ate um .svg
+# estatico, passava pelo bootstrap completo do Laravel e ficava numa fila serializada
+# (~3-6s por asset, medido em producao). Agora nginx serve estatico direto do disco e
+# so repassa .php para o php-fpm (pm=ondemand, ver docker/fly/www.conf — poucos
+# workers residentes, adequado aos 256MB de RAM da maquina).
+COPY deploy-fly/nginx.conf /etc/nginx/sites-enabled/default
+COPY deploy-fly/www.conf /usr/local/etc/php-fpm.d/www.conf
+COPY deploy-fly/start.sh /start.sh
+RUN chmod +x /start.sh
+
 ENV PORT=8080
 EXPOSE 8080
 
-CMD ["sh", "-c", "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan serve --host=0.0.0.0 --port=${PORT}"]
+CMD ["/start.sh"]
