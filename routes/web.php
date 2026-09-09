@@ -163,6 +163,7 @@ Route::prefix('admin')
         Route::any('/surveys/search', [SurveyController::class, 'search'])->name('surveys.search');
         Route::post('/surveys/{id}/toggle', [SurveyController::class, 'toggle'])->name('surveys.toggle');
         Route::get('/surveys/{id}/responses', [SurveyController::class, 'responses'])->name('surveys.responses');
+        Route::get('/surveys/{id}/qrcode', [SurveyController::class, 'qrcode'])->name('surveys.qrcode');
         Route::resource('surveys', SurveyController::class);
 
         //Notificações internas

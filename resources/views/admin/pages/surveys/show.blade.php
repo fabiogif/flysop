@@ -57,6 +57,12 @@
                                 </a>
                             </div>
                         </div>
+                        <div class="mt-2">
+                            <img src="{{ route('surveys.qrcode', $survey->id) }}" alt="QR Code da pesquisa" width="150" height="150">
+                            <a href="{{ route('surveys.qrcode', $survey->id) }}" download="pesquisa-{{ $survey->id }}-qrcode.png" class="d-block mt-1">
+                                <i class="fas fa-download"></i> Baixar QR Code
+                            </a>
+                        </div>
                     </dd>
                 </div>
             </dl>

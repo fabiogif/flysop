@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateSurvey;
 use App\Models\Survey;
 use App\Services\SurveyService;
+use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
 
 class SurveyController extends Controller
@@ -143,6 +144,18 @@ class SurveyController extends Controller
             ->paginate(20);
 
         return view('admin.pages.surveys.responses', compact('survey', 'responses'));
+    }
+
+    public function qrcode($id)
+    {
+        $survey = $this->findTenantSurvey($id);
+        if (!$survey) {
+            return redirect()->route('surveys.index');
+        }
+
+        $result = (new Builder(data: $survey->publicUrl(), size: 300, margin: 10))->build();
+
+        return response($result->getString(), 200)->header('Content-Type', $result->getMimeType());
     }
 
     private function findTenantSurvey($id): ?Survey

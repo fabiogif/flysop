@@ -147,6 +147,29 @@ class SurveyModuleTest extends TestCase
         $this->assertSame(0, SurveyResponse::where('survey_id', $survey->id)->count());
     }
 
+    public function test_admin_can_fetch_survey_qrcode(): void
+    {
+        $user = $this->actingAsAdmin();
+        $survey = Survey::factory()->create(['tenant_id' => $user->tenant_id]);
+
+        $response = $this->get(route('surveys.qrcode', $survey->id));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'image/png');
+        $this->assertNotEmpty($response->getContent());
+        $this->assertSame("\x89PNG\r\n\x1a\n", substr($response->getContent(), 0, 8));
+    }
+
+    public function test_admin_cannot_fetch_qrcode_for_other_tenant_survey(): void
+    {
+        $this->actingAsAdmin();
+        $otherTenant = Tenant::factory()->create();
+        $survey = Survey::factory()->create(['tenant_id' => $otherTenant->id]);
+
+        $this->get(route('surveys.qrcode', $survey->id))
+            ->assertRedirect(route('surveys.index'));
+    }
+
     public function test_public_validation_rejects_invalid_choice_and_scale(): void
     {
         $survey = Survey::factory()->create(['is_active' => true]);

@@ -12,3 +12,5 @@ docker-compose.yml
 !.env.example
 .env.example
 .env.example.docker
+storage/certs/
+phpunit.local.xml

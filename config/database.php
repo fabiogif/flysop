@@ -79,6 +79,9 @@ return [
             // Fly.io, que conecta via um pooler local). Configurável via env para não
             // enfraquecer conexões que realmente saem da máquina.
             'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Backslashes do Windows quebram o parser do DSN pgsql (trata ';' e '\' como
+            // caracteres especiais) — path sempre normalizado para forward slashes.
+            'sslrootcert' => env('DB_SSLROOTCERT') ? str_replace('\\', '/', base_path(env('DB_SSLROOTCERT'))) : null,
         ],
         'sqlsrv' => [
             'driver' => 'sqlsrv',
