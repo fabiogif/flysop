@@ -265,6 +265,14 @@
 
 </div>
 
+{{-- window.L (Leaflet) não vem mais de "app.js" — nenhuma página admin carrega esse bundle
+     hoje (enabled_laravel_mix=false em config/adminlte.php). Bundle isolado só com
+     Leaflet, ver resources/js/admin/leaflet.js. Os gráficos Chart.js logo abaixo
+     (window.dashboardChartsData) dependem de resources/js/admin/dashboardCharts.js, que
+     é importado em app.js — mesma causa raiz, mas não resolvido aqui (fora do escopo
+     do mapa; carregar app.js reatribui window.$/jQuery e quebra os plugins jQuery já
+     carregados nesta página). --}}
+<script src="{{ asset('js/leaflet.js') }}"></script>
 <script>window.dashboardChartsData = @json($charts);</script>
 <script>
     (function () {

@@ -343,6 +343,10 @@
     $initialLat = isset($occurrences) && $occurrences->latitude ? (float) $occurrences->latitude : -12.95307;
     $initialLng = isset($occurrences) && $occurrences->longitude ? (float) $occurrences->longitude : -38.49706;
 @endphp
+{{-- window.L (Leaflet) não vem mais de "app.js" — nenhuma página admin carrega esse bundle
+     hoje (enabled_laravel_mix=false em config/adminlte.php, e nenhuma view referencia
+     mix()/@vite). Bundle isolado só com Leaflet, ver resources/js/admin/leaflet.js. --}}
+<script src="{{ asset('js/leaflet.js') }}"></script>
 <script>
 (function() {
     "use strict";

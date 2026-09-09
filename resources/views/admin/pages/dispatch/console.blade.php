@@ -115,6 +115,10 @@
         .dispatch-candidate-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 12.5px; }
     </style>
 
+{{-- window.L (Leaflet) não vem mais de "app.js" — nenhuma página admin carrega esse bundle
+     hoje (enabled_laravel_mix=false em config/adminlte.php). Bundle isolado só com
+     Leaflet, ver resources/js/admin/leaflet.js. --}}
+<script src="{{ asset('js/leaflet.js') }}"></script>
 <script>
 (function () {
     "use strict";
