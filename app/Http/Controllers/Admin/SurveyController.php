@@ -153,7 +153,11 @@ class SurveyController extends Controller
             return redirect()->route('surveys.index');
         }
 
-        $result = (new Builder(data: $survey->publicUrl(), size: 300, margin: 10))->build();
+        $result = Builder::create()
+            ->data($survey->publicUrl())
+            ->size(300)
+            ->margin(10)
+            ->build();
 
         return response($result->getString(), 200)->header('Content-Type', $result->getMimeType());
     }
