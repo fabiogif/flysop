@@ -346,7 +346,7 @@
 {{-- window.L (Leaflet) não vem mais de "app.js" — nenhuma página admin carrega esse bundle
      hoje (enabled_laravel_mix=false em config/adminlte.php, e nenhuma view referencia
      mix()/@vite). Bundle isolado só com Leaflet, ver resources/js/admin/leaflet.js. --}}
-<script src="{{ asset('js/leaflet.js') }}"></script>
+<script src="{{ mix('js/leaflet.js') }}"></script>
 <script>
 (function() {
     "use strict";
@@ -506,8 +506,21 @@
                 showMapAndHideLoading();
             } else if (typeof navigator !== 'undefined' && navigator.geolocation) {
                 if (loadingEl) loadingEl.innerHTML = '<div class="p-3 text-center text-muted"><p class="mb-0">Obtendo sua localização…</p></div>';
+                // ponytail: alguns navegadores/SOs (ex.: Windows com Location Services
+                // desligado) nunca chamam nem o success nem o error callback do
+                // getCurrentPosition, ignorando a opção "timeout" nativa — trava a spinner
+                // pra sempre. Fallback próprio garante que o mapa sempre aparece.
+                var geoSettled = false;
+                var geoFallback = setTimeout(function() {
+                    if (geoSettled) return;
+                    geoSettled = true;
+                    showMapAndHideLoading();
+                }, 11000);
                 navigator.geolocation.getCurrentPosition(
                     function(position) {
+                        if (geoSettled) return;
+                        geoSettled = true;
+                        clearTimeout(geoFallback);
                         var pos = { lat: position.coords.latitude, lng: position.coords.longitude };
                         map.setView([pos.lat, pos.lng], ZOOM);
                         marker.setLatLng([pos.lat, pos.lng]);
@@ -516,6 +529,9 @@
                         showMapAndHideLoading();
                     },
                     function() {
+                        if (geoSettled) return;
+                        geoSettled = true;
+                        clearTimeout(geoFallback);
                         showMapAndHideLoading();
                     },
                     { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
@@ -529,9 +545,9 @@
         }
     }
 
-    // Leaflet já vem bundlado em app.js (window.L, ver resources/js/bootstrap.js) — sem
-    // script externo para carregar. app.js é um <script> comum (sem defer) no fim do
-    // <body>, então esperar o DOMContentLoaded garante que window.L já existe.
+    // O <script src="mix('js/leaflet.js')"> acima é síncrono (sem defer) e já roda antes
+    // daqui, então window.L já existe neste ponto — mas ainda esperamos o DOMContentLoaded
+    // caso o restante do DOM (inputs de lat/lng etc.) ainda não tenha sido parseado.
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initOccurrenceMapWidget);
     } else {
