@@ -18,4 +18,14 @@ mix.js('resources/js/app.js', 'public/js')
     // quebraria os plugins jQuery já carregados nas páginas com mapa — ver
     // resources/js/admin/leaflet.js) para as páginas admin com mapa (ocorrência,
     // despacho, dashboard) que hoje não carregam nenhum bundle JS compilado.
-    .js('resources/js/admin/leaflet.js', 'public/js');
+    .js('resources/js/admin/leaflet.js', 'public/js')
+    // Imagens do ícone padrão do marcador (Leaflet resolve a URL delas relativa à página
+    // atual quando bundlado via require() em vez do <link>/script oficial do pacote —
+    // sem isso, 404 em /admin/{qualquer-rota}/marker-icon.png). URLs fixas em
+    // resources/js/admin/leaflet.js apontam pra cá.
+    .copyDirectory('node_modules/leaflet/dist/images', 'public/images/leaflet')
+    // Sem isso, arquivos compilados (js/css) mantêm sempre o mesmo nome de URL — com o
+    // nginx cacheando estático por 7 dias (deploy-fly/nginx.conf), quem já tinha visitado
+    // o admin fica preso numa versão antiga do JS até o cache expirar sozinho. version()
+    // adiciona "?id=hash" na URL (via mix(), não asset(), nas views) e muda a cada build.
+    .version();

@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use PDO;
 
 //$DATABASE_URL = parse_url(getenv("DATABASE_URL"));
 
@@ -82,6 +83,15 @@ return [
             // Backslashes do Windows quebram o parser do DSN pgsql (trata ';' e '\' como
             // caracteres especiais) — path sempre normalizado para forward slashes.
             'sslrootcert' => env('DB_SSLROOTCERT') ? str_replace('\\', '/', base_path(env('DB_SSLROOTCERT'))) : null,
+            // Banco (Aiven) fica em Santa Clara/CA, o app em gru (São Paulo) — cada conexão
+            // nova paga handshake TCP+TLS cruzando o continente (~150-250ms). Persistente
+            // reaproveita a conexão entre requests atendidos pelo mesmo worker php-fpm
+            // (com "php artisan serve", cada request era um processo novo, então isso não
+            // fazia diferença nenhuma — só passou a valer a pena depois da troca pra
+            // php-fpm). Não elimina a latência por query, só o custo repetido de conectar.
+            'options' => [
+                PDO::ATTR_PERSISTENT => (bool) env('DB_PERSISTENT', true),
+            ],
         ],
         'sqlsrv' => [
             'driver' => 'sqlsrv',

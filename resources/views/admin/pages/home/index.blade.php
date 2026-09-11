@@ -272,7 +272,7 @@
      é importado em app.js — mesma causa raiz, mas não resolvido aqui (fora do escopo
      do mapa; carregar app.js reatribui window.$/jQuery e quebra os plugins jQuery já
      carregados nesta página). --}}
-<script src="{{ asset('js/leaflet.js') }}"></script>
+<script src="{{ mix('js/leaflet.js') }}"></script>
 <script>window.dashboardChartsData = @json($charts);</script>
 <script>
     (function () {
