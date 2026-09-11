@@ -347,6 +347,7 @@
      hoje (enabled_laravel_mix=false em config/adminlte.php, e nenhuma view referencia
      mix()/@vite). Bundle isolado só com Leaflet, ver resources/js/admin/leaflet.js. --}}
 <script src="{{ mix('js/leaflet.js') }}"></script>
+<script src="{{ mix('js/geolocate-with-fallback.js') }}"></script>
 <script>
 (function() {
     "use strict";
@@ -504,23 +505,10 @@
 
             if (hasExistingPosition) {
                 showMapAndHideLoading();
-            } else if (typeof navigator !== 'undefined' && navigator.geolocation) {
+            } else if (typeof navigator !== 'undefined' && navigator.geolocation && window.geolocateWithFallback) {
                 if (loadingEl) loadingEl.innerHTML = '<div class="p-3 text-center text-muted"><p class="mb-0">Obtendo sua localização…</p></div>';
-                // ponytail: alguns navegadores/SOs (ex.: Windows com Location Services
-                // desligado) nunca chamam nem o success nem o error callback do
-                // getCurrentPosition, ignorando a opção "timeout" nativa — trava a spinner
-                // pra sempre. Fallback próprio garante que o mapa sempre aparece.
-                var geoSettled = false;
-                var geoFallback = setTimeout(function() {
-                    if (geoSettled) return;
-                    geoSettled = true;
-                    showMapAndHideLoading();
-                }, 11000);
-                navigator.geolocation.getCurrentPosition(
-                    function(position) {
-                        if (geoSettled) return;
-                        geoSettled = true;
-                        clearTimeout(geoFallback);
+                window.geolocateWithFallback(navigator.geolocation, {
+                    onSuccess: function(position) {
                         var pos = { lat: position.coords.latitude, lng: position.coords.longitude };
                         map.setView([pos.lat, pos.lng], ZOOM);
                         marker.setLatLng([pos.lat, pos.lng]);
@@ -528,14 +516,13 @@
                         reverseGeocode(pos.lat, pos.lng);
                         showMapAndHideLoading();
                     },
-                    function() {
-                        if (geoSettled) return;
-                        geoSettled = true;
-                        clearTimeout(geoFallback);
+                    // Erro (permissão negada) ou nunca respondeu (fallback de timeout,
+                    // ver resources/js/admin/geolocate-with-fallback.js) — nos dois casos
+                    // mostra o mapa no centro padrão pra o usuário buscar/marcar manualmente.
+                    onUnavailable: function() {
                         showMapAndHideLoading();
-                    },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
-                );
+                    }
+                });
             } else {
                 showMapAndHideLoading();
             }

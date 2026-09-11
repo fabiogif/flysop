@@ -19,6 +19,10 @@ mix.js('resources/js/app.js', 'public/js')
     // resources/js/admin/leaflet.js) para as páginas admin com mapa (ocorrência,
     // despacho, dashboard) que hoje não carregam nenhum bundle JS compilado.
     .js('resources/js/admin/leaflet.js', 'public/js')
+    // Wrapper de geolocalizacao com fallback de timeout (ver comentario no proprio
+    // arquivo) — isolado do resto pra poder ser testado com `npm run test:js`
+    // (tests/js/geolocate-with-fallback.test.js) sem depender do browser.
+    .js('resources/js/admin/geolocate-with-fallback.js', 'public/js')
     // Imagens do ícone padrão do marcador (Leaflet resolve a URL delas relativa à página
     // atual quando bundlado via require() em vez do <link>/script oficial do pacote —
     // sem isso, 404 em /admin/{qualquer-rota}/marker-icon.png). URLs fixas em
