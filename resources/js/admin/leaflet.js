@@ -9,6 +9,13 @@ window.L = require('leaflet');
 require('leaflet.markercluster');
 require('leaflet.heat');
 
+// Icon.Default._getIconUrl SEMPRE concatena IconDefault.imagePath na frente da url,
+// mesmo quando ela já é absoluta (ver leaflet-src.js) — com leaflet.css carregado
+// (necessário pro .leaflet-pane{position:absolute} funcionar), o auto-detect de
+// imagePath acha a regra ".leaflet-default-icon-path" do CSS e retorna "/css/images/",
+// gerando "/css/images//images/leaflet/marker-icon.png" (404). imagePath = '' (string,
+// não undefined) pula esse auto-detect e deixa nossas urls absolutas intactas.
+L.Icon.Default.imagePath = '';
 // Sem isso, o ícone padrão do marcador tenta carregar de uma URL relativa à página atual
 // (ex.: /admin/occurrences/marker-icon.png) em vez do caminho real — 404 silencioso,
 // marcador invisível. Imagens copiadas de node_modules/leaflet/dist/images via
