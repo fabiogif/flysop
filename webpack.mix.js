@@ -28,6 +28,12 @@ mix.js('resources/js/app.js', 'public/js')
     // sem isso, 404 em /admin/{qualquer-rota}/marker-icon.png). URLs fixas em
     // resources/js/admin/leaflet.js apontam pra cá.
     .copyDirectory('node_modules/leaflet/dist/images', 'public/images/leaflet')
+    // O CSS oficial do Leaflet (.leaflet-pane, .leaflet-tile-pane etc. com
+    // position:absolute) nunca era carregado nas paginas admin com mapa — elas
+    // estendem adminlte::page, que nao inclui app.css (onde o leaflet.css entra via
+    // @import no app.scss). Sem ele, os tiles nao ficam posicionados e o mapa fica em
+    // branco mesmo com o JS funcionando. Copiado isolado, como as imagens acima.
+    .copy('node_modules/leaflet/dist/leaflet.css', 'public/css/leaflet.css')
     // Sem isso, arquivos compilados (js/css) mantêm sempre o mesmo nome de URL — com o
     // nginx cacheando estático por 7 dias (deploy-fly/nginx.conf), quem já tinha visitado
     // o admin fica preso numa versão antiga do JS até o cache expirar sozinho. version()

@@ -343,6 +343,12 @@
     $initialLat = isset($occurrences) && $occurrences->latitude ? (float) $occurrences->latitude : -12.95307;
     $initialLng = isset($occurrences) && $occurrences->longitude ? (float) $occurrences->longitude : -38.49706;
 @endphp
+@push('css')
+{{-- CSS oficial do Leaflet (.leaflet-pane etc.) — sem ele os tiles não ficam
+     posicionados e o mapa fica em branco. Não vem de app.css (adminlte::page não
+     carrega esse bundle), copiado isolado via webpack.mix.js. --}}
+<link rel="stylesheet" href="{{ mix('css/leaflet.css') }}">
+@endpush
 {{-- window.L (Leaflet) não vem mais de "app.js" — nenhuma página admin carrega esse bundle
      hoje (enabled_laravel_mix=false em config/adminlte.php, e nenhuma view referencia
      mix()/@vite). Bundle isolado só com Leaflet, ver resources/js/admin/leaflet.js. --}}
