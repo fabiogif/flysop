@@ -38,8 +38,9 @@ swap_size_mb = 512
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  # 1 sempre ligada: com 0, a primeira requisição após ociosidade esperava o boot (~35-50s)
-  min_machines_running = 1
+  # 0 = sem custo fixo (máquinas param quando ociosas e sobem sob demanda). Manter assim para
+  # ficar no uso gratuito; o custo do boot a frio é reduzido no entrypoint (.fly/entrypoint.sh).
+  min_machines_running = 0
   processes = ['app']
 
 [[vm]]

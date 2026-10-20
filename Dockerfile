@@ -27,6 +27,13 @@ RUN composer install --optimize-autoloader --no-dev \
 # Sem o sed de TrustProxies do template: app/Http/Middleware/TrustProxies.php já define
 # $proxies = '*', e o sed gerava "$proxies = "*" = '*'" (ParseError, derrubou o deploy v57).
 
+# Caches que não dependem dos secrets ficam prontos na imagem: no boot a frio da máquina
+# 256MB eles somavam boa parte dos ~60s de espera (config:cache continua no boot, em
+# .fly/scripts/caches.sh, porque precisa do .env/secrets de produção).
+RUN php artisan route:cache \
+    && php artisan view:cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
 # If we're using Octane...
 RUN if grep -Fq "laravel/octane" /var/www/html/composer.json; then \
         rm -rf /etc/supervisor/conf.d/fpm.conf; \
