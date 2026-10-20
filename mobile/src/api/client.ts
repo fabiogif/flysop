@@ -1,9 +1,11 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
-// Definido no build: EXPO_PUBLIC_API_URL=https://<app>.fly.dev/api (produção, HTTPS obrigatório no
-// release). Sem ela, o backend local visto do emulador Android (10.0.2.2; no iOS seria localhost).
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8010/api';
+// APK de release usa sempre a API de produção; em desenvolvimento (Metro), o backend local visto
+// do emulador Android (10.0.2.2; no iOS seria localhost). EXPO_PUBLIC_API_URL no build sobrepõe ambos.
+const PRODUCTION_API_URL = 'https://flysop.fly.dev/api';
+const LOCAL_API_URL = 'http://10.0.2.2:8010/api';
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? (__DEV__ ? LOCAL_API_URL : PRODUCTION_API_URL);
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
