@@ -66,7 +66,7 @@ class OccurrenceService
      * "is_anonymous" com cidadão logado mantém o vínculo com a conta (ele acompanha em
      * "Minhas ocorrências"), mas a identidade fica oculta para o órgão (OccurrenceResource).
      */
-    public function createNewOccurrence(array $data): Model
+    public function createNewOccurrence(array $data, array $anexos = []): Model
     {
         if (empty($data['clients_id'])) {
             $data['clients_id'] = $this->clientService->anonymousClient()->id;
@@ -92,7 +92,18 @@ class OccurrenceService
             abort(503, 'O sistema ainda não tem status de ocorrência ou órgão cadastrado. Avise a administração da prefeitura.');
         }
 
-        return $this->createOccurrenceWithDefaults($data);
+        // Ocorrência e fotos juntas: se a gravação de uma foto falhar, nada fica salvo pela metade
+        return DB::transaction(function () use ($data, $anexos) {
+            $occurrence = $this->createOccurrenceWithDefaults($data);
+
+            foreach ($anexos as $file) {
+                if ($file instanceof UploadedFile && $file->isValid()) {
+                    $this->storeEvidence($occurrence, $file, null);
+                }
+            }
+
+            return $occurrence;
+        });
     }
 
     /**
@@ -186,7 +197,8 @@ class OccurrenceService
 
         $occurrence->imagens()->create([
             'url' => $url,
-            'uploaded_by_user_id' => auth()->id(),
+            // FK para users: foto enviada por cidadão (Client) fica sem autor de equipe
+            'uploaded_by_user_id' => $this->staffUserId(),
             'phase' => $phase,
             'captured_at' => now(),
         ]);

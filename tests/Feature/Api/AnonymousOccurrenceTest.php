@@ -11,7 +11,9 @@ use App\Models\TypeOccurrence;
 use App\Models\User;
 use App\Notifications\NewOccurrenceForIssuingNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AnonymousOccurrenceTest extends TestCase
@@ -85,6 +87,29 @@ class AnonymousOccurrenceTest extends TestCase
             ->assertJsonPath('data.title', 'Poste apagado');
 
         $this->getJson('/api/occurrences/protocol/OC-0000-99999')->assertNotFound();
+    }
+
+    public function test_occurrence_with_photo_is_created_once_with_its_evidence(): void
+    {
+        Storage::fake();
+        $citizen = Client::factory()->create();
+
+        // Duas submissões seguidas: antes, a segunda falhava ("Is a directory") com a ocorrência já gravada
+        foreach ([1, 2] as $i) {
+            $this->actingAs($citizen, 'sanctum')
+                ->post('/api/occurrences', $this->payload([
+                    'title' => "Poste com foto {$i}",
+                    'anexo' => [UploadedFile::fake()->image("foto{$i}.png")],
+                ]), ['Accept' => 'application/json'])
+                ->assertCreated()
+                ->assertJsonCount(1, 'data.anexo');
+        }
+
+        $occurrence = Occurrences::where('title', 'Poste com foto 2')->firstOrFail();
+        $this->assertCount(1, $occurrence->imagens);
+        $this->assertNull($occurrence->imagens->first()->uploaded_by_user_id);
+        Storage::assertExists($occurrence->imagens->first()->url);
+        $this->assertSame(2, Occurrences::count());
     }
 
     public function test_environment_without_status_or_issuing_returns_clear_message_instead_of_500(): void

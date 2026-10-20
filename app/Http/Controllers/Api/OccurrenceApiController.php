@@ -14,7 +14,6 @@ use Illuminate\Http\Request;
 use App\Models\OccurrencesImagens;
 use App\Models\Occurrences;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Storage;
 
 class OccurrenceApiController extends Controller
 {
@@ -114,30 +113,18 @@ class OccurrenceApiController extends Controller
             $data['clients_id'] = $citizen->id;
         }
 
-        // Órgão: OccurrenceService::createNewOccurrence() resolve pelo tipo da ocorrência.
-        $occurrence = $this->occurrenceService->createNewOccurrence($data);
+        // Órgão: OccurrenceService::createNewOccurrence() resolve pelo tipo da ocorrência. As fotos
+        // vão pelo ponto único de evidência do Service (OccurrenceService::storeEvidence), na mesma
+        // transação: antes o Storage::put duplicado aqui falhava ("Is a directory") depois da
+        // ocorrência já gravada, deixando ocorrência sem foto e devolvendo erro 500 ao app.
+        $anexos = $request->hasFile('anexo') ? (array) $request->file('anexo') : [];
+        $occurrence = $this->occurrenceService->createNewOccurrence($data, $anexos);
 
         if (!$occurrence) {
             return response()->json(['message' => 'Ocorrência não cadastrada'], 404);
         }
 
-        if ($request->hasFile('anexo')) {
-            $imagem = array();
-
-            foreach ($request->allFiles()['anexo'] as $anexo) {
-                Storage::put('occurrence/occurrences', file_get_contents($anexo));
-
-                $data['url'] = $anexo->store("occurrence/occurrences");
-                $data['occurrence_id'] = $occurrence->id;
-                $data['latitude'] = $data['latitude'] ?? null;
-                $data['longitude'] = $data['longitude'] ?? null;
-                $data['captured_at'] = now();
-
-                $occurrence->imagens()->create($data);
-                $imagem[] = $data['url'];
-            }
-            $occurrence->anexo = $imagem;
-        }
+        $occurrence->anexo = $occurrence->imagens()->pluck('url')->all();
 
         return (new OccurrenceResource($occurrence))->response()->setStatusCode(201);
     }
