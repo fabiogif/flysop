@@ -24,14 +24,8 @@ RUN composer install --optimize-autoloader --no-dev \
     && cp .fly/entrypoint.sh /entrypoint \
     && chmod +x /entrypoint
 
-# Laravel 11 made changes to how trusting all proxies works, see https://laravel.com/docs/11.x/requests#trusting-all-proxies and https://laravel.com/docs/10.x/requests#trusting-all-proxies
-RUN if php artisan --version | grep -q "Laravel Framework 1[1-9]"; then \
-    sed -i='' '/->withMiddleware(function (Middleware \$middleware) {/a\
-        \$middleware->trustProxies(at: "*");\
-' bootstrap/app.php; \
-  else \
-    sed -i 's/protected \$proxies/protected \$proxies = "*"/g' app/Http/Middleware/TrustProxies.php; \
-fi
+# Sem o sed de TrustProxies do template: app/Http/Middleware/TrustProxies.php já define
+# $proxies = '*', e o sed gerava "$proxies = "*" = '*'" (ParseError, derrubou o deploy v57).
 
 # If we're using Octane...
 RUN if grep -Fq "laravel/octane" /var/www/html/composer.json; then \
@@ -48,53 +42,9 @@ RUN if grep -Fq "laravel/octane" /var/www/html/composer.json; then \
         ln -sf /etc/nginx/sites-available/default-octane /etc/nginx/sites-enabled/default; \
     fi
 
-# Multi-stage build: Build static assets
-# This allows us to not include Node within the final container
-FROM node:${NODE_VERSION} as node_modules_go_brrr
-
-RUN mkdir /app
-
-RUN mkdir -p  /app
-WORKDIR /app
-COPY . .
-COPY --from=base /var/www/html/vendor /app/vendor
-
-# Use yarn or npm depending on what type of
-# lock file we might find. Defaults to
-# NPM if no lock file is found.
-# Note: We run "production" for Mix and "build" for Vite
-RUN if [ -f "vite.config.js" ]; then \
-        ASSET_CMD="build"; \
-    else \
-        ASSET_CMD="production"; \
-    fi; \
-    if [ -f "yarn.lock" ]; then \
-        yarn install --frozen-lockfile; \
-        yarn $ASSET_CMD; \
-    elif [ -f "pnpm-lock.yaml" ]; then \
-        corepack enable && corepack prepare pnpm@latest-8 --activate; \
-        pnpm install --frozen-lockfile; \
-        pnpm run $ASSET_CMD; \
-    elif [ -f "package-lock.json" ]; then \
-        npm ci --no-audit; \
-        npm run $ASSET_CMD; \
-    else \
-        npm install; \
-        npm run $ASSET_CMD; \
-    fi;
-
-# From our base container created above, we
-# create our final image, adding in static
-# assets that we generated above
-FROM base
-
-# Packages like Laravel Nova may have added assets to the public directory
-# or maybe some custom assets were added manually! Either way, we merge
-# in the assets we generated above rather than overwrite them
-COPY --from=node_modules_go_brrr /app/public /var/www/html/public-npm
-RUN rsync -ar /var/www/html/public-npm/ /var/www/html/public/ \
-    && rm -rf /var/www/html/public-npm \
-    && chown -R www-data:www-data /var/www/html/public
+# Sem etapa de build de assets (Node) do template do fly launch: o CSS/JS compilado já vem
+# versionado em public/ — é o que produção sempre serviu — e o Laravel Mix deste projeto
+# (webpack antigo) não compila no Node 18 (ERR_OSSL_EVP_UNSUPPORTED).
 
 EXPOSE 8080
 
