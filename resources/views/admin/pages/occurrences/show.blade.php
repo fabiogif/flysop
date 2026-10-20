@@ -155,7 +155,7 @@
                         @foreach ($imagensDaFase as $occurrencesImagen)
                             <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
                                 <div class="ciop-evidence-card">
-                                    <img src="https://sopanexos.s3.amazonaws.com/{{ $occurrencesImagen->url }}"
+                                    <img src="{{ $occurrencesImagen->public_url }}"
                                         alt="{{ $occurrences->title }}" />
                                     <p class="ciop-evidence-meta">
                                         {{ $occurrencesImagen->uploadedBy->name ?? 'Sistema' }} —

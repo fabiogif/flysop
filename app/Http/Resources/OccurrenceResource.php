@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\Client;
+use App\Models\OccurrencesImagens;
 use Carbon\Carbon;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,10 +17,11 @@ class OccurrenceResource extends JsonResource
      */
     public function toArray($request)
     {
-        // Sem anexo devolve [] (antes era [""], que o app tentava renderizar como imagem)
+        // Sem anexo devolve [] (antes era [""], que o app tentava renderizar como imagem); a URL vem
+        // do disco configurado (Tigris em produção) em vez do bucket antigo fixo no código.
         $anexo = collect((array) $this->anexo)
             ->filter()
-            ->map(fn ($item) => 'https://sopanexos.s3.amazonaws.com/' . $item)
+            ->map(fn ($item) => OccurrencesImagens::urlFor($item))
             ->values();
 
         // Anônima: só o próprio autor vê os dados de identificação; o órgão não

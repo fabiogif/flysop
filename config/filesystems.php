@@ -40,14 +40,17 @@ return [
             'url' => env('APP_URL') . '/storage',
             'visibility' => 'public',
         ],
+        // Compatível com S3 e com o Tigris (Fly.io): os nomes do Tigris (AWS_REGION,
+        // AWS_ENDPOINT_URL_S3, BUCKET_NAME) têm prioridade sobre os nomes antigos da AWS.
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
+            'region' => env('AWS_REGION', env('AWS_DEFAULT_REGION', 'auto')),
+            'bucket' => env('BUCKET_NAME', env('AWS_BUCKET')),
             'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
+            'endpoint' => env('AWS_ENDPOINT_URL_S3', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => (bool) env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
     ],
     'links' => [
