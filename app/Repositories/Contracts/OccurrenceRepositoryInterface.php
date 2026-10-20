@@ -15,7 +15,7 @@ interface OccurrenceRepositoryInterface
 
     public function createNewOccurrence(array $data): Model;
 
-    public function getPaginatedList(int $perPage = 15): LengthAwarePaginator;
+    public function getPaginatedList(int $perPage = 15, ?int $issuingId = null): LengthAwarePaginator;
 
     public function find(int $id): ?Model;
 
@@ -23,5 +23,5 @@ interface OccurrenceRepositoryInterface
 
     public function delete(int $id): bool;
 
-    public function search(?string $filter = null): LengthAwarePaginator;
+    public function search(?string $filter = null, ?int $issuingId = null): LengthAwarePaginator;
 }

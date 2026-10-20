@@ -60,12 +60,11 @@ class OccurrenceAnonymousTest extends TestCase
         Tenant::factory()->create();
         StatusOccurrence::factory()->create(['is_terminal' => false, 'sort_order' => 0]);
 
-        $auth = $this->postJson('/api/auth/citizen', ['name' => 'Maria', 'phone' => '11988887777']);
+        $token = $this->postJson('/api/auth/citizen', ['name' => 'Maria', 'phone' => '11988887777'])->json('token');
         $client = Client::where('phone', '11988887777')->firstOrFail();
 
-        $this->postJson('/api/occurrences', $this->validPayload([
-            'clients_id' => $client->id,
-        ]));
+        // Autor vem do token: clients_id no payload é ignorado (rota pública, evita se passar por outro)
+        $this->withToken($token)->postJson('/api/occurrences', $this->validPayload());
 
         $this->assertDatabaseHas('occurrences', [
             'title' => 'Buraco na via',

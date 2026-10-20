@@ -31,8 +31,23 @@ Os endpoints abaixo não tinham middleware de autenticação; validado com o tim
 
 `POST /driver/position` (`Api/Driver/DriverLocationController`) foi **removido**: aceitava `driver_id`/`latitude`/`longitude` de qualquer origem sem autenticação, era uma duplicata de `Driver\DriverPositionController` (ver `docs/specs/modules.md`), e não havia nenhum client externo dependendo dele. A gravação de posição do motorista agora tem um único ponto de verdade em `App\Services\DriverPositionService`, usado pela rota web autenticada (`POST /driver/position`, guard `web` + `ensure.driver`).
 
-Toda rota de API nova deve ter `auth:sanctum` a menos que exista uma razão documentada para ser pública (ex.: `/sanctum/token`, `/client`, `/clientConsumer`, `POST /occurrences` de cadastro público).
+Toda rota de API nova deve ter `auth:sanctum` a menos que exista uma razão documentada para ser pública:
+- Rotas públicas documentadas: `/sanctum/token`, `/client`, `/clientConsumer`, `POST /occurrences` (abertura pública de chamados), `POST /auth/citizen` (login leve), `POST /auth/register` (cadastro), `POST /auth/social` (Google/Apple), `GET /profile/{username}` (perfil público).
+- Rotas protegidas novas (`auth:sanctum`): `GET /my-occurrences`, `PUT /profile`, `POST /profile/avatar`, `GET /surveys`, `POST /surveys/{token}/responses`.
+- `POST /auth/staff/login` (login do gestor de órgão no app) é público por ser o login, com `throttle:5,1`; só emite token para `User` com `issuing_id`.
+- Públicas para o uso sem cadastro (ocorrência anônima): `GET /typeOccurrence`, `GET /occurrences` (mapa), `GET /occurrences/{id}` e `GET /occurrences/protocol/{protocol}` — sem dados pessoais (`PublicOccurrenceResource`); o autor logado recebe o detalhe completo resolvendo o token com `$request->user('sanctum')`.
 
+### Ocorrência anônima
+`occurrences.is_anonymous`: com cidadão logado, a ocorrência continua com o `clients_id` dele (acompanha em "Minhas ocorrências"), mas `OccurrenceResource` oculta nome/CPF/RG/e-mail/`clients_id` para quem não é o autor, o detalhe do gestor devolve `requester: null`, a notificação vai sem autor e o painel/PDF mostram "Anônimo". Sem login, usa o client placeholder "Anônimo" e é sempre anônima. `POST /occurrences` (público) ignora do payload `clients_id`, `users_id`, `protocol`, `status_occurrences_id`, `driver_id`, `priority_id`, `due_at` e `possible_duplicate_of_id` — antes era possível abrir ocorrência em nome de outro cidadão ou já finalizada/atribuída. **Deploy**: notificações são `ShouldQueue`; após publicar mudança nelas, rodar `php artisan queue:restart` (o worker mantém o código antigo em memória).
+
+### Dois tipos de token Sanctum (cidadão x gestor)
+`Client` (cidadão) e `User` (gestor de órgão, `users.issuing_id` preenchido) emitem tokens Sanctum na mesma tabela. Rotas do cidadão (`/profile`, `/my-occurrences`) usam `ensure.citizen`; rotas `/api/manager/*` usam `ensure.manager`. Sem esses middlewares, um token de um tipo passaria em rotas que assumem o outro (ex.: id de `User` gravado como `clients_id`). Em `OccurrenceApiController::createNewOccurrence`, só um `Client` vira autor da ocorrência. `OccurrencePolicy` limita o gestor (não admin) às ocorrências do próprio órgão em `view`/`update`, mesmo que ele tenha a permissão `occurrences`.
+
+### LGPD no app do cidadão
+`GET /api/occurrences` (mapa) e `GET /api/occurrences/{id}` de ocorrência de outra pessoa usam `PublicOccurrenceResource` (sem nome, CPF, RG, e-mail, telefone, autor ou descrição). O detalhe completo (`OccurrenceResource`) só vai para o autor. `GET /occurrences/getOccurrenceByClientId/{clientId}` só responde para o próprio cliente (403 caso contrário). O detalhe do gestor (`/api/manager/occurrences/{id}`) grava `activity('lgpd_access')`, como o painel.
+
+### Perfil Público e Isolamento LGPD
+O endpoint `GET /api/profile/{username}` utiliza `PublicProfileResource`, que restringe os dados retornados a: `id`, `name`, `username`, `avatar_url`, `bio`, `website`, `created_at` e `occurrences_count`. Campos privados (`phone`, `email`, `cpf`, `rg`, `password`) são omitidos para evitar vazamento acidental.
 ## LGPD (Fase 6 do plano de execução)
 
 - Consentimento explícito: `App\Http\Requests\Api\StoreUpdateOccurrences` (formulário público, sem login) exige `lgpd_consent` (`required|accepted`). O request do admin (`App\Http\Requests\StoreUpdateOccurrences`) não exige — quem preenche é o atendente, não o titular dos dados

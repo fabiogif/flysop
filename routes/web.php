@@ -170,6 +170,8 @@ Route::prefix('admin')
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+        Route::put('/notifications/settings', [NotificationController::class, 'updateSettings'])->name('notifications.settings');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
         //Busca global
         Route::get('/search', [App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search.index');

@@ -17,11 +17,16 @@ class OccurrencePolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->hasPermission('occurrences') || $user->driver !== null;
+        return $user->hasPermission('occurrences') || $user->driver !== null || $user->isManager();
     }
 
     public function view(User $user, Occurrences $occurrence): bool
     {
+        // Gestor de órgão: só as ocorrências do próprio órgão, mesmo tendo a permissão do módulo.
+        if ($user->isManager()) {
+            return $this->belongsToManagerIssuing($user, $occurrence);
+        }
+
         if ($user->hasPermission('occurrences')) {
             return true;
         }
@@ -36,7 +41,16 @@ class OccurrencePolicy
 
     public function update(User $user, Occurrences $occurrence): bool
     {
+        if ($user->isManager()) {
+            return $this->belongsToManagerIssuing($user, $occurrence);
+        }
+
         return $user->hasPermission('occurrences');
+    }
+
+    private function belongsToManagerIssuing(User $user, Occurrences $occurrence): bool
+    {
+        return (int) $occurrence->issuings_id === (int) $user->issuing_id;
     }
 
     /**

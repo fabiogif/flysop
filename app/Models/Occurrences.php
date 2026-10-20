@@ -10,10 +10,14 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Occurrences extends Model
 {
     use LogsActivity;
-    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'nameType', 'nameStatus'];
+    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'is_anonymous', 'nameType', 'nameStatus'];
 
     protected $casts = [
         'due_at' => 'datetime',
+        'is_anonymous' => 'boolean',
+        // decimal do Postgres chega como string; API/app tratam como número
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     // Coluna gerada pelo Postgres (busca global — Fase 4), nunca setada via PHP.
@@ -44,7 +48,7 @@ class Occurrences extends Model
     }
 
 
-    public function Occurrence($filter = null)
+    public function Occurrence($filter = null, ?int $issuingId = null)
     {
 
         $occurrences = $this->select(
@@ -67,7 +71,8 @@ class Occurrences extends Model
                     ->orWhere('occurrences.protocol', 'ILIKE', "%{$filter}%")
                     ->orWhereRaw("occurrences.search_vector @@ plainto_tsquery('portuguese', ?)", [$filter]);
             }
-        })->orderBy('occurrences.updated_at', 'desc')->orderBy('occurrences.created_at', 'desc')->paginate();
+        })->when($issuingId, fn ($query) => $query->where('occurrences.issuings_id', $issuingId))
+            ->orderBy('occurrences.updated_at', 'desc')->orderBy('occurrences.created_at', 'desc')->paginate();
 
         return $occurrences;
     }
@@ -111,6 +116,11 @@ class Occurrences extends Model
     public function issuing()
     {
         return $this->belongsTo(Issuing::class, 'issuings_id');
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'clients_id');
     }
 
     public function imagens()

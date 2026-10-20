@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateUsers;
+use App\Models\Issuing;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.pages.users.create');
+        return view('admin.pages.users.create', ['issuings' => Issuing::orderBy('name')->get()]);
     }
 
     /**
@@ -91,7 +92,7 @@ class UserController extends Controller
             return redirect()->back();
         }
 
-        return  view('admin.pages.users.edit', ['user' => $user]);
+        return  view('admin.pages.users.edit', ['user' => $user, 'issuings' => Issuing::orderBy('name')->get()]);
     }
 
     /**
@@ -109,7 +110,7 @@ class UserController extends Controller
             return redirect()->back();
         }
 
-        $data = $request->only(['name', 'email']);
+        $data = $request->only(['name', 'email', 'issuing_id']);
 
         if ($request->password) {
             $data['password'] = bcrypt($request->password);

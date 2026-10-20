@@ -13,7 +13,7 @@ class Team extends Model
 
     public function search($filter = null)
     {
-        return $this->where('name', 'ILIKE', "%{$filter}%")->paginate(10);
+        return $this->with('department')->where('name', 'ILIKE', "%{$filter}%")->paginate(10);
     }
 
     public function department()

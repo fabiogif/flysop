@@ -19,12 +19,32 @@ class Client extends Authenticatable
     protected $fillable = [
         'id',
         'name',
+        'username',
+        'avatar_url',
+        'bio',
+        'website',
+        'google_id',
+        'apple_id',
+        'email_verified_at',
+        'marketing_opt_in',
+        'terms_accepted_at',
         'email',
         'phone',
         'password',
         'tenant_id',
         'uuid',
     ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'terms_accepted_at' => 'datetime',
+        'marketing_opt_in' => 'boolean',
+    ];
+
+    public function occurrences()
+    {
+        return $this->hasMany(Occurrences::class, 'clients_id');
+    }
     public function orders()
     {
         return $this->hasMany(Order::class);

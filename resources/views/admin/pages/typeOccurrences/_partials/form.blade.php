@@ -29,6 +29,20 @@
                 </select>
             </div>
         </div>
+        <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
+            <div class="form-group">
+                <label for="issuing_id">Órgão responsável</label>
+                <select name="issuing_id" id="issuing_id" class="form-control">
+                    <option value="">Padrão (primeiro órgão cadastrado)</option>
+                    @foreach ($issuings ?? [] as $issuing)
+                        <option value="{{ $issuing->id }}"
+                            {{ (string) old('issuing_id', $typeOccurrence->issuing_id ?? '') === (string) $issuing->id ? 'selected' : '' }}>
+                            {{ $issuing->name }}</option>
+                    @endforeach
+                </select>
+                <small class="form-text text-muted">Ocorrências deste tipo abertas pelo app vão para este órgão.</small>
+            </div>
+        </div>
         <div class="col-lg-2 col-md-2 col-sm-2 col-xs-12">
             <div class="form-group">
                 <button type="submit" class="btn btn-block btn-success">Salvar</button>

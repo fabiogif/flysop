@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateAuth;
 use App\Http\Resources\ClientResource;
+use App\Http\Resources\ManagerResource;
 use App\Models\Client;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -28,15 +30,16 @@ class AuthClientController extends Controller
 
     public function me(Request $request)
     {
-        $client = $request->user();
-        return new ClientResource($client);
+        $user = $request->user();
+
+        // O mesmo /auth/me atende cidadão (Client) e gestor (User) — o app decide a navegação por "role".
+        return $user instanceof User ? new ManagerResource($user) : new ClientResource($user);
     }
 
     public function logout(Request $request)
     {
-        $client = $request->user();
-
-        $client->tokens()->delete();
+        // Só o token deste aparelho: o gestor pode estar logado no app e no painel ao mesmo tempo.
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json([], 204);
     }

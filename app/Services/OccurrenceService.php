@@ -10,7 +10,9 @@ use App\Models\Occurrences;
 use App\Models\Priority;
 use App\Models\StatusOccurrence;
 use App\Models\TypeOccurrence;
+use App\Models\User;
 use App\Events\OccurrenceUpdated;
+use App\Notifications\NewOccurrenceForIssuingNotification;
 use App\Notifications\OccurrenceAssignedNotification;
 use App\Notifications\OccurrenceStatusChangedNotification;
 use App\Repositories\Contracts\OccurrenceRepositoryInterface;
@@ -19,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class OccurrenceService
@@ -56,16 +59,20 @@ class OccurrenceService
      * a coluna "clients_id" é NOT NULL mas nunca era preenchida aqui, derrubando toda
      * submissão pública com erro 500.
      *
-     * Client de origem: se o app/site já mandou "clients_id" (cidadão logado via
-     * CitizenAuthController), usa esse. Se "is_anonymous" foi marcado, ou nenhum client foi
-     * informado, usa o placeholder "Anônimo" (ClientService::anonymousClient()) — visível e
-     * identificável no admin, em vez do antigo default arbitrário "primeiro client cadastrado".
+     * Client de origem: o cidadão logado ("clients_id" vem do token, nunca do payload — ver
+     * OccurrenceApiController). Sem cidadão logado (cadastro sem conta), usa o placeholder
+     * "Anônimo" (ClientService::anonymousClient()) e a ocorrência é sempre anônima.
+     *
+     * "is_anonymous" com cidadão logado mantém o vínculo com a conta (ele acompanha em
+     * "Minhas ocorrências"), mas a identidade fica oculta para o órgão (OccurrenceResource).
      */
     public function createNewOccurrence(array $data): Model
     {
-        if (!empty($data['is_anonymous']) || empty($data['clients_id'])) {
+        if (empty($data['clients_id'])) {
             $data['clients_id'] = $this->clientService->anonymousClient()->id;
+            $data['is_anonymous'] = true;
         }
+        $data['is_anonymous'] = ! empty($data['is_anonymous']);
 
         if (empty($data['status_occurrences_id'])) {
             $data['status_occurrences_id'] = StatusOccurrence::where('is_terminal', false)
@@ -73,7 +80,26 @@ class OccurrenceService
                 ->value('id');
         }
 
+        // Órgão: o responsável pelo tipo (configurado no web); sem isso, o primeiro órgão.
+        if (empty($data['issuings_id'])) {
+            $data['issuings_id'] = TypeOccurrence::whereKey($data['type_occurrences_id'] ?? null)->value('issuing_id')
+                ?? Issuing::query()->value('id')
+                ?? 1;
+        }
+
         return $this->createOccurrenceWithDefaults($data);
+    }
+
+    /**
+     * Ocorrências de um órgão (app do gestor), mais recentes primeiro.
+     */
+    public function getOccurrencesForIssuing(int $issuingId, ?int $statusId = null, int $perPage = 15): LengthAwarePaginator
+    {
+        return Occurrences::where('issuings_id', $issuingId)
+            ->when($statusId, fn ($query) => $query->where('status_occurrences_id', $statusId))
+            ->with(['statusOccurence', 'typeOccurrence'])
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
     }
 
     /**
@@ -81,7 +107,17 @@ class OccurrenceService
      */
     public function getPaginatedList(int $perPage = 15): LengthAwarePaginator
     {
-        return $this->repository->getPaginatedList($perPage);
+        return $this->repository->getPaginatedList($perPage, $this->managerIssuingScope());
+    }
+
+    /**
+     * Gestor de órgão (não admin) só lista o próprio órgão no painel; demais, tudo.
+     */
+    private function managerIssuingScope(): ?int
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->isManager() && ! $user->isAdmin() ? $user->issuing_id : null;
     }
 
     /**
@@ -166,13 +202,15 @@ class OccurrenceService
             'occurrence_id' => $occurrence->id,
             'from_status_id' => null,
             'to_status_id' => $occurrence->status_occurrences_id,
-            'changed_by_user_id' => auth()->id(),
+            'changed_by_user_id' => $this->staffUserId(),
             'note' => 'Ocorrência registrada.',
         ]);
 
         if (! empty($data['driver_id'])) {
             $this->notifyAssignment((int) $data['driver_id'], $occurrence);
         }
+
+        $this->notifyIssuingManagers($occurrence);
 
         $this->detectPossibleDuplicate($occurrence);
 
@@ -394,7 +432,7 @@ class OccurrenceService
             'occurrence_id' => $occurrence->id,
             'from_status_id' => $fromStatusId,
             'to_status_id' => $newStatusId,
-            'changed_by_user_id' => auth()->id(),
+            'changed_by_user_id' => $this->staffUserId(),
             'note' => $note,
         ]);
 
@@ -495,7 +533,7 @@ class OccurrenceService
 
     public function search(?string $filter = null): LengthAwarePaginator
     {
-        return $this->repository->search($filter);
+        return $this->repository->search($filter, $this->managerIssuingScope());
     }
 
     /**
@@ -570,5 +608,29 @@ class OccurrenceService
         $occurrence = $this->findOrFail($occurrenceId);
 
         return $this->recordStatusChange($occurrence, $statusOccurrencesId);
+    }
+
+    /**
+     * Avisa os gestores do órgão da ocorrência (quem desligou a preferência fica de fora;
+     * quem cadastrou pelo painel não é avisado da própria ocorrência).
+     */
+    private function notifyIssuingManagers(Occurrences $occurrence): void
+    {
+        $managers = User::where('issuing_id', $occurrence->issuings_id)
+            ->where('notify_new_occurrences', true)
+            ->when($this->staffUserId(), fn ($query, $userId) => $query->where('id', '!=', $userId))
+            ->get();
+
+        Notification::send($managers, new NewOccurrenceForIssuingNotification($occurrence));
+    }
+
+    /**
+     * changed_by_user_id é FK para users: cidadão (Client via Sanctum) não pode ser gravado ali.
+     */
+    private function staffUserId(): ?int
+    {
+        $user = auth()->user();
+
+        return $user instanceof User ? $user->id : null;
     }
 }

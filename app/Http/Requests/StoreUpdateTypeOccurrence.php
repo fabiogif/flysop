@@ -31,6 +31,7 @@ class StoreUpdateTypeOccurrence extends FormRequest
         return [
             'name' => "required|min:3|max:255|unique:type_occurrences,name,{$id},id",
             'sla_hours' => 'nullable|integer|min:1',
+            'issuing_id' => 'nullable|integer|exists:issuings,id',
             'parent_id' => "nullable|integer|exists:type_occurrences,id|different:{$id}",
         ];
     }

@@ -95,7 +95,7 @@ class TeamController extends Controller
     public function search(Request $request)
     {
         $filters = $request->all();
-        $teams = $this->repository->with('department')->search($request->filter);
+        $teams = $this->repository->search($request->filter);
 
         return view('admin.pages.teams.index', [
             'teams' => $teams,

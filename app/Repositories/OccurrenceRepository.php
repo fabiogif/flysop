@@ -34,9 +34,9 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
         return $this->entity->create($data);
     }
 
-    public function getPaginatedList(int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedList(int $perPage = 15, ?int $issuingId = null): LengthAwarePaginator
     {
-        return $this->entity->Occurrence(null);
+        return $this->entity->Occurrence(null, $issuingId);
     }
 
     public function find(int $id): ?Model
@@ -58,8 +58,8 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
         return $occurrence ? (bool) $occurrence->delete() : false;
     }
 
-    public function search(?string $filter = null): LengthAwarePaginator
+    public function search(?string $filter = null, ?int $issuingId = null): LengthAwarePaginator
     {
-        return $this->entity->Occurrence($filter);
+        return $this->entity->Occurrence($filter, $issuingId);
     }
 }

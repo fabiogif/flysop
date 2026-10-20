@@ -100,18 +100,26 @@
                         @endif
                     </dd>
                 </div>
-                <div class="ciop-detail-item">
-                    <dt>Solicitante</dt>
-                    <dd>{{ $occurrences->name ?? '—' }}</dd>
-                </div>
-                <div class="ciop-detail-item">
-                    <dt>E-mail</dt>
-                    <dd>{{ $occurrences->email ?? '—' }}</dd>
-                </div>
-                <div class="ciop-detail-item">
-                    <dt>Telefone</dt>
-                    <dd>{{ $occurrences->phone ?? '—' }}</dd>
-                </div>
+                {{-- Anônima: o cidadão pediu para o órgão não saber quem abriu --}}
+                @if ($occurrences->is_anonymous)
+                    <div class="ciop-detail-item">
+                        <dt>Solicitante</dt>
+                        <dd><i class="fas fa-user-secret" aria-hidden="true"></i> Anônimo</dd>
+                    </div>
+                @else
+                    <div class="ciop-detail-item">
+                        <dt>Solicitante</dt>
+                        <dd>{{ $occurrences->name ?? '—' }}</dd>
+                    </div>
+                    <div class="ciop-detail-item">
+                        <dt>E-mail</dt>
+                        <dd>{{ $occurrences->email ?? '—' }}</dd>
+                    </div>
+                    <div class="ciop-detail-item">
+                        <dt>Telefone</dt>
+                        <dd>{{ $occurrences->phone ?? '—' }}</dd>
+                    </div>
+                @endif
                 <div class="ciop-detail-item">
                     <dt>Motorista</dt>
                     <dd>{{ $occurrences->driver->name ?? '—' }}</dd>

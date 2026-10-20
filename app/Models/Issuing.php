@@ -17,4 +17,9 @@ class Issuing extends Model
             ->paginate(10);
         return $result;
     }
+
+    public function managers()
+    {
+        return $this->hasMany(User::class);
+    }
 }
