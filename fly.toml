@@ -5,7 +5,9 @@
 #
 
 app = 'flysop'
-primary_region = 'gru'
+# sjc (San José): ao lado do Postgres (Aiven, Santa Clara/CA). Em gru cada query custava
+# ~540ms (3 idas e voltas de ~180ms) e as páginas levavam 2,5-3,5s; em sjc caem para ~0,5s.
+primary_region = 'sjc'
 console_command = 'php /var/www/html/artisan tinker'
 kill_signal = 'SIGINT'
 kill_timeout = '10s'
@@ -36,7 +38,8 @@ swap_size_mb = 512
   force_https = true
   auto_stop_machines = 'stop'
   auto_start_machines = true
-  min_machines_running = 0
+  # 1 sempre ligada: com 0, a primeira requisição após ociosidade esperava o boot (~35-50s)
+  min_machines_running = 1
   processes = ['app']
 
 [[vm]]
