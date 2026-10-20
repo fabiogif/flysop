@@ -1,0 +1,33 @@
+{
+  "expo": {
+    "name": "CIOP - Ocorrências Públicas",
+    "slug": "ciop-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "plugins": ["@maplibre/maplibre-react-native"],
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#1E3A8A"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.gov.ciop.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Precisamos da sua localização para registrar onde o problema está ocorrendo no mapa.",
+        "NSCameraUsageDescription": "Precisamos da sua câmera para tirar fotos de evidência da ocorrência.",
+        "NSPhotoLibraryUsageDescription": "Precisamos de acesso às fotos para que você possa anexar imagens da ocorrência."
+      }
+    },
+    "android": {
+      "package": "br.gov.ciop.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    }
+  }
+}
