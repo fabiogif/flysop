@@ -83,8 +83,13 @@ class OccurrenceService
         // Órgão: o responsável pelo tipo (configurado no web); sem isso, o primeiro órgão.
         if (empty($data['issuings_id'])) {
             $data['issuings_id'] = TypeOccurrence::whereKey($data['type_occurrences_id'] ?? null)->value('issuing_id')
-                ?? Issuing::query()->value('id')
-                ?? 1;
+                ?? Issuing::query()->value('id');
+        }
+
+        // Ambiente sem cadastros básicos (ex.: produção recém-criada) dava 500 por violação de
+        // NOT NULL/FK; responde com o motivo para quem configura o sistema.
+        if (empty($data['status_occurrences_id']) || empty($data['issuings_id'])) {
+            abort(503, 'O sistema ainda não tem status de ocorrência ou órgão cadastrado. Avise a administração da prefeitura.');
         }
 
         return $this->createOccurrenceWithDefaults($data);

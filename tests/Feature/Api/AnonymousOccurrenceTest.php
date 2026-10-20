@@ -87,6 +87,17 @@ class AnonymousOccurrenceTest extends TestCase
         $this->getJson('/api/occurrences/protocol/OC-0000-99999')->assertNotFound();
     }
 
+    public function test_environment_without_status_or_issuing_returns_clear_message_instead_of_500(): void
+    {
+        StatusOccurrence::query()->delete();
+
+        $this->postJson('/api/occurrences', $this->payload())
+            ->assertStatus(503)
+            ->assertJsonPath('message', 'O sistema ainda não tem status de ocorrência ou órgão cadastrado. Avise a administração da prefeitura.');
+
+        $this->assertDatabaseCount('occurrences', 0);
+    }
+
     public function test_public_creation_ignores_author_and_workflow_fields_from_payload(): void
     {
         $victim = Client::factory()->create();
