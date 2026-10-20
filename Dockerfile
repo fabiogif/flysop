@@ -1,69 +1,101 @@
-# fly.io / deploy – imagem oficial PHP (Debian), evita 404 em apt
-# Para uso local via docker-compose use: Dockerfile.dev
+# syntax = docker/dockerfile:experimental
 
-FROM php:8.2-fpm AS base
+# Default to PHP 8.2, but we attempt to match
+# the PHP version from the user (wherever `flyctl launch` is run)
+# Valid version values are PHP 7.4+
+ARG PHP_VERSION=8.2
+ARG NODE_VERSION=18
+FROM fideloper/fly-laravel:${PHP_VERSION} as base
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        git \
-        unzip \
-        nginx \
-        libzip-dev \
-        libpng-dev \
-        libjpeg-dev \
-        libonig-dev \
-        libxml2-dev \
-        libpq-dev \
-        curl \
-    && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        zip \
-        pdo \
-        pdo_pgsql \
-        mbstring \
-        xml \
-        bcmath \
-        gd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# PHP_VERSION needs to be repeated here
+# See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+ARG PHP_VERSION
 
-# opcache.enable_cli=1 evita recompilar o framework do zero nos comandos "php artisan"
-# de boot (config:cache/route:cache/view:cache, release_command). memory_consumption
-# reduzido de 128 (padrao) para 64MB porque a maquina de producao tem so 256MB de RAM.
-RUN { \
-        echo 'opcache.enable=1'; \
-        echo 'opcache.enable_cli=1'; \
-        echo 'opcache.memory_consumption=64'; \
-        echo 'opcache.max_accelerated_files=10000'; \
-        echo 'opcache.validate_timestamps=0'; \
-    } > /usr/local/etc/php/conf.d/zz-opcache.ini
+LABEL fly_launch_runtime="laravel"
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# copy application code, skipping files based on .dockerignore
+COPY . /var/www/html
 
+RUN composer install --optimize-autoloader --no-dev \
+    && mkdir -p storage/logs \
+    && php artisan optimize:clear \
+    && chown -R www-data:www-data /var/www/html \
+    && echo "MAILTO=\"\"\n* * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
+    && cp .fly/entrypoint.sh /entrypoint \
+    && chmod +x /entrypoint
+
+# Laravel 11 made changes to how trusting all proxies works, see https://laravel.com/docs/11.x/requests#trusting-all-proxies and https://laravel.com/docs/10.x/requests#trusting-all-proxies
+RUN if php artisan --version | grep -q "Laravel Framework 1[1-9]"; then \
+    sed -i='' '/->withMiddleware(function (Middleware \$middleware) {/a\
+        \$middleware->trustProxies(at: "*");\
+' bootstrap/app.php; \
+  else \
+    sed -i 's/protected \$proxies/protected \$proxies = "*"/g' app/Http/Middleware/TrustProxies.php; \
+fi
+
+# If we're using Octane...
+RUN if grep -Fq "laravel/octane" /var/www/html/composer.json; then \
+        rm -rf /etc/supervisor/conf.d/fpm.conf; \
+        if grep -Fq "spiral/roadrunner" /var/www/html/composer.json; then \
+            mv /etc/supervisor/octane-rr.conf /etc/supervisor/conf.d/octane-rr.conf; \
+            if [ -f ./vendor/bin/rr ]; then ./vendor/bin/rr get-binary; fi; \
+            rm -f .rr.yaml; \
+        else \
+            mv .fly/octane-swoole /etc/services.d/octane; \
+            mv /etc/supervisor/octane-swoole.conf /etc/supervisor/conf.d/octane-swoole.conf; \
+        fi; \
+        rm /etc/nginx/sites-enabled/default; \
+        ln -sf /etc/nginx/sites-available/default-octane /etc/nginx/sites-enabled/default; \
+    fi
+
+# Multi-stage build: Build static assets
+# This allows us to not include Node within the final container
+FROM node:${NODE_VERSION} as node_modules_go_brrr
+
+RUN mkdir /app
+
+RUN mkdir -p  /app
 WORKDIR /app
-
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
-
 COPY . .
-RUN composer dump-autoload --optimize \
-    && composer run-script post-install-cmd 2>/dev/null || true
+COPY --from=base /var/www/html/vendor /app/vendor
 
-RUN chown -R www-data:www-data /app \
-    && chmod -R 755 /app/storage /app/bootstrap/cache
+# Use yarn or npm depending on what type of
+# lock file we might find. Defaults to
+# NPM if no lock file is found.
+# Note: We run "production" for Mix and "build" for Vite
+RUN if [ -f "vite.config.js" ]; then \
+        ASSET_CMD="build"; \
+    else \
+        ASSET_CMD="production"; \
+    fi; \
+    if [ -f "yarn.lock" ]; then \
+        yarn install --frozen-lockfile; \
+        yarn $ASSET_CMD; \
+    elif [ -f "pnpm-lock.yaml" ]; then \
+        corepack enable && corepack prepare pnpm@latest-8 --activate; \
+        pnpm install --frozen-lockfile; \
+        pnpm run $ASSET_CMD; \
+    elif [ -f "package-lock.json" ]; then \
+        npm ci --no-audit; \
+        npm run $ASSET_CMD; \
+    else \
+        npm install; \
+        npm run $ASSET_CMD; \
+    fi;
 
-# Antes rodava tudo (inclusive JS/CSS/imagens) via "php artisan serve" — servidor de
-# dev single-threaded, sem front-end de webserver. Toda requisicao, ate um .svg
-# estatico, passava pelo bootstrap completo do Laravel e ficava numa fila serializada
-# (~3-6s por asset, medido em producao). Agora nginx serve estatico direto do disco e
-# so repassa .php para o php-fpm (pm=ondemand, ver docker/fly/www.conf — poucos
-# workers residentes, adequado aos 256MB de RAM da maquina).
-COPY deploy-fly/nginx.conf /etc/nginx/sites-enabled/default
-COPY deploy-fly/www.conf /usr/local/etc/php-fpm.d/www.conf
-COPY deploy-fly/start.sh /start.sh
-RUN chmod +x /start.sh
+# From our base container created above, we
+# create our final image, adding in static
+# assets that we generated above
+FROM base
 
-ENV PORT=8080
+# Packages like Laravel Nova may have added assets to the public directory
+# or maybe some custom assets were added manually! Either way, we merge
+# in the assets we generated above rather than overwrite them
+COPY --from=node_modules_go_brrr /app/public /var/www/html/public-npm
+RUN rsync -ar /var/www/html/public-npm/ /var/www/html/public/ \
+    && rm -rf /var/www/html/public-npm \
+    && chown -R www-data:www-data /var/www/html/public
+
 EXPOSE 8080
 
-CMD ["/start.sh"]
+ENTRYPOINT ["/entrypoint"]
