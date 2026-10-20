@@ -11,11 +11,12 @@ import { SurveyDetailScreen } from '../screens/Surveys/SurveyDetailScreen';
 import { EditProfileScreen } from '../screens/Profile/EditProfileScreen';
 import { GuestOccurrencesScreen } from '../screens/Occurrences/GuestOccurrencesScreen';
 import { useAuth } from '../context/AuthContext';
+import { Coordinates } from '../components/Map/osmStyle';
 
 const Tab = createBottomTabNavigator();
 
 // Sub-fluxo do Mapa com detalhe de ocorrência
-const MapFlow: React.FC<{ onNavigateToNew: () => void }> = ({ onNavigateToNew }) => {
+const MapFlow: React.FC<{ onNavigateToNew: (point?: Coordinates) => void }> = ({ onNavigateToNew }) => {
   const [selectedDetailId, setSelectedDetailId] = useState<number | null>(null);
 
   if (selectedDetailId !== null) {
@@ -108,7 +109,9 @@ export const TabNavigator: React.FC = () => {
           ),
         }}
       >
-        {({ navigation }) => <MapFlow onNavigateToNew={() => navigation.navigate('NovaTab')} />}
+        {({ navigation }) => (
+          <MapFlow onNavigateToNew={(point) => navigation.navigate('NovaTab', { point })} />
+        )}
       </Tab.Screen>
 
       <Tab.Screen
@@ -136,8 +139,14 @@ export const TabNavigator: React.FC = () => {
           ),
         }}
       >
-        {({ navigation }) => (
-          <NewOccurrenceScreen onNavigateHome={() => navigation.navigate('MapaTab')} />
+        {({ navigation, route }) => (
+          <NewOccurrenceScreen
+            initialPoint={(route.params as { point?: Coordinates } | undefined)?.point}
+            onNavigateHome={() => {
+              navigation.setParams({ point: undefined });
+              navigation.navigate('MapaTab');
+            }}
+          />
         )}
       </Tab.Screen>
 

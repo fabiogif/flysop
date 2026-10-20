@@ -16,27 +16,12 @@ import * as Location from 'expo-location';
 import NetInfo from '@react-native-community/netinfo';
 import { apiClient } from '../../api/client';
 import { Occurrence, TypeOccurrence } from '../../types';
-
-// Tiles OpenStreetMap sem API key. ponytail: tile.openstreetmap.org não é para tráfego de produção
-// alto (tile usage policy); trocar por provedor próprio/pago (MapTiler, Stadia) ao escalar.
-const OSM_STYLE = {
-  version: 8,
-  sources: {
-    osm: {
-      type: 'raster',
-      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-      tileSize: 256,
-      attribution: '© OpenStreetMap contributors',
-    },
-  },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
-};
-
-const DEFAULT_CENTER = { latitude: -12.9714, longitude: -38.5014 };
+import { OSM_STYLE, DEFAULT_CENTER, Coordinates } from '../../components/Map/osmStyle';
 
 interface MapScreenProps {
   onSelectOccurrenceDetail: (occurrenceId: number) => void;
-  onOpenNewOccurrence: () => void;
+  // Sem ponto = localização atual (botão ＋); com ponto = local escolhido no mapa (toque longo)
+  onOpenNewOccurrence: (point?: Coordinates) => void;
 }
 
 export const MapScreen: React.FC<MapScreenProps> = ({
@@ -158,6 +143,11 @@ export const MapScreen: React.FC<MapScreenProps> = ({
         compassEnabled
         logoEnabled={false}
         onPress={() => setSelectedOccurrence(null)}
+        onLongPress={(feature) => {
+          // Toque longo: registra a ocorrência nesse ponto em vez da localização atual
+          const [longitude, latitude] = (feature.geometry as GeoJSON.Point).coordinates;
+          onOpenNewOccurrence({ latitude, longitude });
+        }}
       >
         <Camera
           ref={cameraRef}
@@ -259,6 +249,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({
             </TouchableOpacity>
           ))}
         </ScrollView>
+        <View style={styles.hintBubble} pointerEvents="none">
+          <Text style={styles.hintText}>Toque e segure no mapa para registrar em outro local</Text>
+        </View>
       </SafeAreaView>
 
       {/* Floating Action Buttons: Recentre & New Occurrence */}
@@ -273,7 +266,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
         <TouchableOpacity
           style={[styles.floatingBtn, styles.newOccurrenceBtn]}
-          onPress={onOpenNewOccurrence}
+          onPress={() => onOpenNewOccurrence()}
           accessibilityLabel="Criar nova ocorrência"
         >
           <Text style={styles.newOccurrenceBtnText}>＋</Text>
@@ -376,6 +369,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: '#374151',
+  },
+  hintBubble: {
+    alignSelf: 'center',
+    marginTop: 8,
+    backgroundColor: 'rgba(17, 24, 39, 0.75)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  hintText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '600',
   },
   filterChipTextActive: {
     color: '#FFFFFF',

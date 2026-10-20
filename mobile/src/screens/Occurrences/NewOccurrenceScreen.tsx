@@ -18,9 +18,18 @@ import { toUf } from '../../utils/uf';
 import { useAuth } from '../../context/AuthContext';
 import { saveGuestProtocol } from '../../services/guestProtocols';
 import { AppCameraModal } from '../../components/Camera/AppCameraModal';
+import { LocationPickerModal } from '../../components/Map/LocationPickerModal';
+import { Coordinates } from '../../components/Map/osmStyle';
 
-export const NewOccurrenceScreen: React.FC<{ onNavigateHome: () => void }> = ({
+interface NewOccurrenceScreenProps {
+  onNavigateHome: () => void;
+  // Ponto escolhido no mapa principal (toque longo); sem ele, usa o GPS
+  initialPoint?: Coordinates | null;
+}
+
+export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
   onNavigateHome,
+  initialPoint,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -35,6 +44,8 @@ export const NewOccurrenceScreen: React.FC<{ onNavigateHome: () => void }> = ({
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [isGpsLoading, setIsGpsLoading] = useState(false);
+  const [locationSource, setLocationSource] = useState<'gps' | 'map'>('gps');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   // Fotos e Câmera
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -70,41 +81,58 @@ export const NewOccurrenceScreen: React.FC<{ onNavigateHome: () => void }> = ({
         setErrorMessage('Não foi possível carregar os tipos de ocorrência. Verifique sua conexão.');
       }
 
-      // Obter localização inicial
-      await detectGpsLocation();
+      // Localização inicial: o ponto vindo do mapa tem prioridade sobre o GPS
+      if (!initialPoint) await detectGpsLocation();
     })();
   }, []);
 
-  const detectGpsLocation = async () => {
-    setIsGpsLoading(true);
+  useEffect(() => {
+    if (initialPoint) applyCoordinates(initialPoint, 'map');
+  }, [initialPoint]);
+
+  // Ponto único para GPS e mapa: grava as coordenadas e preenche o endereço pelo geocoding reverso
+  const applyCoordinates = async (coords: Coordinates, source: 'gps' | 'map') => {
+    setLatitude(coords.latitude);
+    setLongitude(coords.longitude);
+    setLocationSource(source);
+    // Limpa o endereço anterior para não ficar um endereço de outro ponto
+    setAddress('');
+    setNeighborhood('');
+    setCity('');
+    setState('');
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setIsGpsLoading(false);
-        return;
-      }
-
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      setLatitude(loc.coords.latitude);
-      setLongitude(loc.coords.longitude);
-
-      const [geo] = await Location.reverseGeocodeAsync({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      });
-
+      const [geo] = await Location.reverseGeocodeAsync(coords);
       if (geo) {
         setAddress(geo.street ? `${geo.street}, ${geo.streetNumber || 'S/N'}` : '');
         setNeighborhood(geo.district || geo.subregion || '');
         setCity(geo.city || '');
         setState(toUf(geo.region));
       }
-    } catch {} finally {
+    } catch (error) {
+      console.warn('NewOccurrence: falha no geocoding reverso', error);
+    }
+  };
+
+  const detectGpsLocation = async () => {
+    setIsGpsLoading(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return;
+
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+      await applyCoordinates(loc.coords, 'gps');
+    } catch (error) {
+      console.warn('NewOccurrence: falha ao obter GPS', error);
+    } finally {
       setIsGpsLoading(false);
     }
+  };
+
+  const handlePickOnMap = async (coords: Coordinates) => {
+    setIsPickerOpen(false);
+    await applyCoordinates(coords, 'map');
   };
 
   const isFormValid =
@@ -220,11 +248,9 @@ export const NewOccurrenceScreen: React.FC<{ onNavigateHome: () => void }> = ({
         <View style={styles.gpsCard}>
           <View style={styles.gpsHeader}>
             <Text style={styles.gpsTitle}>📍 Local do Problema</Text>
-            <TouchableOpacity onPress={detectGpsLocation} disabled={isGpsLoading}>
-              <Text style={styles.refreshGps}>
-                {isGpsLoading ? 'Atualizando...' : 'Atualizar GPS'}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.locationSourceText}>
+              {locationSource === 'map' ? 'Ponto escolhido no mapa' : 'Sua localização atual'}
+            </Text>
           </View>
 
           {latitude && longitude ? (
@@ -240,10 +266,40 @@ export const NewOccurrenceScreen: React.FC<{ onNavigateHome: () => void }> = ({
             </View>
           ) : (
             <Text style={styles.noGpsText}>
-              Buscando localização exata via GPS...
+              {isGpsLoading ? 'Buscando localização exata via GPS...' : 'Nenhum local definido.'}
             </Text>
           )}
+
+          {/* Um ou outro: a localização atual ou qualquer ponto escolhido no mapa */}
+          <View style={styles.locationActions}>
+            <TouchableOpacity
+              style={[styles.locationBtn, locationSource === 'gps' && styles.locationBtnActive]}
+              onPress={detectGpsLocation}
+              disabled={isGpsLoading}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.locationBtnText, locationSource === 'gps' && styles.locationBtnTextActive]}>
+                {isGpsLoading ? 'Localizando...' : '🎯 Minha localização'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.locationBtn, locationSource === 'map' && styles.locationBtnActive]}
+              onPress={() => setIsPickerOpen(true)}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.locationBtnText, locationSource === 'map' && styles.locationBtnTextActive]}>
+                🗺️ Escolher no mapa
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
+
+        <LocationPickerModal
+          visible={isPickerOpen}
+          initial={latitude && longitude ? { latitude, longitude } : null}
+          onConfirm={handlePickOnMap}
+          onClose={() => setIsPickerOpen(false)}
+        />
 
         {/* Tipo de Ocorrência */}
         <View style={styles.formGroup}>
@@ -431,10 +487,37 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1E3A8A',
   },
-  refreshGps: {
+  locationSourceText: {
     fontSize: 12,
-    color: '#1E3A8A',
+    color: '#6B7280',
     fontWeight: '600',
+  },
+  locationActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  locationBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#1E3A8A',
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  locationBtnActive: {
+    backgroundColor: '#1E3A8A',
+  },
+  locationBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1E3A8A',
+  },
+  locationBtnTextActive: {
+    color: '#FFFFFF',
   },
   addressText: {
     fontSize: 15,
