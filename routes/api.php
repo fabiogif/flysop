@@ -63,6 +63,12 @@ Route::get('/occurrences', [App\Http\Controllers\Api\OccurrenceApiController::cl
 Route::get('/occurrences/protocol/{protocol}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'showByProtocol']);
 Route::get('/occurrences/{id}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'show'])->whereNumber('id');
 
+// Pesquisas: públicas como no web (PublicSurveyController, link/QR sem login); a resposta grava
+// só o IP, nunca o cidadão. Reaproveita SurveyService/StoreSurveyResponse sem duplicar regra.
+Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);
+Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
+Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);
+
 /*
 |--------------------------------------------------------------------------
 | Rotas autenticadas (auth:sanctum)
@@ -80,10 +86,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/tenants', [App\Http\Controllers\Api\TenantApiController::class, 'index']);
 
     Route::get('/occurrences/getOccurrenceByClientId/{clientId}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'getOccurrenceByClientId']);
-
-    // Pesquisas (app/site público, cidadão logado) — espelha PublicSurveyController (Blade),
-    // reaproveita SurveyService/StoreSurveyResponse sem duplicar regra de negócio.
-    Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);
-    Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
-    Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);
 });

@@ -60,8 +60,22 @@ class SurveyApiTest extends TestCase
         $this->assertSame(1, SurveyResponse::where('survey_id', $survey->id)->count());
     }
 
-    public function test_survey_endpoints_require_authentication(): void
+    public function test_visitor_without_account_lists_and_answers_surveys_like_on_the_web(): void
     {
-        $this->getJson('/api/surveys')->assertUnauthorized();
+        $tenant = Tenant::factory()->create();
+        $survey = Survey::factory()->create(['tenant_id' => $tenant->id, 'is_active' => true]);
+        $question = SurveyQuestion::factory()->create([
+            'survey_id' => $survey->id,
+            'type' => SurveyQuestion::TYPE_TEXT,
+            'required' => true,
+        ]);
+
+        $this->getJson('/api/surveys')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson("/api/surveys/{$survey->public_token}")->assertOk();
+        $this->postJson("/api/surveys/{$survey->public_token}/responses", [
+            'answers' => [$question->id => 'Muito bom'],
+        ])->assertCreated();
+
+        $this->assertSame(1, SurveyResponse::where('survey_id', $survey->id)->count());
     }
 }
