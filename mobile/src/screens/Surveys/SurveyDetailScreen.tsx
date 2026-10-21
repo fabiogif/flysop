@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { apiClient } from '../../api/client';
+import { saveAnsweredSurvey } from '../../services/answeredSurveys';
 import { Survey, SurveyQuestion } from '../../types';
 
 interface SurveyDetailScreenProps {
@@ -78,6 +79,7 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
       await apiClient.post(`/surveys/${token}/responses`, {
         answers,
       });
+      await saveAnsweredSurvey(token).catch(() => {});
       setIsCompleted(true);
     } catch (err: unknown) {
       let msg: string | null = null;

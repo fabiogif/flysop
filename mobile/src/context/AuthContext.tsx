@@ -1,7 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiClient } from '../api/client';
 import { Client, Manager } from '../types';
+
+const GUEST_MODE_KEY = 'guest_mode';
 
 export interface RegisterPayload {
   name: string;
@@ -38,6 +41,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isGuest, setIsGuest] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Modo anônimo fica salvo no aparelho: reabrir o app não volta para a tela de cadastro
+  const setGuest = (value: boolean) => {
+    setIsGuest(value);
+    (value ? AsyncStorage.setItem(GUEST_MODE_KEY, '1') : AsyncStorage.removeItem(GUEST_MODE_KEY)).catch(() => {});
+  };
+
   // /auth/me atende cidadão e gestor; "role" decide qual dos dois é
   const applyMe = (me: Client | Manager) => {
     if ('role' in me && me.role === 'manager') {
@@ -56,6 +65,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (token) {
           const response = await apiClient.get<MeResponse>('/auth/me');
           applyMe(response.data.data ?? response.data);
+        } else if ((await AsyncStorage.getItem(GUEST_MODE_KEY)) === '1') {
+          setIsGuest(true);
         }
       } catch {
         await SecureStore.deleteItemAsync('auth_token');
@@ -74,7 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { token, client: clientData } = response.data;
     await SecureStore.setItemAsync('auth_token', token);
     setClient(clientData);
-    setIsGuest(false);
+    setGuest(false);
   };
 
   const registerWithEmail = async (data: RegisterPayload) => {
@@ -85,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { token, client: clientData } = response.data;
     await SecureStore.setItemAsync('auth_token', token);
     setClient(clientData);
-    setIsGuest(false);
+    setGuest(false);
   };
 
   const socialAuth = async (
@@ -103,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { token, client: clientData } = response.data;
     await SecureStore.setItemAsync('auth_token', token);
     setClient(clientData);
-    setIsGuest(false);
+    setGuest(false);
   };
 
   const loginAsManager = async (email: string, password: string) => {
@@ -115,11 +126,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await SecureStore.setItemAsync('auth_token', response.data.token);
     setManager(response.data.user);
     setClient(null);
-    setIsGuest(false);
+    setGuest(false);
   };
 
   const enterAsGuest = () => {
-    setIsGuest(true);
+    setGuest(true);
     setClient(null);
   };
 
@@ -130,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await SecureStore.deleteItemAsync('auth_token');
     setClient(null);
     setManager(null);
-    setIsGuest(false);
+    setGuest(false);
   };
 
   const refreshProfile = async () => {

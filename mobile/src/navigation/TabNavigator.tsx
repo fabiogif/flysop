@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
@@ -12,6 +12,9 @@ import { EditProfileScreen } from '../screens/Profile/EditProfileScreen';
 import { GuestOccurrencesScreen } from '../screens/Occurrences/GuestOccurrencesScreen';
 import { useAuth } from '../context/AuthContext';
 import { Coordinates } from '../components/Map/osmStyle';
+import { apiClient } from '../api/client';
+import { getAnsweredSurveys } from '../services/answeredSurveys';
+import { Survey } from '../types';
 
 const Tab = createBottomTabNavigator();
 
@@ -64,14 +67,17 @@ const OccurrencesFlow: React.FC<{ onNavigateToNew: () => void }> = ({ onNavigate
 };
 
 // Sub-fluxo de Pesquisas Públicas com detalhe de questionário
-const SurveysFlow: React.FC = () => {
+const SurveysFlow: React.FC<{ onSurveyClosed: () => void }> = ({ onSurveyClosed }) => {
   const [activeSurveyToken, setActiveSurveyToken] = useState<string | null>(null);
 
   if (activeSurveyToken !== null) {
     return (
       <SurveyDetailScreen
         token={activeSurveyToken}
-        onFinish={() => setActiveSurveyToken(null)}
+        onFinish={() => {
+          setActiveSurveyToken(null);
+          onSurveyClosed();
+        }}
       />
     );
   }
@@ -84,6 +90,26 @@ const SurveysFlow: React.FC = () => {
 };
 
 export const TabNavigator: React.FC = () => {
+  const [pendingSurveys, setPendingSurveys] = useState(0);
+
+  // Badge = pesquisas ativas ainda não respondidas neste aparelho
+  const refreshSurveyBadge = useCallback(async () => {
+    try {
+      const [response, answered] = await Promise.all([
+        apiClient.get<{ data?: Survey[] } & Survey[]>('/surveys'),
+        getAnsweredSurveys(),
+      ]);
+      const list = response.data.data ?? response.data;
+      if (Array.isArray(list)) {
+        setPendingSurveys(list.filter((s) => !answered.includes(s.public_token)).length);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    refreshSurveyBadge();
+  }, [refreshSurveyBadge]);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -152,15 +178,16 @@ export const TabNavigator: React.FC = () => {
 
       <Tab.Screen
         name="PesquisasTab"
-        component={SurveysFlow}
         options={{
           tabBarLabel: 'Pesquisas',
-          tabBarBadge: '•',
+          tabBarBadge: pendingSurveys > 0 ? pendingSurveys : undefined,
           tabBarIcon: ({ color, focused }) => (
             <Text style={{ fontSize: 20, color }}>{focused ? '📊' : '📉'}</Text>
           ),
         }}
-      />
+      >
+        {() => <SurveysFlow onSurveyClosed={refreshSurveyBadge} />}
+      </Tab.Screen>
 
       <Tab.Screen
         name="PerfilTab"
