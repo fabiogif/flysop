@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -40,9 +41,12 @@ export const GuestOccurrencesScreen: React.FC = () => {
     setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    loadSaved();
-  }, [loadSaved]);
+  // A aba fica montada: recarrega ao voltar para ela (senão a ocorrência recém-registrada não aparece)
+  useFocusEffect(
+    useCallback(() => {
+      loadSaved();
+    }, [loadSaved])
+  );
 
   const handleSearch = async () => {
     const value = protocol.trim().toUpperCase();

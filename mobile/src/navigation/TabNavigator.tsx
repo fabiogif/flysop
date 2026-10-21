@@ -124,6 +124,11 @@ export const TabNavigator: React.FC = () => {
         tabPress: () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         },
+        // Recalcula a cada troca de aba: com a API acordando (máquina parada no Fly) a 1ª
+        // consulta pode estourar o timeout e o badge ficaria sumido até a próxima resposta
+        focus: () => {
+          refreshSurveyBadge();
+        },
       }}
     >
       <Tab.Screen
