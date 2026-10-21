@@ -7,8 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 interface OccurrenceRepositoryInterface
 {
-    public function getAllOccurrences(int $pre_page);
-
     public function getOccurrenceById(string $id): ?Model;
 
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator;

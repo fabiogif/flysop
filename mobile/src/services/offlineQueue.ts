@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import { apiClient } from '../api/client';
+import { saveGuestProtocol } from './guestProtocols';
 
 export interface QueuedOccurrence {
   id: string;
@@ -89,9 +90,18 @@ export class OfflineQueueService {
           } as unknown as Blob);
         }
 
-        await apiClient.post('/occurrences', formData, {
+        const response = await apiClient.post<{
+          data?: { protocol?: string };
+          tracking_code?: string;
+        }>('/occurrences', formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
+
+        // Sem conta: guarda protocolo + código, senão o autor perde o acompanhamento
+        const sent = response?.data;
+        if (sent?.tracking_code && sent.data?.protocol) {
+          await saveGuestProtocol(sent.data.protocol, sent.tracking_code);
+        }
 
         processedCount += 1;
       } catch {

@@ -28,29 +28,34 @@ class OccurrenceApiController extends Controller
     }
 
     /**
-     * Mapa do app: ocorrências de todos, sem dados pessoais (LGPD) — ver PublicOccurrenceResource.
+     * Mapa do app: a ocorrência só aparece para quem criou (e para o gestor do órgão, pelas rotas
+     * /manager). Cidadão logado vê as dele; sem cadastro (ou outro tipo de token), lista vazia.
      */
     public function index(Request $request)
     {
-        $pre_page = (int) $request->get('pre_page', 15);
-        $occurrence = $this->occurrenceService->getAllOccurrences($pre_page);
+        $client = $request->user('sanctum');
+        if (! $client instanceof Client) {
+            return PublicOccurrenceResource::collection(collect());
+        }
 
-        return PublicOccurrenceResource::collection($occurrence);
+        $occurrences = $this->occurrences
+            ->where('clients_id', $client->id)
+            ->with(['typeOccurrence', 'statusOccurence'])
+            ->orderByDesc('created_at')
+            ->paginate((int) $request->get('pre_page', 15));
+
+        return PublicOccurrenceResource::collection($occurrences);
     }
 
     /**
-     * Detalhe: completo só para o autor; para os demais, a versão pública.
+     * Detalhe só para o autor; para os demais 404 (nem confirma que a ocorrência existe).
      */
     public function show(Request $request, $id)
     {
         $occurrence = $this->occurrenceService->getOccurrenceById($id);
 
-        if (!$occurrence) {
+        if (! $occurrence || ! $this->isAuthor($request, $occurrence)) {
             return response()->json(['message' => 'Not found'], 404);
-        }
-
-        if (! $this->isAuthor($request, $occurrence)) {
-            return new PublicOccurrenceResource($occurrence);
         }
 
         $occurrence->anexo = $this->occurrenceImage->where('occurrence_id', $id)->pluck('url')->all();
@@ -60,14 +65,20 @@ class OccurrenceApiController extends Controller
 
 
     /**
-     * Consulta pública por protocolo (quem registrou sem cadastro acompanha por aqui).
+     * Acompanhamento por protocolo: exige ser o autor logado ou o código de acompanhamento
+     * (header X-Tracking-Code) devolvido no cadastro sem conta — o protocolo sozinho é sequencial
+     * e permitiria ver ocorrências de terceiros.
      */
-    public function showByProtocol(string $protocol)
+    public function showByProtocol(Request $request, string $protocol)
     {
         $occurrence = $this->occurrences->where('protocol', $protocol)->with(['typeOccurrence', 'statusOccurence'])->first();
 
-        if (! $occurrence) {
-            return response()->json(['message' => 'Protocolo não encontrado.'], 404);
+        $code = strtoupper(trim((string) $request->header('X-Tracking-Code')));
+        $hasCode = $occurrence && $occurrence->tracking_code_hash && $code !== ''
+            && hash_equals($occurrence->tracking_code_hash, hash('sha256', $code));
+
+        if (! $occurrence || (! $hasCode && ! $this->isAuthor($request, $occurrence))) {
+            return response()->json(['message' => 'Protocolo ou código de acompanhamento não encontrado.'], 404);
         }
 
         return new PublicOccurrenceResource($occurrence);
@@ -103,14 +114,19 @@ class OccurrenceApiController extends Controller
         // possível abrir ocorrência em nome de outro cidadão ou já "Finalizada"/atribuída).
         $data = $request->except([
             'clients_id', 'users_id', 'protocol', 'status_occurrences_id', 'driver_id',
-            'priority_id', 'due_at', 'possible_duplicate_of_id',
+            'priority_id', 'due_at', 'possible_duplicate_of_id', 'tracking_code_hash',
         ]);
 
         // Autor = cidadão do token (mesmo anônimo: ele acompanha, o órgão não vê quem é).
         // Token de gestor (User) não vira autor: o id dele não é um clients_id.
+        // Sem conta, o autor se prova pelo código de acompanhamento, devolvido só aqui.
+        $trackingCode = null;
         $citizen = $request->user('sanctum');
         if ($citizen instanceof Client) {
             $data['clients_id'] = $citizen->id;
+        } else {
+            $trackingCode = $this->newTrackingCode();
+            $data['tracking_code_hash'] = hash('sha256', $trackingCode);
         }
 
         // Órgão: OccurrenceService::createNewOccurrence() resolve pelo tipo da ocorrência. As fotos
@@ -126,7 +142,24 @@ class OccurrenceApiController extends Controller
 
         $occurrence->anexo = $occurrence->imagens()->pluck('url')->all();
 
-        return (new OccurrenceResource($occurrence))->response()->setStatusCode(201);
+        return (new OccurrenceResource($occurrence))
+            ->additional($trackingCode ? ['tracking_code' => $trackingCode] : [])
+            ->response()
+            ->setStatusCode(201);
+    }
+
+    /**
+     * 8 caracteres sem os ambíguos (0/O, 1/I/L), no formato XXXX-XXXX: fácil de anotar.
+     */
+    private function newTrackingCode(): string
+    {
+        $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $code = '';
+        for ($i = 0; $i < 8; $i++) {
+            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+
+        return substr($code, 0, 4) . '-' . substr($code, 4);
     }
 
     /**

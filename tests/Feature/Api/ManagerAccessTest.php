@@ -148,7 +148,7 @@ class ManagerAccessTest extends TestCase
         $this->assertFalse($manager->fresh()->notify_new_occurrences);
     }
 
-    public function test_citizen_map_and_other_peoples_occurrences_hide_personal_data(): void
+    public function test_citizen_sees_only_own_occurrences_never_other_peoples(): void
     {
         $citizen = Client::factory()->create();
         $other = Occurrences::factory()->create(['cpf' => '111.222.333-44', 'email' => 'vizinho@example.com']);
@@ -158,12 +158,11 @@ class ManagerAccessTest extends TestCase
 
         $this->getJson('/api/occurrences')
             ->assertOk()
-            ->assertJsonMissing(['cpf' => '111.222.333-44'])
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $own->id)
             ->assertJsonMissing(['email' => 'vizinho@example.com']);
 
-        $public = $this->getJson("/api/occurrences/{$other->id}")->assertOk()->json('data');
-        $this->assertArrayNotHasKey('cpf', $public);
-        $this->assertArrayNotHasKey('email', $public);
+        $this->getJson("/api/occurrences/{$other->id}")->assertNotFound();
 
         $this->getJson("/api/occurrences/{$own->id}")
             ->assertOk()

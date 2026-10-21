@@ -61,6 +61,7 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
   // Status de Submissão
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedProtocol, setGeneratedProtocol] = useState<string | null>(null);
+  const [trackingCode, setTrackingCode] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -172,17 +173,20 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
         } as unknown as Blob);
       }
 
-      const response = await apiClient.post<{ data?: { protocol?: string }; protocol?: string }>(
-        '/occurrences',
-        formData,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      const response = await apiClient.post<{
+        data?: { protocol?: string };
+        protocol?: string;
+        tracking_code?: string;
+      }>('/occurrences', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       const protocol =
         response.data.data?.protocol ?? response.data.protocol ?? 'OC-REGISTRADA';
-      if (isGuest) await saveGuestProtocol(protocol);
+      // Sem conta, a API devolve o código de acompanhamento (só agora): sem ele não há como ver
+      const code = response.data.tracking_code ?? null;
+      if (isGuest) await saveGuestProtocol(protocol, code ?? undefined);
+      setTrackingCode(code);
       setGeneratedProtocol(protocol);
     } catch (err: unknown) {
       setErrorMessage(getApiErrorMessage(err) ?? 'Erro ao registrar ocorrência. Tente novamente.');
@@ -194,6 +198,7 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
   // A aba mantém o estado: limpa para a próxima ocorrência (localização e tipo continuam)
   const handleBackHome = () => {
     setGeneratedProtocol(null);
+    setTrackingCode(null);
     setTitle('');
     setDescription('');
     setPhotoUri(null);
@@ -216,7 +221,19 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
 
           <View style={styles.protocolCard}>
             <Text style={styles.protocolLabel}>NÚMERO DE PROTOCOLO</Text>
-            <Text style={styles.protocolValue}>{generatedProtocol}</Text>
+            <Text style={styles.protocolValue} selectable>{generatedProtocol}</Text>
+            {trackingCode ? (
+              <>
+                <Text style={[styles.protocolLabel, styles.trackingCodeLabel]}>
+                  CÓDIGO DE ACOMPANHAMENTO
+                </Text>
+                <Text style={styles.protocolValue} selectable>{trackingCode}</Text>
+                <Text style={styles.trackingCodeHint}>
+                  Anote o protocolo e o código: só com os dois é possível acompanhar de outro
+                  aparelho.
+                </Text>
+              </>
+            ) : null}
           </View>
 
           <TouchableOpacity
@@ -381,7 +398,7 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
             <Text style={styles.switchTitle}>Enviar de forma anônima</Text>
             <Text style={styles.switchSubtitle}>
               {isGuest
-                ? 'Sem cadastro, o chamado é sempre anônimo. Guarde o protocolo para acompanhar.'
+                ? 'Sem cadastro, o chamado é sempre anônimo. Guarde o protocolo e o código para acompanhar.'
                 : 'O órgão não verá seu nome; você continua acompanhando em Minhas Ocorrências.'}
             </Text>
           </View>
@@ -729,6 +746,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginBottom: 32,
+  },
+  trackingCodeLabel: {
+    marginTop: 16,
+  },
+  trackingCodeHint: {
+    marginTop: 10,
+    fontSize: 13,
+    color: '#4B5563',
+    textAlign: 'center',
   },
   protocolLabel: {
     fontSize: 12,

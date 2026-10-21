@@ -10,7 +10,7 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Occurrences extends Model
 {
     use LogsActivity;
-    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'is_anonymous', 'nameType', 'nameStatus'];
+    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'is_anonymous', 'tracking_code_hash', 'nameType', 'nameStatus'];
 
     protected $casts = [
         'due_at' => 'datetime',
@@ -21,7 +21,7 @@ class Occurrences extends Model
     ];
 
     // Coluna gerada pelo Postgres (busca global — Fase 4), nunca setada via PHP.
-    protected $hidden = ['search_vector'];
+    protected $hidden = ['search_vector', 'tracking_code_hash'];
 
     use HasFactory;
 

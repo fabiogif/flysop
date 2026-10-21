@@ -11,20 +11,24 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { apiClient, getApiErrorMessage } from '../../api/client';
-import { getGuestProtocols } from '../../services/guestProtocols';
+import { getGuestProtocols, saveGuestProtocol, GuestProtocol } from '../../services/guestProtocols';
 import { Occurrence } from '../../types';
 
-// Sem cadastro: acompanha pelos protocolos registrados neste aparelho ou digitando um protocolo
+// Sem cadastro: acompanha pelas ocorrências registradas neste aparelho ou digitando protocolo +
+// código de acompanhamento (a API só mostra a ocorrência para quem tem os dois)
 export const GuestOccurrencesScreen: React.FC = () => {
   const [occurrences, setOccurrences] = useState<Occurrence[]>([]);
   const [protocol, setProtocol] = useState('');
+  const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  const fetchByProtocol = (value: string) =>
+  const fetchByProtocol = ({ protocol: value, code: trackingCode }: GuestProtocol) =>
     apiClient
-      .get<{ data: Occurrence }>(`/occurrences/protocol/${encodeURIComponent(value)}`)
+      .get<{ data: Occurrence }>(`/occurrences/protocol/${encodeURIComponent(value)}`, {
+        headers: trackingCode ? { 'X-Tracking-Code': trackingCode } : undefined,
+      })
       .then((response) => response.data.data);
 
   const loadSaved = useCallback(async () => {
@@ -42,13 +46,19 @@ export const GuestOccurrencesScreen: React.FC = () => {
 
   const handleSearch = async () => {
     const value = protocol.trim().toUpperCase();
-    if (!value) return;
+    const trackingCode = code.trim().toUpperCase();
+    if (!value || !trackingCode) {
+      setMessage('Informe o protocolo e o código de acompanhamento.');
+      return;
+    }
     setIsSearching(true);
     setMessage(null);
     try {
-      const found = await fetchByProtocol(value);
+      const found = await fetchByProtocol({ protocol: value, code: trackingCode });
+      await saveGuestProtocol(value, trackingCode);
       setOccurrences((current) => [found, ...current.filter((o) => o.id !== found.id)]);
       setProtocol('');
+      setCode('');
     } catch (err: unknown) {
       setMessage(getApiErrorMessage(err) ?? 'Não foi possível consultar o protocolo.');
     } finally {
@@ -76,18 +86,28 @@ export const GuestOccurrencesScreen: React.FC = () => {
       <View style={styles.header}>
         <Text style={styles.heading}>Acompanhar ocorrência</Text>
         <Text style={styles.subheading}>
-          Você está sem cadastro: acompanhe pelo número de protocolo.
+          Você está sem cadastro: acompanhe pelo protocolo e código de acompanhamento.
         </Text>
+        <TextInput
+          style={[styles.input, styles.inputStacked]}
+          value={protocol}
+          onChangeText={setProtocol}
+          placeholder="Protocolo (ex: OC-2026-00008)"
+          placeholderTextColor="#9CA3AF"
+          autoCapitalize="characters"
+          accessibilityLabel="Número de protocolo"
+        />
         <View style={styles.searchRow}>
           <TextInput
             style={styles.input}
-            value={protocol}
-            onChangeText={setProtocol}
-            placeholder="Ex: OC-2026-00008"
+            value={code}
+            onChangeText={setCode}
+            placeholder="Código (ex: K7QM-3XPR)"
             placeholderTextColor="#9CA3AF"
             autoCapitalize="characters"
+            autoCorrect={false}
             onSubmitEditing={handleSearch}
-            accessibilityLabel="Número de protocolo"
+            accessibilityLabel="Código de acompanhamento"
           />
           <TouchableOpacity style={styles.searchBtn} onPress={handleSearch} disabled={isSearching}>
             {isSearching ? (
@@ -116,8 +136,8 @@ export const GuestOccurrencesScreen: React.FC = () => {
               <Text style={styles.emptyIcon}>🔎</Text>
               <Text style={styles.emptyTitle}>Nenhuma ocorrência neste aparelho</Text>
               <Text style={styles.emptyText}>
-                Os protocolos que você registrar aparecem aqui. Também é possível consultar um
-                protocolo acima.
+                As ocorrências que você registrar aparecem aqui. De outro aparelho, consulte com o
+                protocolo e o código de acompanhamento acima.
               </Text>
             </View>
           }
@@ -165,6 +185,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#111827',
     backgroundColor: '#F9FAFB',
+  },
+  // Fora da linha do botão: sem flex (senão estica na vertical dentro do cabeçalho)
+  inputStacked: {
+    flex: 0,
+    marginBottom: 8,
   },
   searchBtn: {
     height: 48,

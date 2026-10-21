@@ -39,11 +39,6 @@ class OccurrenceService
     ) {
     }
 
-    public function getAllOccurrences(int $perPage = 15): LengthAwarePaginator
-    {
-        return $this->repository->getAllOccurrences($perPage);
-    }
-
     public function getOccurrenceById(string $id): ?Model
     {
         return $this->repository->getOccurrenceById($id);

@@ -70,23 +70,54 @@ class AnonymousOccurrenceTest extends TestCase
             ->assertJsonPath('data.is_anonymous', true);
     }
 
-    public function test_visitor_without_account_registers_and_follows_by_protocol(): void
+    public function test_visitor_without_account_follows_only_with_protocol_and_tracking_code(): void
     {
         $this->getJson('/api/typeOccurrence')->assertOk();
-        $this->getJson('/api/occurrences')->assertOk();
 
-        $protocol = $this->postJson('/api/occurrences', $this->payload())
-            ->assertCreated()
-            ->json('data.protocol');
+        $created = $this->postJson('/api/occurrences', $this->payload([
+            'tracking_code_hash' => hash('sha256', 'ESCOLHIDO'), // payload não define o código
+        ]))->assertCreated();
+        $protocol = $created->json('data.protocol');
+        $code = $created->json('tracking_code');
+        $this->assertMatchesRegularExpression('/^[A-Z2-9]{4}-[A-Z2-9]{4}$/', $code);
 
         $occurrence = Occurrences::where('protocol', $protocol)->firstOrFail();
         $this->assertTrue($occurrence->is_anonymous);
+        $this->assertSame(hash('sha256', $code), $occurrence->tracking_code_hash);
 
-        $this->getJson("/api/occurrences/protocol/{$protocol}")
+        // O protocolo é sequencial: sozinho (ou com código errado) não abre a ocorrência
+        $this->getJson("/api/occurrences/protocol/{$protocol}")->assertNotFound();
+        $this->getJson("/api/occurrences/protocol/{$protocol}", ['X-Tracking-Code' => 'AAAA-AAAA'])->assertNotFound();
+        $this->getJson("/api/occurrences/{$occurrence->id}")->assertNotFound();
+
+        $this->getJson("/api/occurrences/protocol/{$protocol}", ['X-Tracking-Code' => strtolower($code)])
             ->assertOk()
             ->assertJsonPath('data.title', 'Poste apagado');
 
-        $this->getJson('/api/occurrences/protocol/OC-0000-99999')->assertNotFound();
+        // Mapa sem conta não lista ocorrências de ninguém
+        $this->getJson('/api/occurrences')->assertOk()->assertJsonCount(0, 'data');
+    }
+
+    public function test_occurrence_is_visible_only_to_its_author_among_citizens(): void
+    {
+        $author = Client::factory()->create();
+        $other = Client::factory()->create();
+
+        $protocol = $this->actingAs($author, 'sanctum')
+            ->postJson('/api/occurrences', $this->payload())
+            ->assertCreated()
+            ->assertJsonMissing(['tracking_code'])
+            ->json('data.protocol');
+        $occurrence = Occurrences::where('protocol', $protocol)->firstOrFail();
+
+        $this->getJson('/api/occurrences')->assertJsonCount(1, 'data');
+        $this->getJson("/api/occurrences/{$occurrence->id}")->assertOk();
+        $this->getJson("/api/occurrences/protocol/{$protocol}")->assertOk();
+
+        $this->actingAs($other, 'sanctum');
+        $this->getJson('/api/occurrences')->assertJsonCount(0, 'data');
+        $this->getJson("/api/occurrences/{$occurrence->id}")->assertNotFound();
+        $this->getJson("/api/occurrences/protocol/{$protocol}")->assertNotFound();
     }
 
     public function test_occurrence_with_photo_is_created_once_with_its_evidence(): void

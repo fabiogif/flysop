@@ -14,11 +14,6 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
     ) {
     }
 
-    public function getAllOccurrences(int $pre_page): LengthAwarePaginator
-    {
-        return $this->entity->Occurrence();
-    }
-
     public function getOccurrenceById(string $id): ?Model
     {
         return $this->entity->where('id', $id)->first();
