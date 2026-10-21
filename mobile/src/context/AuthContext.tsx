@@ -21,7 +21,6 @@ interface AuthContextData {
   isAuthenticated: boolean;
   isGuest: boolean;
   isLoading: boolean;
-  loginWithPhone: (name: string, phone: string, email?: string) => Promise<void>;
   registerWithEmail: (data: RegisterPayload) => Promise<void>;
   loginAsManager: (email: string, password: string) => Promise<void>;
   setManager: (manager: Manager) => void;
@@ -74,18 +73,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     })();
   }, []);
-
-  const loginWithPhone = async (name: string, phone: string, email?: string) => {
-    const response = await apiClient.post<{ token: string; client: Client }>('/auth/citizen', {
-      name,
-      phone,
-      email,
-    });
-    const { token, client: clientData } = response.data;
-    await SecureStore.setItemAsync('auth_token', token);
-    setClient(clientData);
-    setGuest(false);
-  };
 
   const registerWithEmail = async (data: RegisterPayload) => {
     const response = await apiClient.post<{ token: string; client: Client }>('/auth/register', {
@@ -140,7 +127,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!client || !!manager,
         isGuest,
         isLoading,
-        loginWithPhone,
         registerWithEmail,
         loginAsManager,
         setManager,

@@ -25,9 +25,7 @@ class StoreUpdateOccurrences extends FormRequest
     {
         return [
             'title' => "required|max:255",
-            // Antes "required": o login leve do cidadão (ver CitizenAuthController) nunca
-            // coleta e-mail — exigir aqui derrubaria toda submissão de quem só informou
-            // nome+celular.
+            // Opcional: quem registra sem conta não informa e-mail.
             'email' => "nullable|email|max:255",
             // type_occurrences_id é obrigatório. issuings_id é opcional na API pública (app/cidadão)
             // e recebe fallback para o órgão padrão no controller/service se omitido.
