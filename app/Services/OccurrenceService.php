@@ -399,15 +399,16 @@ class OccurrenceService
 
     /**
      * Gera o protocolo sequencial da ocorrência no formato OC-{ano}-{sequencial}.
-     * Simplificação aceitável para o volume atual (painel único, sem concorrência alta);
-     * não usa lock/sequência dedicada.
+     * Parte do maior protocolo do ano, não da contagem: com contagem, excluir uma ocorrência
+     * fazia o próximo número repetir um protocolo existente (violação do unique → 500).
+     * ponytail: sem lock/sequência dedicada (volume baixo); o max() lexical vale até 99999/ano.
      */
     private function generateProtocol(): string
     {
         $year = now()->year;
-        $count = Occurrences::whereYear('created_at', $year)->count();
+        $last = Occurrences::where('protocol', 'like', "OC-{$year}-%")->max('protocol');
 
-        return sprintf('OC-%d-%05d', $year, $count + 1);
+        return sprintf('OC-%d-%05d', $year, $last ? (int) substr($last, -5) + 1 : 1);
     }
 
     /**

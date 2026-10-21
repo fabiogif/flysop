@@ -112,6 +112,18 @@ class AnonymousOccurrenceTest extends TestCase
         $this->assertSame(2, Occurrences::count());
     }
 
+    public function test_protocol_does_not_repeat_after_an_occurrence_is_deleted(): void
+    {
+        $first = $this->postJson('/api/occurrences', $this->payload())->assertCreated()->json('data.protocol');
+        $second = $this->postJson('/api/occurrences', $this->payload())->assertCreated()->json('data.protocol');
+
+        // Antes, o protocolo vinha da contagem: excluir a primeira fazia a próxima repetir a segunda
+        Occurrences::where('protocol', $first)->delete();
+
+        $third = $this->postJson('/api/occurrences', $this->payload())->assertCreated()->json('data.protocol');
+        $this->assertSame((int) substr($second, -5) + 1, (int) substr($third, -5));
+    }
+
     public function test_environment_without_status_or_issuing_returns_clear_message_instead_of_500(): void
     {
         StatusOccurrence::query()->delete();
