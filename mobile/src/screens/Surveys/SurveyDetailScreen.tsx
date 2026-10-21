@@ -128,6 +128,9 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
     return (
       <SafeAreaView style={styles.centerContainer}>
         <Text style={styles.errorText}>Pesquisa não encontrada.</Text>
+        <TouchableOpacity style={styles.backButton} onPress={onFinish}>
+          <Text style={styles.backButtonText}>Voltar às Pesquisas</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
@@ -246,6 +249,10 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
           ) : (
             <Text style={styles.submitButtonText}>Enviar Respostas</Text>
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.backButton} onPress={onFinish} disabled={isSubmitting}>
+          <Text style={styles.backButtonText}>Voltar às Pesquisas</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -400,6 +407,22 @@ const styles = StyleSheet.create({
   },
   submitButtonText: {
     color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  // Secundário (contorno), abaixo do "Enviar Respostas"
+  backButton: {
+    alignSelf: 'stretch',
+    height: 52,
+    borderWidth: 1.5,
+    borderColor: '#1E3A8A',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  backButtonText: {
+    color: '#1E3A8A',
     fontSize: 16,
     fontWeight: '700',
   },

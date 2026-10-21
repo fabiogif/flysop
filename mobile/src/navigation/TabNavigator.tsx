@@ -157,7 +157,9 @@ export const TabNavigator: React.FC = () => {
       <Tab.Screen
         name="NovaTab"
         options={{
-          tabBarLabel: 'Nova',
+          // Só o "+": sem rótulo; o nome fica para leitor de tela
+          tabBarLabel: () => null,
+          tabBarAccessibilityLabel: 'Nova ocorrência',
           tabBarIcon: () => (
             <View style={styles.centerActionButton}>
               <Text style={styles.centerActionText}>＋</Text>

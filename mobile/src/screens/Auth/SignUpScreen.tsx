@@ -26,7 +26,7 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
   onSuccessWelcome,
   onManagerAccess,
 }) => {
-  const { registerWithEmail, socialAuth, enterAsGuest } = useAuth();
+  const { registerWithEmail, enterAsGuest } = useAuth();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -62,18 +62,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
       setErrorMessage(
         getApiErrorMessage(err) ?? 'Erro ao criar conta. Verifique os dados e tente novamente.'
       );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true);
-    try {
-      await socialAuth('google', 'google_mock_id', 'usuario@gmail.com', 'Usuário Google');
-      setIsRegistered(true);
-    } catch {
-      setErrorMessage('Falha na autenticação com o Google.');
     } finally {
       setIsLoading(false);
     }
@@ -115,35 +103,6 @@ export const SignUpScreen: React.FC<SignUpScreenProps> = ({
           <Text style={styles.screenSubheading}>
             Acompanhe o andamento das suas solicitações em tempo real.
           </Text>
-
-          {/* Third party sign-up options */}
-          <View style={styles.socialButtonsContainer}>
-            <TouchableOpacity
-              style={styles.socialButton}
-              onPress={handleGoogleSignUp}
-            >
-              <Text style={styles.socialButtonText}>Continuar com Google</Text>
-            </TouchableOpacity>
-
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[styles.socialButton, styles.appleButton]}
-                onPress={() =>
-                  socialAuth('apple', 'apple_mock_id', 'apple@icloud.com', 'Usuário Apple')
-                }
-              >
-                <Text style={[styles.socialButtonText, styles.appleButtonText]}>
-                  Continuar com Apple
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          <View style={styles.dividerRow}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>ou cadastre-se com e-mail</Text>
-            <View style={styles.dividerLine} />
-          </View>
 
           {errorMessage && (
             <View style={styles.errorBox}>
@@ -305,46 +264,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 6,
     marginBottom: 20,
-  },
-  socialButtonsContainer: {
-    gap: 10,
-    marginBottom: 20,
-  },
-  socialButton: {
-    minHeight: 48,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  socialButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
-  },
-  appleButton: {
-    backgroundColor: '#000000',
-    borderColor: '#000000',
-  },
-  appleButtonText: {
-    color: '#FFFFFF',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 14,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E7EB',
-  },
-  dividerText: {
-    marginHorizontal: 12,
-    fontSize: 13,
-    color: '#9CA3AF',
   },
   errorBox: {
     backgroundColor: '#FEE2E2',

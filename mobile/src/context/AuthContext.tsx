@@ -23,7 +23,6 @@ interface AuthContextData {
   isLoading: boolean;
   loginWithPhone: (name: string, phone: string, email?: string) => Promise<void>;
   registerWithEmail: (data: RegisterPayload) => Promise<void>;
-  socialAuth: (provider: 'google' | 'apple', providerId: string, email?: string, name?: string) => Promise<void>;
   loginAsManager: (email: string, password: string) => Promise<void>;
   setManager: (manager: Manager) => void;
   enterAsGuest: () => void;
@@ -99,24 +98,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGuest(false);
   };
 
-  const socialAuth = async (
-    provider: 'google' | 'apple',
-    providerId: string,
-    email?: string,
-    name?: string
-  ) => {
-    const response = await apiClient.post<{ token: string; client: Client }>('/auth/social', {
-      provider,
-      provider_id: providerId,
-      email,
-      name,
-    });
-    const { token, client: clientData } = response.data;
-    await SecureStore.setItemAsync('auth_token', token);
-    setClient(clientData);
-    setGuest(false);
-  };
-
   const loginAsManager = async (email: string, password: string) => {
     const response = await apiClient.post<{ token: string; user: Manager }>('/auth/staff/login', {
       email,
@@ -161,7 +142,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         loginWithPhone,
         registerWithEmail,
-        socialAuth,
         loginAsManager,
         setManager,
         enterAsGuest,
