@@ -59,6 +59,10 @@ Route::get('/occurrences', [App\Http\Controllers\Api\OccurrenceApiController::cl
 Route::get('/occurrences/protocol/{protocol}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'showByProtocol']);
 Route::get('/occurrences/{id}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'show'])->whereNumber('id');
 
+// Página inicial do app (também sem conta): só totais agregados por etapa e informativos publicados
+Route::get('/occurrence-stats', [App\Http\Controllers\Api\OccurrenceApiController::class, 'stats']);
+Route::get('/announcements', [App\Http\Controllers\Api\AnnouncementApiController::class, 'index']);
+
 // Pesquisas: públicas como no web (PublicSurveyController, link/QR sem login); a resposta grava
 // só o IP, nunca o cidadão. Reaproveita SurveyService/StoreSurveyResponse sem duplicar regra.
 Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);

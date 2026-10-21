@@ -34,6 +34,7 @@ class PermissionMenuSeeder extends Seeder
         'occurrences' => 'Ocorrências',
         'drivers' => 'Motoristas',
         'surveys' => 'Pesquisas',
+        'announcements' => 'Informativos',
     ];
 
     public function run(): void

@@ -11,6 +11,10 @@ jest.mock('expo-haptics', () => ({
   },
 }));
 
+jest.mock('../../src/screens/Home/HomeScreen', () => ({
+  HomeScreen: () => <></>,
+}));
+
 jest.mock('../../src/screens/Occurrences/MapScreen', () => ({
   MapScreen: () => <></>,
 }));
@@ -39,9 +43,9 @@ describe('TabNavigator Integration', () => {
       </NavigationContainer>
     );
 
-    expect(getByText('Mapa')).toBeTruthy();
+    // A aba central (+) não tem rótulo; o mapa abre a partir do Início
+    expect(getByText('Início')).toBeTruthy();
     expect(getByText('Ocorrências')).toBeTruthy();
-    expect(getByText('Nova')).toBeTruthy();
     expect(getByText('Pesquisas')).toBeTruthy();
     expect(getByText('Perfil')).toBeTruthy();
   });

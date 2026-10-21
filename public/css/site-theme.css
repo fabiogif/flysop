@@ -590,6 +590,29 @@ img {
   font-size: 0.98rem;
 }
 
+/* Informativos (home): mesmo card de recurso, com órgão/data e texto com quebras de linha */
+.ciop-feature .ciop-announcement-meta {
+  margin-bottom: 0.55rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ciop-accent);
+}
+
+.ciop-announcement-body {
+  white-space: pre-line;
+}
+
+.ciop-feature details {
+  margin-top: 0.6rem;
+}
+
+.ciop-feature summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--ciop-teal);
+}
+
 /* Flow */
 .ciop-flow {
   list-style: none;

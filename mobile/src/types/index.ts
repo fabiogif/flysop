@@ -68,6 +68,21 @@ export interface Survey {
   questions?: SurveyQuestion[];
 }
 
+export interface Announcement {
+  id: number;
+  title: string;
+  body: string;
+  issuing: { id: number; name: string } | null;
+  published_at: string | null;
+}
+
+// Totais da página inicial (GET /occurrence-stats): só números, nenhum dado de ocorrência
+export interface OccurrenceStats {
+  abertas: number;
+  andamento: number;
+  resolvidas: number;
+}
+
 export interface Client {
   id: number;
   name: string;

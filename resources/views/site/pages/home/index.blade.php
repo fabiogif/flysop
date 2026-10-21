@@ -28,6 +28,40 @@
     </section>
 
     {{-- Paralaxe: obras / ocorrências públicas --}}
+    @if ($announcements->isNotEmpty())
+        <section id="informativos" class="ciop-section" aria-labelledby="informativos-title">
+            <div class="container">
+                <header class="ciop-section-head reveal">
+                    <h2 id="informativos-title">Informativos</h2>
+                    <p>Avisos publicados pelos órgãos da prefeitura.</p>
+                </header>
+
+                <div class="ciop-feature-grid">
+                    @foreach ($announcements as $announcement)
+                        <article class="ciop-feature reveal">
+                            <h3>{{ $announcement->title }}</h3>
+                            <p class="ciop-announcement-meta">
+                                {{ $announcement->issuing->name ?? '' }}
+                                @if ($announcement->published_at)
+                                    · <time datetime="{{ $announcement->published_at->toDateString() }}">{{ $announcement->published_at->format('d/m/Y') }}</time>
+                                @endif
+                            </p>
+                            @if (mb_strlen($announcement->body) > 280)
+                                <p>{{ \Illuminate\Support\Str::limit($announcement->body, 280) }}</p>
+                                <details>
+                                    <summary>Ler informativo completo</summary>
+                                    <p class="ciop-announcement-body">{{ $announcement->body }}</p>
+                                </details>
+                            @else
+                                <p class="ciop-announcement-body">{{ $announcement->body }}</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     <section id="obras" class="ciop-parallax ciop-parallax-obras ciop-parallax-light" data-parallax aria-labelledby="obras-title">
         <div class="ciop-parallax-media" aria-hidden="true">
             <div

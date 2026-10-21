@@ -9,6 +9,9 @@ interface OccurrenceRepositoryInterface
 {
     public function getOccurrenceById(string $id): ?Model;
 
+    /** @return array<string, int> nome do status => quantidade */
+    public function countByStatusName(?int $issuingId = null): array;
+
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator;
 
     public function createNewOccurrence(array $data): Model;

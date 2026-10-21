@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import * as Haptics from 'expo-haptics';
 import { MapScreen } from '../screens/Occurrences/MapScreen';
+import { HomeScreen } from '../screens/Home/HomeScreen';
 import { MyOccurrencesScreen } from '../screens/Occurrences/MyOccurrencesScreen';
 import { NewOccurrenceScreen } from '../screens/Occurrences/NewOccurrenceScreen';
 import { OccurrenceDetailScreen } from '../screens/Occurrences/OccurrenceDetailScreen';
@@ -37,6 +38,24 @@ const MapFlow: React.FC<{ onNavigateToNew: (point?: Coordinates) => void }> = ({
       onOpenNewOccurrence={onNavigateToNew}
     />
   );
+};
+
+// Aba Início: página inicial (dashboard + informativos); o mapa abre a partir dela
+const HomeFlow: React.FC<{ onNavigateToNew: (point?: Coordinates) => void }> = ({ onNavigateToNew }) => {
+  const [isMapOpen, setIsMapOpen] = useState(false);
+
+  if (isMapOpen) {
+    return (
+      <View style={styles.flowContainer}>
+        <TouchableOpacity style={styles.backBar} onPress={() => setIsMapOpen(false)} accessibilityRole="button">
+          <Text style={styles.backBarText}>← Voltar ao início</Text>
+        </TouchableOpacity>
+        <MapFlow onNavigateToNew={onNavigateToNew} />
+      </View>
+    );
+  }
+
+  return <HomeScreen onOpenMap={() => setIsMapOpen(true)} />;
 };
 
 // Sub-fluxo de Minhas Ocorrências com detalhe
@@ -132,16 +151,16 @@ export const TabNavigator: React.FC = () => {
       }}
     >
       <Tab.Screen
-        name="MapaTab"
+        name="InicioTab"
         options={{
-          tabBarLabel: 'Mapa',
+          tabBarLabel: 'Início',
           tabBarIcon: ({ color, focused }) => (
-            <Text style={{ fontSize: 20, color }}>{focused ? '🗺️' : '🧭'}</Text>
+            <Text style={{ fontSize: 20, color }}>{focused ? '🏠' : '🏡'}</Text>
           ),
         }}
       >
         {({ navigation }) => (
-          <MapFlow onNavigateToNew={(point) => navigation.navigate('NovaTab', { point })} />
+          <HomeFlow onNavigateToNew={(point) => navigation.navigate('NovaTab', { point })} />
         )}
       </Tab.Screen>
 
@@ -177,7 +196,7 @@ export const TabNavigator: React.FC = () => {
             initialPoint={(route.params as { point?: Coordinates } | undefined)?.point}
             onNavigateHome={() => {
               navigation.setParams({ point: undefined });
-              navigation.navigate('MapaTab');
+              navigation.navigate('InicioTab');
             }}
           />
         )}
@@ -211,6 +230,22 @@ export const TabNavigator: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  flowContainer: {
+    flex: 1,
+  },
+  backBar: {
+    height: 48,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  backBarText: {
+    color: '#1E3A8A',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   tabBar: {
     height: 64,
     paddingBottom: 8,

@@ -33,6 +33,17 @@ class OccurrenceService
     private const DUPLICATE_RADIUS_KM = 0.3;
     private const DUPLICATE_WINDOW_HOURS = 48;
 
+    /**
+     * Agrupamento dos status para o painel público do app (abertas / em andamento / resolvidas).
+     * Cancelada e Duplicada não entram. ponytail: por nome, como DashboardService ('Em atendimento');
+     * status renomeado no painel sai da contagem — coluna de etapa no status se isso virar problema.
+     */
+    public const STATUS_GROUPS = [
+        'abertas' => ['Recebida', 'Em triagem', 'Validada', 'Aguardando despacho', 'Aguardando aceitação', 'Recusada', 'Reaberta'],
+        'andamento' => ['Aceita', 'Em deslocamento', 'Equipe no local', 'Em atendimento', 'Aguardando material'],
+        'resolvidas' => ['Resolvida', 'Finalizada'],
+    ];
+
     public function __construct(
         protected OccurrenceRepositoryInterface $repository,
         protected ClientService $clientService
@@ -42,6 +53,18 @@ class OccurrenceService
     public function getOccurrenceById(string $id): ?Model
     {
         return $this->repository->getOccurrenceById($id);
+    }
+
+    /**
+     * Totais por etapa (só números, nenhum dado de ocorrência) para a página inicial do app.
+     */
+    public function publicStats(?int $issuingId = null): array
+    {
+        $byStatus = $this->repository->countByStatusName($issuingId);
+
+        return collect(self::STATUS_GROUPS)
+            ->map(fn (array $names) => (int) collect($names)->sum(fn ($name) => $byStatus[$name] ?? 0))
+            ->all();
     }
 
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator

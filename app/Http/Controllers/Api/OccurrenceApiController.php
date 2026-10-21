@@ -9,6 +9,7 @@ use App\Http\Resources\OccurrenceResource;
 use App\Http\Resources\PublicOccurrenceResource;
 use App\Mail\MailNotify;
 use App\Models\Client;
+use App\Models\Issuing;
 use App\Services\OccurrenceService;
 use Illuminate\Http\Request;
 use App\Models\OccurrencesImagens;
@@ -45,6 +46,20 @@ class OccurrenceApiController extends Controller
             ->paginate((int) $request->get('pre_page', 15));
 
         return PublicOccurrenceResource::collection($occurrences);
+    }
+
+    /**
+     * Página inicial do app: totais abertas/em andamento/resolvidas, opcionalmente por órgão, e a
+     * lista de órgãos para o filtro. Pública (app sem conta) porque são só números agregados.
+     */
+    public function stats(Request $request)
+    {
+        $issuingId = (int) $request->query('issuing_id') ?: null;
+
+        return response()->json([
+            'data' => $this->occurrenceService->publicStats($issuingId),
+            'issuings' => Issuing::orderBy('name')->get(['id', 'name']),
+        ]);
     }
 
     /**

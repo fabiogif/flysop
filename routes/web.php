@@ -166,6 +166,9 @@ Route::prefix('admin')
         Route::get('/surveys/{id}/qrcode', [SurveyController::class, 'qrcode'])->name('surveys.qrcode');
         Route::resource('surveys', SurveyController::class);
 
+        // Informativos do órgão (exibidos na home do site e do app)
+        Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class)->except(['show']);
+
         //Notificações internas
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');

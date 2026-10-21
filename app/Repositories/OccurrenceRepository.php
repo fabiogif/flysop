@@ -19,6 +19,18 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
         return $this->entity->where('id', $id)->first();
     }
 
+    public function countByStatusName(?int $issuingId = null): array
+    {
+        return $this->entity->newQuery()
+            ->join('status_occurrences', 'status_occurrences.id', '=', 'occurrences.status_occurrences_id')
+            ->when($issuingId, fn ($q) => $q->where('occurrences.issuings_id', $issuingId))
+            ->groupBy('status_occurrences.name')
+            ->selectRaw('status_occurrences.name, count(*) as total')
+            ->pluck('total', 'name')
+            ->map(fn ($total) => (int) $total)
+            ->all();
+    }
+
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator
     {
         return $this->entity->OccurrenceByClientId($clientId);
