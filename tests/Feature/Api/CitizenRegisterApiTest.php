@@ -79,23 +79,16 @@ class CitizenRegisterApiTest extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors(['email']);
     }
 
-    public function test_social_auth_registers_and_authenticates_citizen(): void
+    public function test_social_login_endpoint_no_longer_exists(): void
     {
-        Tenant::factory()->create();
+        // Aceitava provider_id + e-mail sem validar com o Google/Apple: bastava o e-mail de
+        // alguém para receber o token da conta dele. Foi removido junto com o botão do app.
+        $victim = Client::factory()->create(['email' => 'vitima@example.com']);
 
-        $response = $this->postJson('/api/auth/social', [
+        $this->postJson('/api/auth/social', [
             'provider' => 'google',
-            'provider_id' => 'google_sub_123456',
-            'email' => 'googleuser@example.com',
-            'name' => 'Google User',
-        ]);
-
-        $response->assertOk();
-        $response->assertJsonStructure(['token', 'client']);
-
-        $this->assertDatabaseHas('clients', [
-            'google_id' => 'google_sub_123456',
-            'email' => 'googleuser@example.com',
-        ]);
+            'provider_id' => 'qualquer',
+            'email' => $victim->email,
+        ])->assertNotFound();
     }
 }

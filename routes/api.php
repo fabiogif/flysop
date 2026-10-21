@@ -10,7 +10,6 @@ Route::post('/sanctum/token', [App\Http\Controllers\Api\Auth\AuthClientControlle
 // ver análise de impacto em docs/specs/flysop.md e app/Services/ClientService.php.
 Route::post('/auth/citizen', [App\Http\Controllers\Api\Auth\CitizenAuthController::class, 'auth']);
 Route::post('/auth/register', [App\Http\Controllers\Api\Auth\CitizenRegisterController::class, 'register']);
-Route::post('/auth/social', [App\Http\Controllers\Api\Auth\CitizenRegisterController::class, 'socialAuth']);
 Route::get('/profile/{username}', [App\Http\Controllers\Api\ProfileApiController::class, 'show']);
 
 // Login do gestor de órgão no app (público por ser o login; throttle contra força bruta).
