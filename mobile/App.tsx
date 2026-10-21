@@ -10,6 +10,7 @@ import { OnboardingScreen } from './src/screens/Onboarding/OnboardingScreen';
 import { SignUpScreen } from './src/screens/Auth/SignUpScreen';
 import { ManagerLoginScreen } from './src/screens/Auth/ManagerLoginScreen';
 import { LoginScreen, LoginFooterLink } from './src/screens/Auth/LoginScreen';
+import { ForgotPasswordScreen } from './src/screens/Auth/ForgotPasswordScreen';
 import { TabNavigator } from './src/navigation/TabNavigator';
 import { ManagerNavigator } from './src/navigation/ManagerNavigator';
 import { OfflineQueueService } from './src/services/offlineQueue';
@@ -22,7 +23,7 @@ const RootNavigation: React.FC = () => {
   const [hasOnboarding, setHasOnboarding] = useState<boolean | null>(null);
   const [isSplashDone, setIsSplashDone] = useState(false);
   // Tela de acesso de quem ainda não entrou (nem com conta, nem sem cadastro)
-  const [authScreen, setAuthScreen] = useState<'signup' | 'login' | 'manager'>('signup');
+  const [authScreen, setAuthScreen] = useState<'signup' | 'login' | 'forgot' | 'manager'>('signup');
 
   useEffect(() => {
     const unsubscribeSync = OfflineQueueService.setupAutoSyncListener();
@@ -49,6 +50,9 @@ const RootNavigation: React.FC = () => {
       if (authScreen === 'manager') {
         return <ManagerLoginScreen onBack={() => setAuthScreen('signup')} />;
       }
+      if (authScreen === 'forgot') {
+        return <ForgotPasswordScreen onBack={() => setAuthScreen('login')} />;
+      }
       if (authScreen === 'login') {
         return (
           <LoginScreen
@@ -60,6 +64,7 @@ const RootNavigation: React.FC = () => {
             onBack={() => setAuthScreen('signup')}
             footer={
               <>
+                <LoginFooterLink text="Esqueceu a senha?" action="Recuperar" onPress={() => setAuthScreen('forgot')} />
                 <LoginFooterLink text="Não tem conta?" action="Criar conta" onPress={() => setAuthScreen('signup')} />
                 <LoginFooterLink text="Prefere não se cadastrar?" action="Registrar sem cadastro" onPress={enterAsGuest} />
               </>

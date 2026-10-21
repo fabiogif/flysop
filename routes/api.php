@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 // Login do cidadão no app (e-mail + senha); throttle contra força bruta, como o login do gestor
 Route::post('/sanctum/token', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'auth'])->middleware('throttle:5,1');
 
+Route::post('/auth/forgot-password', [App\Http\Controllers\Api\Auth\ClientPasswordResetController::class, 'sendLink'])->middleware('throttle:5,1');
 Route::post('/auth/register', [App\Http\Controllers\Api\Auth\CitizenRegisterController::class, 'register']);
 Route::get('/profile/{username}', [App\Http\Controllers\Api\ProfileApiController::class, 'show']);
 

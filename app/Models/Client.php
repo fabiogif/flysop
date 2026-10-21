@@ -4,12 +4,14 @@ namespace App\Models;
 
 use App\Models\Traits\UserACLTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Notifications\ClientResetPasswordNotification;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class Client extends Authenticatable
 {
-    use HasApiTokens, HasFactory, UserACLTrait;
+    use HasApiTokens, HasFactory, Notifiable, UserACLTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -40,6 +42,12 @@ class Client extends Authenticatable
         'terms_accepted_at' => 'datetime',
         'marketing_opt_in' => 'boolean',
     ];
+
+    // Link aponta para a página pública de redefinição (o app não abre o token)
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ClientResetPasswordNotification($token));
+    }
 
     public function occurrences()
     {

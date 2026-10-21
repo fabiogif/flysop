@@ -199,6 +199,10 @@ Route::middleware(['auth', 'ensure.driver'])->prefix('driver')->name('driver.')-
 Route::get('/', [App\Http\Controllers\Site\SiteController::class , 'index'])->name('site.home');
 //Route::get('/', [App\Http\Controllers\HomeController::class , 'index'])->name('login');
 
+// Redefinição de senha do cidadão (link enviado por e-mail a pedido do app)
+Route::get('/cidadao/redefinir-senha/{token}', [App\Http\Controllers\Api\Auth\ClientPasswordResetController::class, 'showResetForm'])->name('client.password.reset');
+Route::post('/cidadao/redefinir-senha', [App\Http\Controllers\Api\Auth\ClientPasswordResetController::class, 'reset'])->name('client.password.update')->middleware('throttle:5,1');
+
 // Pesquisas públicas (anônimas) por token
 Route::get('/p/{token}', [PublicSurveyController::class, 'show'])->name('public.surveys.show');
 Route::post('/p/{token}', [PublicSurveyController::class, 'store'])->name('public.surveys.store');

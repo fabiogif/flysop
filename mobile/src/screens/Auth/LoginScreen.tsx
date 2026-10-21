@@ -129,7 +129,8 @@ export const LoginFooterLink: React.FC<{ text: string; action: string; onPress: 
   </TouchableOpacity>
 );
 
-const styles = StyleSheet.create({
+// Reaproveitado pela tela "Esqueci minha senha"
+export const styles = StyleSheet.create({
   footerLink: {
     alignItems: 'center',
     paddingVertical: 14,
