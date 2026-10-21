@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -26,6 +27,8 @@ interface NewOccurrenceScreenProps {
   // Ponto escolhido no mapa principal (toque longo); sem ele, usa o GPS
   initialPoint?: Coordinates | null;
 }
+
+const TYPES_ERROR = 'Não foi possível carregar os tipos de ocorrência. Verifique sua conexão.';
 
 export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
   onNavigateHome,
@@ -64,27 +67,34 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
   const [trackingCode, setTrackingCode] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    (async () => {
-      // Carregar tipos de ocorrência
-      try {
-        const response = await apiClient.get<{ data?: TypeOccurrence[] } & TypeOccurrence[]>(
-          '/typeOccurrence'
-        );
-        const list = response.data.data ?? response.data;
-        if (Array.isArray(list)) {
-          setTypes(list);
-          if (list.length > 0) setSelectedTypeId(list[0].id);
-        }
-      } catch (error) {
-        // Sem tipos o chamado não pode ser enviado: avisa em vez de deixar o campo vazio
-        console.warn('NewOccurrence: falha ao carregar tipos', error);
-        setErrorMessage('Não foi possível carregar os tipos de ocorrência. Verifique sua conexão.');
+  const loadTypes = useCallback(async () => {
+    try {
+      const response = await apiClient.get<{ data?: TypeOccurrence[] } & TypeOccurrence[]>(
+        '/typeOccurrence'
+      );
+      const list = response.data.data ?? response.data;
+      if (Array.isArray(list)) {
+        setTypes(list);
+        setSelectedTypeId((current) => current ?? list[0]?.id ?? null);
+        setErrorMessage((current) => (current === TYPES_ERROR ? null : current));
       }
+    } catch (error) {
+      // Sem tipos o chamado não pode ser enviado: avisa em vez de deixar o campo vazio
+      console.warn('NewOccurrence: falha ao carregar tipos', error);
+      setErrorMessage(TYPES_ERROR);
+    }
+  }, []);
 
-      // Localização inicial: o ponto vindo do mapa tem prioridade sobre o GPS
-      if (!initialPoint) await detectGpsLocation();
-    })();
+  // A aba fica montada: se a 1ª carga falhou (ex.: API acordando), tenta de novo ao voltar à tela
+  useFocusEffect(
+    useCallback(() => {
+      if (types.length === 0) loadTypes();
+    }, [types.length, loadTypes])
+  );
+
+  useEffect(() => {
+    // Localização inicial: o ponto vindo do mapa tem prioridade sobre o GPS
+    if (!initialPoint) detectGpsLocation();
   }, []);
 
   useEffect(() => {
@@ -258,6 +268,11 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
         {errorMessage && (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{errorMessage}</Text>
+            {errorMessage === TYPES_ERROR ? (
+              <TouchableOpacity onPress={loadTypes} accessibilityRole="button">
+                <Text style={styles.retryText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         )}
 
@@ -456,6 +471,11 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
 };
 
 const styles = StyleSheet.create({
+  retryText: {
+    color: '#1E3A8A',
+    fontWeight: '700',
+    marginTop: 6,
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',

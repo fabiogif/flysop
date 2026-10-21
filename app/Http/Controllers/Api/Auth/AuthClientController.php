@@ -13,18 +13,25 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthClientController extends Controller
 {
+    /**
+     * Login do cidadão no app (e-mail + senha do cadastro). Público por necessidade, com throttle
+     * na rota — mesmo formato de StaffAuthController::login. Antes respondia ['token', $token]
+     * (lista, não objeto) e 404, e o app não tinha tela de login.
+     */
     public function auth(StoreUpdateAuth $request)
     {
-
         $client = Client::where('email', $request->email)->first();
 
-        if (!$client || !Hash::check($request->password, $client->password)) {
-            return response()->json(['menssage' => 'Credenciais inválidas'], 404);
+        if (! $client || ! Hash::check($request->password, $client->password)) {
+            return response()->json(['message' => 'E-mail ou senha inválidos.'], 401);
         }
 
         $token = $client->createToken($request->device_name)->plainTextToken;
 
-        return response()->json(['token', $token]);
+        return response()->json([
+            'token' => $token,
+            'client' => new ClientResource($client),
+        ]);
     }
 
 

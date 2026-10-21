@@ -9,7 +9,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
-import { apiClient } from '../../api/client';
+import { apiClient, getApiErrorMessage } from '../../api/client';
 import { Survey } from '../../types';
 
 interface SurveyListScreenProps {
@@ -20,6 +20,7 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchSurveys = async () => {
     try {
@@ -28,7 +29,10 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
       if (Array.isArray(list)) {
         setSurveys(list);
       }
-    } catch {
+      setErrorMessage(null);
+    } catch (err: unknown) {
+      // Antes o erro virava "Nenhuma pesquisa no momento", mesmo com pesquisas ativas
+      setErrorMessage(getApiErrorMessage(err) ?? 'Não foi possível carregar as pesquisas.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -91,6 +95,16 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
           <RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />
         }
         ListEmptyComponent={
+          errorMessage ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyIcon}>⚠️</Text>
+              <Text style={styles.emptyTitle}>Não foi possível carregar</Text>
+              <Text style={styles.emptyText}>{errorMessage}</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={handleRefresh} accessibilityRole="button">
+                <Text style={styles.answerBtnText}>Tentar novamente</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyIcon}>📊</Text>
             <Text style={styles.emptyTitle}>Nenhuma pesquisa no momento</Text>
@@ -98,6 +112,7 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
               Não há pesquisas de opinião ativas no seu município hoje.
             </Text>
           </View>
+          )
         }
       />
     </SafeAreaView>
@@ -105,6 +120,15 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
 };
 
 const styles = StyleSheet.create({
+  retryBtn: {
+    marginTop: 16,
+    height: 44,
+    paddingHorizontal: 20,
+    backgroundColor: '#1E3A8A',
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   safeArea: {
     flex: 1,
     backgroundColor: '#F9FAFB',

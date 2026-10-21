@@ -22,6 +22,7 @@ interface AuthContextData {
   isGuest: boolean;
   isLoading: boolean;
   registerWithEmail: (data: RegisterPayload) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   loginAsManager: (email: string, password: string) => Promise<void>;
   setManager: (manager: Manager) => void;
   enterAsGuest: () => void;
@@ -85,6 +86,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGuest(false);
   };
 
+  const loginWithEmail = async (email: string, password: string) => {
+    const response = await apiClient.post<{ token: string; client: Client }>('/sanctum/token', {
+      email,
+      password,
+      device_name: 'ciop-app',
+    });
+    await SecureStore.setItemAsync('auth_token', response.data.token);
+    setClient(response.data.client);
+    setManager(null);
+    setGuest(false);
+  };
+
   const loginAsManager = async (email: string, password: string) => {
     const response = await apiClient.post<{ token: string; user: Manager }>('/auth/staff/login', {
       email,
@@ -128,6 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isGuest,
         isLoading,
         registerWithEmail,
+        loginWithEmail,
         loginAsManager,
         setManager,
         enterAsGuest,
