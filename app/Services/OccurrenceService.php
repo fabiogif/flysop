@@ -9,6 +9,7 @@ use App\Models\OccurrenceStatusHistory;
 use App\Models\Occurrences;
 use App\Models\Priority;
 use App\Models\StatusOccurrence;
+use App\Models\Team;
 use App\Models\TypeOccurrence;
 use App\Models\User;
 use App\Events\OccurrenceUpdated;
@@ -681,6 +682,68 @@ class OccurrenceService
         $note = 'Reaberta pelo cidadão' . ($reason ? ': ' . $reason : '.');
 
         return $this->recordStatusChange($occurrence, (int) $reabertaId, $note, citizenReopen: true);
+    }
+
+    /**
+     * Encaminha a ocorrência para uma equipe (Eixo 4). A equipe precisa ser da secretaria da
+     * ocorrência ou compartilhada — gestor não manda trabalho para equipe de outro órgão.
+     * Registra no histórico (status não muda; a nota diz para quem foi).
+     */
+    public function forwardToTeam(int $occurrenceId, int $teamId): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        $team = Team::availableForIssuing($occurrence->issuings_id)->whereKey($teamId)->first();
+        if (! $team) {
+            abort(422, 'Equipe não encontrada para a secretaria desta ocorrência.');
+        }
+
+        if ((int) $occurrence->team_id === $team->id) {
+            return $occurrence;
+        }
+
+        $occurrence->update(['team_id' => $team->id]);
+
+        OccurrenceStatusHistory::create([
+            'occurrence_id' => $occurrence->id,
+            'from_status_id' => $occurrence->status_occurrences_id,
+            'to_status_id' => $occurrence->status_occurrences_id,
+            'changed_by_user_id' => $this->staffUserId(),
+            'note' => "Encaminhada para a equipe {$team->name}.",
+        ]);
+
+        broadcast(new OccurrenceUpdated($occurrence))->toOthers();
+
+        return $occurrence->fresh();
+    }
+
+    /**
+     * Avaliação do atendimento pelo cidadão (índice de satisfação): só o autor, só de
+     * ocorrência concluída (Finalizada) e uma única vez.
+     */
+    public function rateByCitizen(int $occurrenceId, Client $client, int $rating, ?string $comment = null): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        if ((int) $occurrence->clients_id !== (int) $client->id) {
+            abort(404);
+        }
+
+        if ($occurrence->statusOccurence?->name !== 'Finalizada') {
+            abort(422, 'Só é possível avaliar uma ocorrência concluída.');
+        }
+
+        if ($occurrence->rating !== null) {
+            abort(422, 'Esta ocorrência já foi avaliada.');
+        }
+
+        $occurrence->update([
+            'rating' => $rating,
+            'rating_comment' => $comment,
+            'rated_at' => now(),
+        ]);
+
+        return $occurrence->fresh();
     }
 
     /**

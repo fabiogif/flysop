@@ -51,6 +51,8 @@ class OccurrenceResource extends JsonResource
             'nameStatus' => $this->nameStatus ?: ($this->statusOccurence?->name ?? ''),
             'anexo' => $anexo,
             'clients_id' => $hideIdentity ? null : $this->clients_id,
+            'rating' => $this->rating,
+            'rating_comment' => $this->rating_comment,
             // Histórico de movimentações para o autor: só status e data — sem servidor nem
             // observação interna. Presente apenas no detalhe (relação carregada).
             'history' => $this->whenLoaded('statusHistory', fn () => $this->statusHistory->map(fn ($entry) => [

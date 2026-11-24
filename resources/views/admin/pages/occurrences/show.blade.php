@@ -125,6 +125,36 @@
                     <dd>{{ $occurrences->driver->name ?? '—' }}</dd>
                 </div>
                 <div class="ciop-detail-item">
+                    <dt>Equipe responsável</dt>
+                    <dd>
+                        @can('update', $occurrences)
+                            <form action="{{ route('occurrences.forward-team', $occurrences->id) }}" method="POST" class="form-inline">
+                                @csrf
+                                <select name="team_id" class="form-control form-control-sm mr-1" aria-label="Equipe responsável" required>
+                                    <option value="">{{ $occurrences->team ? '' : 'Selecione…' }}</option>
+                                    @foreach ($teams as $team)
+                                        <option value="{{ $team->id }}" {{ (int) $occurrences->team_id === $team->id ? 'selected' : '' }}>{{ $team->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Encaminhar</button>
+                            </form>
+                        @else
+                            {{ $occurrences->team->name ?? '—' }}
+                        @endcan
+                    </dd>
+                </div>
+                <div class="ciop-detail-item">
+                    <dt>Avaliação do cidadão</dt>
+                    <dd>
+                        @if ($occurrences->rating)
+                            {{ $occurrences->rating }}/5
+                            @if ($occurrences->rating_comment) — “{{ $occurrences->rating_comment }}” @endif
+                        @else
+                            —
+                        @endif
+                    </dd>
+                </div>
+                <div class="ciop-detail-item">
                     <dt>Endereço</dt>
                     <dd>{{ $occurrences->address ?? '—' }}</dd>
                 </div>

@@ -262,6 +262,16 @@
                     </p>
                 </div>
             </div>
+            <div class="ciop-dash-stat tone-open">
+                <span class="ciop-dash-stat-icon" aria-hidden="true"><i class="fas fa-star"></i></span>
+                <div class="ciop-dash-stat-body">
+                    <p class="ciop-dash-stat-label">Satisfação dos cidadãos</p>
+                    <p class="ciop-dash-stat-value">
+                        {{ $indicators['satisfacao'] !== null ? number_format($indicators['satisfacao'], 1, ',', '.') . ' / 5' : '—' }}
+                    </p>
+                    <p class="ciop-dash-stat-hint">{{ $indicators['avaliacoes'] }} avaliação(ões)</p>
+                </div>
+            </div>
         </div>
 
         <div class="ciop-dash-charts">

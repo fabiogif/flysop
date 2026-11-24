@@ -229,3 +229,13 @@ coberto pelos status atuais, faltando só **Indeferida**.
 - Categorias por secretaria: é cadastro de negócio (produção tem 1 tipo); propor lista para aprovação.
 
 **Deploy:** cada fase com testes; migrations da Fase C e seeders em produção só após confirmação.
+
+### 4.4 Situação da execução (24/11/2026)
+
+| Fase | Status | Observação |
+|---|---|---|
+| A | ✅ Implementada | Indeferida fica fora dos grupos abertas/andamento/resolvidas do app (como Cancelada). |
+| B | ✅ Implementada (backend) | Falta a tela de notificações do cidadão no app (`GET /api/notifications` já existe) e os botões "Reabrir"/"Avaliar". |
+| C | ✅ Implementada (backend + painel) | Migration `2026_11_24_130000`; no app do gestor faltam a tela de escolher equipe (`GET /api/manager/teams`, `PATCH /api/manager/occurrences/{id}/team`). |
+
+Pendente em produção: deploy (roda a migration) e `db:seed --class=PrioritySeeder` e `--class=StatusOccurrenceDriverSeeder` (Indeferida).

@@ -25,6 +25,7 @@ Route::middleware(['auth:sanctum', 'ensure.citizen'])->group(function () {
     Route::post('/profile/avatar', [App\Http\Controllers\Api\ProfileApiController::class, 'uploadAvatar']);
     Route::get('/my-occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class, 'myOccurrences']);
     Route::post('/occurrences/{id}/reopen', [App\Http\Controllers\Api\OccurrenceApiController::class, 'reopen'])->whereNumber('id');
+    Route::post('/occurrences/{id}/rating', [App\Http\Controllers\Api\OccurrenceApiController::class, 'rate'])->whereNumber('id');
 
     // Feed de notificações do cidadão (conclusão/indeferimento) — mesmo controller do gestor.
     Route::get('/notifications', [App\Http\Controllers\Api\NotificationApiController::class, 'index']);
@@ -39,6 +40,8 @@ Route::middleware(['auth:sanctum', 'ensure.manager'])->prefix('manager')->group(
     Route::get('/occurrences/{id}', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'show']);
     Route::patch('/occurrences/{id}/status', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'updateStatus']);
     Route::get('/status-occurrences', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'statuses']);
+    Route::get('/teams', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'teams']);
+    Route::patch('/occurrences/{id}/team', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'forwardToTeam']);
 
     Route::get('/notifications', [App\Http\Controllers\Api\NotificationApiController::class, 'index']);
     Route::post('/notifications/read-all', [App\Http\Controllers\Api\NotificationApiController::class, 'readAll']);

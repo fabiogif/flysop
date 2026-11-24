@@ -129,6 +129,8 @@ class DashboardService implements DashboardServiceInterface
             'atrasadas' => Occurrences::whereNotNull('due_at')->where('due_at', '<', now())
                 ->whereHas('statusOccurence', $isOpen)->count(),
             'tempoMedioHoras' => $avgSeconds !== null ? round($avgSeconds / 3600, 1) : null,
+            'satisfacao' => ($avgRating = Occurrences::whereNotNull('rating')->avg('rating')) !== null ? round((float) $avgRating, 1) : null,
+            'avaliacoes' => Occurrences::whereNotNull('rating')->count(),
             'porBairro' => Occurrences::whereNotNull('neighborhood')->where('neighborhood', '!=', '')
                 ->selectRaw('neighborhood as name, COUNT(*) as total')
                 ->selectRaw('SUM(CASE WHEN status_occurrences_id IN (SELECT id FROM status_occurrences WHERE is_terminal = false) THEN 1 ELSE 0 END) as abertas')

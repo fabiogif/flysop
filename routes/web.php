@@ -129,6 +129,7 @@ Route::prefix('admin')
         //Central de despacho (mapa + lista)
         Route::get('/dispatch', [App\Http\Controllers\Admin\DispatchController::class, 'console'])->name('dispatch.console');
         Route::get('/occurrences/{id}/pdf', [App\Http\Controllers\Admin\OccurrencesController::class, 'pdf'])->name('occurrences.pdf');
+        Route::post('/occurrences/{id}/team', [App\Http\Controllers\Admin\OccurrencesController::class, 'forwardToTeam'])->name('occurrences.forward-team');
         Route::post('/occurrences/{id}/dismiss-duplicate', [App\Http\Controllers\Admin\OccurrencesController::class, 'dismissDuplicate'])->name('occurrences.dismiss-duplicate');
         Route::delete('/occurrences/{id}/forget', [App\Http\Controllers\Admin\OccurrencesController::class, 'forget'])->name('occurrences.forget');
         Route::resource('occurrences', OccurrencesController::class);

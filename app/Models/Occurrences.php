@@ -10,10 +10,12 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Occurrences extends Model
 {
     use LogsActivity;
-    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'is_anonymous', 'tracking_code_hash', 'nameType', 'nameStatus'];
+    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'is_anonymous', 'tracking_code_hash', 'team_id', 'rating', 'rating_comment', 'rated_at', 'nameType', 'nameStatus'];
 
     protected $casts = [
         'due_at' => 'datetime',
+        'rated_at' => 'datetime',
+        'rating' => 'integer',
         'is_anonymous' => 'boolean',
         // decimal do Postgres chega como string; API/app tratam como número
         'latitude' => 'float',
@@ -145,6 +147,11 @@ class Occurrences extends Model
     public function driver()
     {
         return $this->belongsTo(Driver::class);
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 
     public function priority()

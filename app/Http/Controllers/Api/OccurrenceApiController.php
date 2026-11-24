@@ -80,6 +80,21 @@ class OccurrenceApiController extends Controller
     }
 
     /**
+     * Cidadão avalia o atendimento (nota 1–5) da própria ocorrência concluída.
+     */
+    public function rate(Request $request, int $id)
+    {
+        $data = $request->validate([
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $occurrence = $this->occurrenceService->rateByCitizen($id, $request->user(), $data['rating'], $data['comment'] ?? null);
+
+        return new OccurrenceResource($occurrence);
+    }
+
+    /**
      * Cidadão reabre a própria ocorrência concluída (regras em OccurrenceService::reopenByCitizen).
      */
     public function reopen(Request $request, int $id)

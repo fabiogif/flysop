@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OccurrenceResource;
 use App\Http\Resources\StatusOccurenceResource;
 use App\Models\StatusOccurrence;
+use App\Models\Team;
 use App\Services\OccurrenceService;
 use Illuminate\Http\Request;
 
@@ -67,6 +68,31 @@ class ManagerOccurrenceApiController extends Controller
         $occurrence = $this->occurrenceService->updateStatusByAdmin($id, $data['status_occurrences_id']);
 
         return new OccurrenceResource($occurrence->load(['statusOccurence', 'typeOccurrence']));
+    }
+
+    /**
+     * Encaminha a ocorrência do próprio órgão para uma equipe (regra em OccurrenceService::forwardToTeam).
+     */
+    public function forwardToTeam(Request $request, int $id)
+    {
+        $data = $request->validate(['team_id' => 'required|integer']);
+
+        $this->authorize('update', $this->occurrenceService->findOrFail($id));
+
+        $occurrence = $this->occurrenceService->forwardToTeam($id, $data['team_id']);
+
+        return new OccurrenceResource($occurrence->load(['statusOccurence', 'typeOccurrence']));
+    }
+
+    /**
+     * Equipes que o gestor pode acionar: as da secretaria dele e as compartilhadas.
+     */
+    public function teams(Request $request)
+    {
+        return response()->json([
+            'data' => Team::availableForIssuing($request->user()->issuing_id)
+                ->orderBy('name')->get(['id', 'name', 'issuing_id']),
+        ]);
     }
 
     public function statuses()
