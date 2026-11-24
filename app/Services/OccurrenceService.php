@@ -497,7 +497,8 @@ class OccurrenceService
         }
 
         // Não notificar o próprio motorista quando a mudança foi feita por ele mesmo.
-        if (auth()->id() === $occurrence->driver->user->id) {
+        // Só User: na reabertura pelo cidadão o logado é um Client, cujo id não é de users.
+        if (auth()->user() instanceof User && auth()->id() === $occurrence->driver->user->id) {
             return;
         }
 
@@ -670,7 +671,9 @@ class OccurrenceService
             abort(422, 'Só é possível reabrir uma ocorrência concluída.');
         }
 
-        if ($occurrence->updated_at && $occurrence->updated_at->lt(now()->subDays(self::REOPEN_WINDOW_DAYS))) {
+        // Conta da conclusão (histórico), não de updated_at — avaliar ou editar depois não estende o prazo.
+        $concludedAt = $occurrence->statusHistory()->where('to_status_id', $occurrence->status_occurrences_id)->max('created_at');
+        if ($concludedAt && Carbon::parse($concludedAt)->lt(now()->subDays(self::REOPEN_WINDOW_DAYS))) {
             abort(422, 'O prazo de ' . self::REOPEN_WINDOW_DAYS . ' dias para reabrir esta ocorrência terminou.');
         }
 

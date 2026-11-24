@@ -30,7 +30,7 @@ class OccurrenceStatusForCitizenNotification extends Notification implements Sho
     {
         $message = $this->statusName === 'Indeferida'
             ? "Sua ocorrência {$this->occurrence->protocol} foi indeferida."
-            : "Sua ocorrência {$this->occurrence->protocol} foi concluída. Avalie o atendimento no app.";
+            : "Sua ocorrência {$this->occurrence->protocol} foi concluída.";
 
         return [
             'occurrence_id' => $this->occurrence->id,

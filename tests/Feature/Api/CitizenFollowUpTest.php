@@ -121,7 +121,13 @@ class CitizenFollowUpTest extends TestCase
         $this->postJson("/api/occurrences/{$open->id}/reopen")->assertStatus(422);
 
         $expired = $this->occurrenceOf($citizen, 'Finalizada');
-        Occurrences::whereKey($expired->id)->update(['updated_at' => now()->subDays(31)]);
+        // Concluída há 31 dias; uma edição/avaliação recente (updated_at agora) não estende o prazo.
+        \App\Models\OccurrenceStatusHistory::forceCreate([
+            'occurrence_id' => $expired->id,
+            'to_status_id' => $this->status('Finalizada'),
+            'created_at' => now()->subDays(31),
+        ]);
+        $expired->update(['rating' => 5]);
         $this->postJson("/api/occurrences/{$expired->id}/reopen")->assertStatus(422);
 
         $this->assertSame($this->status('Finalizada'), (int) $others->fresh()->status_occurrences_id);
