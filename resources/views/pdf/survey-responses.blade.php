@@ -15,9 +15,17 @@
     </style>
 </head>
 <body>
-    <h1>Respostas da pesquisa: {{ $survey->title }}</h1>
-    <p class="muted">{{ $responses->count() }} resposta(s) — gerado em {{ now()->format('d/m/Y H:i') }}</p>
+    <h1>{{ $summary === null ? 'Resposta' : 'Respostas' }} da pesquisa: {{ $survey->title }}</h1>
+    <p class="muted">
+        {{ $responses->count() }} resposta(s)
+        @if (!empty($period['date_from']) || !empty($period['date_to']))
+            — período {{ !empty($period['date_from']) ? \Carbon\Carbon::parse($period['date_from'])->format('d/m/Y') : 'início' }}
+            a {{ !empty($period['date_to']) ? \Carbon\Carbon::parse($period['date_to'])->format('d/m/Y') : 'hoje' }}
+        @endif
+        — gerado em {{ now()->format('d/m/Y H:i') }}
+    </p>
 
+    @if ($summary !== null)
     <h3>Resumo por pergunta</h3>
     @foreach ($summary as $item)
         <table class="grid">
@@ -43,6 +51,7 @@
     @endforeach
 
     <h3>Respostas individuais</h3>
+    @endif
     @forelse ($responses as $response)
         @php $answers = $response->answers->keyBy('survey_question_id'); @endphp
         <div class="response">

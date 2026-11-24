@@ -7,6 +7,8 @@ use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
 
 class SurveyService
@@ -95,23 +97,40 @@ class SurveyService
     }
 
     /**
+     * Respostas da pesquisa no período (date_from/date_to, datas inclusivas, ambos opcionais).
+     * Ponto único usado pela listagem, pelo PDF e pelo resumo — o filtro não diverge entre eles.
+     *
+     * @param  array{date_from?: ?string, date_to?: ?string}  $period
+     */
+    public function responsesQuery(Survey $survey, array $period = []): HasMany
+    {
+        return $survey->responses()
+            ->when($period['date_from'] ?? null, fn ($q, $from) => $q->where('submitted_at', '>=', Carbon::parse($from)->startOfDay()))
+            ->when($period['date_to'] ?? null, fn ($q, $to) => $q->where('submitted_at', '<=', Carbon::parse($to)->endOfDay()));
+    }
+
+    /**
      * Resumo por pergunta: total de respostas; contagem por opção (múltipla escolha e
      * escala, incluindo opções com zero) e média da escala. Texto livre só tem total.
      *
+     * @param  array{date_from?: ?string, date_to?: ?string}  $period
      * @return array<int, array{question: SurveyQuestion, total: int, counts: array<string, int>, average: ?float}>
      */
-    public function summarize(Survey $survey): array
+    public function summarize(Survey $survey, array $period = []): array
     {
         $survey->loadMissing('questions');
         $questions = $survey->questions;
+        $responseIds = $this->responsesQuery($survey, $period)->reorder()->select('id');
 
         $totals = SurveyAnswer::query()
+            ->whereIn('survey_response_id', $responseIds)
             ->whereIn('survey_question_id', $questions->pluck('id'))
             ->selectRaw('survey_question_id, count(*) as total')
             ->groupBy('survey_question_id')
             ->pluck('total', 'survey_question_id');
 
         $byValue = SurveyAnswer::query()
+            ->whereIn('survey_response_id', $responseIds)
             ->whereIn('survey_question_id', $questions->where('type', '!=', SurveyQuestion::TYPE_TEXT)->pluck('id'))
             ->selectRaw('survey_question_id, value, count(*) as total')
             ->groupBy('survey_question_id', 'value')

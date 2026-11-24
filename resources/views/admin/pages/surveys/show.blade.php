@@ -134,6 +134,7 @@
                             <th>Enviada em</th>
                             <th>IP</th>
                             <th>Respostas</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -142,9 +143,18 @@
                                 <td>{{ $response->submitted_at ? $response->submitted_at->format('d/m/Y H:i') : '—' }}</td>
                                 <td>{{ $response->ip ?? '—' }}</td>
                                 <td>{{ $response->answers_count }}</td>
+                                <td class="text-right">
+                                    <a href="{{ route('surveys.response.pdf', [$survey->id, $response->id]) }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-xs" title="Imprimir resposta"><i class="fas fa-print"></i></a>
+                                    <form action="{{ route('surveys.response.destroy', [$survey->id, $response->id]) }}" method="POST" class="d-inline"
+                                        onsubmit="return confirm('Excluir esta resposta?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-outline-danger btn-xs" title="Excluir resposta"><i class="far fa-trash-alt"></i></button>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
-                            <tr><td colspan="3" class="ciop-empty">Nenhuma resposta ainda.</td></tr>
+                            <tr><td colspan="4" class="ciop-empty">Nenhuma resposta ainda.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

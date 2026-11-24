@@ -165,6 +165,8 @@ Route::prefix('admin')
         Route::post('/surveys/{id}/toggle', [SurveyController::class, 'toggle'])->name('surveys.toggle');
         Route::get('/surveys/{id}/responses', [SurveyController::class, 'responses'])->name('surveys.responses');
         Route::get('/surveys/{id}/responses/pdf', [SurveyController::class, 'responsesPdf'])->name('surveys.responses.pdf');
+        Route::get('/surveys/{id}/responses/{response}/pdf', [SurveyController::class, 'responsePdf'])->name('surveys.response.pdf');
+        Route::delete('/surveys/{id}/responses/{response}', [SurveyController::class, 'destroyResponse'])->name('surveys.response.destroy');
         Route::get('/surveys/{id}/qrcode', [SurveyController::class, 'qrcode'])->name('surveys.qrcode');
         Route::resource('surveys', SurveyController::class);
 
@@ -207,7 +209,7 @@ Route::post('/cidadao/redefinir-senha', [App\Http\Controllers\Api\Auth\ClientPas
 
 // Pesquisas públicas (anônimas) por token
 Route::get('/p/{token}', [PublicSurveyController::class, 'show'])->name('public.surveys.show');
-Route::post('/p/{token}', [PublicSurveyController::class, 'store'])->name('public.surveys.store');
+Route::post('/p/{token}', [PublicSurveyController::class, 'store'])->name('public.surveys.store')->middleware('throttle:10,1');
 Route::get('/p/{token}/obrigado', [PublicSurveyController::class, 'thanks'])->name('public.surveys.thanks');
 
 /*Route::get('/home', function () {

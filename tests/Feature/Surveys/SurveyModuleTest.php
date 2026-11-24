@@ -278,6 +278,92 @@ class SurveyModuleTest extends TestCase
         $this->assertSame('%PDF', substr($response->getContent(), 0, 4));
     }
 
+    public function test_admin_can_print_single_response_as_pdf(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$survey] = $this->surveyWithAnswer($user->tenant_id);
+        $response = SurveyResponse::where('survey_id', $survey->id)->first();
+
+        $this->get(route('surveys.responses', $survey->id))
+            ->assertSee(route('surveys.response.pdf', [$survey->id, $response->id]));
+
+        $pdf = $this->get(route('surveys.response.pdf', [$survey->id, $response->id]));
+        $pdf->assertOk();
+        $pdf->assertHeader('Content-Type', 'application/pdf');
+        $this->assertSame('%PDF', substr($pdf->getContent(), 0, 4));
+    }
+
+    public function test_single_response_pdf_rejects_response_from_other_survey(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$mine] = $this->surveyWithAnswer($user->tenant_id);
+        [$foreign] = $this->surveyWithAnswer(Tenant::factory()->create()->id);
+        $foreignResponse = SurveyResponse::where('survey_id', $foreign->id)->first();
+
+        $this->get(route('surveys.response.pdf', [$mine->id, $foreignResponse->id]))
+            ->assertRedirect(route('surveys.responses', $mine->id));
+    }
+
+    public function test_period_filter_limits_responses_and_summary(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$survey, $question] = $this->surveyWithAnswer($user->tenant_id);
+        $old = SurveyResponse::create(['survey_id' => $survey->id, 'submitted_at' => now()->subDays(10)]);
+        SurveyAnswer::create(['survey_response_id' => $old->id, 'survey_question_id' => $question->id, 'value' => 'Não']);
+
+        $period = ['date_from' => now()->subDay()->toDateString(), 'date_to' => now()->toDateString()];
+        $summary = app(\App\Services\SurveyService::class)->summarize($survey, $period);
+        $this->assertSame(1, $summary[0]['total']);
+        $this->assertSame(['Sim' => 1, 'Não' => 0], $summary[0]['counts']);
+
+        $this->get(route('surveys.responses', ['id' => $survey->id] + $period))
+            ->assertOk()
+            ->assertDontSee('Resposta #' . $old->id)
+            ->assertSee(e(route('surveys.responses.pdf', ['id' => $survey->id] + $period)), false);
+
+        $this->get(route('surveys.responses', ['id' => $survey->id, 'date_from' => '2026-05-10', 'date_to' => '2026-05-01']))
+            ->assertSessionHasErrors('date_to');
+    }
+
+    public function test_admin_can_delete_single_response(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$survey] = $this->surveyWithAnswer($user->tenant_id);
+        $response = SurveyResponse::where('survey_id', $survey->id)->first();
+
+        $this->from(route('surveys.responses', $survey->id))
+            ->delete(route('surveys.response.destroy', [$survey->id, $response->id]))
+            ->assertRedirect(route('surveys.responses', $survey->id))
+            ->assertSessionHas('messageSuccess');
+
+        $this->assertDatabaseMissing('survey_responses', ['id' => $response->id]);
+        $this->assertDatabaseMissing('survey_answers', ['survey_response_id' => $response->id]);
+
+        $log = \Spatie\Activitylog\Models\Activity::where('description', 'survey.response_deleted')->first();
+        $this->assertNotNull($log);
+        $this->assertSame($user->id, (int) $log->causer_id);
+        $this->assertSame($survey->id, (int) $log->subject_id);
+        $this->assertSame($response->id, $log->properties['survey_response_id']);
+        $this->assertSame(1, $log->properties['answers_count']);
+        $this->assertSame($user->tenant_id, $log->properties['tenant_id']);
+    }
+
+    public function test_admin_cannot_delete_response_from_other_tenant(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$mine] = $this->surveyWithAnswer($user->tenant_id);
+        [$foreign] = $this->surveyWithAnswer(Tenant::factory()->create()->id);
+        $foreignResponse = SurveyResponse::where('survey_id', $foreign->id)->first();
+
+        // Pela pesquisa alheia e pela própria pesquisa com id de resposta alheia.
+        $this->delete(route('surveys.response.destroy', [$foreign->id, $foreignResponse->id]))
+            ->assertRedirect(route('surveys.index'));
+        $this->delete(route('surveys.response.destroy', [$mine->id, $foreignResponse->id]));
+
+        $this->assertDatabaseHas('survey_responses', ['id' => $foreignResponse->id]);
+        $this->assertDatabaseMissing('activity_log', ['description' => 'survey.response_deleted']);
+    }
+
     public function test_admin_cannot_print_other_tenant_responses(): void
     {
         $this->actingAsAdmin();

@@ -72,6 +72,7 @@ O endpoint `GET /api/profile/{username}` utiliza `PublicProfileResource`, que re
 
 - `throttle:api` no grupo `api` (Kernel)
 - `throttle:20,1` explícito na rota `driver/position` (web)
+- `throttle:10,1` no envio público de pesquisa (`POST /p/{token}`, web, sem login) — evita inflar respostas por script
 
 ## Checklist rápido antes de merge
 
