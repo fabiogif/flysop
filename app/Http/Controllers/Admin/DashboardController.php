@@ -25,15 +25,18 @@ class DashboardController extends Controller
     {
         $stats = $this->dashboardService->getStats();
         $charts = $this->dashboardService->getChartsData();
+        $indicators = $this->dashboardService->getIndicators();
 
         $filterOptions = [
             'statusOccurrences' => StatusOccurrence::orderBy('sort_order')->get(),
             'typeOccurrences' => TypeOccurrence::orderBy('name')->get(),
             'priorities' => Priority::orderBy('weight', 'desc')->get(),
             'drivers' => Driver::where('tenant_id', auth()->user()->tenant_id)->orderBy('name')->get(),
+            'neighborhoods' => Occurrences::whereNotNull('neighborhood')->where('neighborhood', '!=', '')
+                ->distinct()->orderBy('neighborhood')->pluck('neighborhood'),
         ];
 
-        return view('admin.pages.home.index', $stats + ['charts' => $charts, 'filterOptions' => $filterOptions]);
+        return view('admin.pages.home.index', $stats + ['charts' => $charts, 'indicators' => $indicators, 'filterOptions' => $filterOptions]);
     }
 
     /**
@@ -68,15 +71,8 @@ class DashboardController extends Controller
     public function occurrencesRecent(Request $request): JsonResponse
     {
         $limit = (int) $request->get('limit', 10);
-        $occurrences = Occurrences::with(['statusOccurence', 'typeOccurrence', 'priority'])
-            ->when($request->filled('status_occurrences_id'), fn ($q) => $q->where('status_occurrences_id', $request->status_occurrences_id))
-            ->when($request->filled('type_occurrences_id'), fn ($q) => $q->where('type_occurrences_id', $request->type_occurrences_id))
-            ->when($request->filled('priority_id'), fn ($q) => $q->where('priority_id', $request->priority_id))
-            ->when($request->filled('driver_id'), fn ($q) => $q->where('driver_id', $request->driver_id))
-            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
-            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
-            ->when($request->boolean('open_only'), fn ($q) => $q->whereHas('statusOccurence', fn ($q2) => $q2->where('is_terminal', false)))
-            ->when($request->boolean('no_driver'), fn ($q) => $q->whereNull('driver_id'))
+        $occurrences = $this->filteredOccurrences($request)
+            ->with(['statusOccurence', 'typeOccurrence', 'priority'])
             ->orderBy('updated_at', 'desc')
             ->limit($limit)
             ->get()
@@ -108,8 +104,22 @@ class DashboardController extends Controller
      */
     public function occurrencesHeatmap(Request $request): JsonResponse
     {
-        $points = Occurrences::whereNotNull('latitude')
+        $points = $this->filteredOccurrences($request)
+            ->whereNotNull('latitude')
             ->whereNotNull('longitude')
+            ->get(['latitude', 'longitude'])
+            ->map(fn ($o) => ['lat' => (float) $o->latitude, 'lng' => (float) $o->longitude]);
+
+        return response()->json(['points' => $points]);
+    }
+
+    /**
+     * Filtros comuns da lista/mapa e do mapa de calor — um só lugar para os dois não
+     * divergirem (já divergiram antes, ver occurrencesHeatmap).
+     */
+    private function filteredOccurrences(Request $request)
+    {
+        return Occurrences::query()
             ->when($request->filled('status_occurrences_id'), fn ($q) => $q->where('status_occurrences_id', $request->status_occurrences_id))
             ->when($request->filled('type_occurrences_id'), fn ($q) => $q->where('type_occurrences_id', $request->type_occurrences_id))
             ->when($request->filled('priority_id'), fn ($q) => $q->where('priority_id', $request->priority_id))
@@ -117,11 +127,8 @@ class DashboardController extends Controller
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('created_at', '>=', $request->date_from))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('created_at', '<=', $request->date_to))
             ->when($request->boolean('open_only'), fn ($q) => $q->whereHas('statusOccurence', fn ($q2) => $q2->where('is_terminal', false)))
-            ->when($request->boolean('no_driver'), fn ($q) => $q->whereNull('driver_id'))
-            ->get(['latitude', 'longitude'])
-            ->map(fn ($o) => ['lat' => (float) $o->latitude, 'lng' => (float) $o->longitude]);
-
-        return response()->json(['points' => $points]);
+            ->when($request->filled('neighborhood'), fn ($q) => $q->where('neighborhood', $request->neighborhood))
+            ->when($request->boolean('no_driver'), fn ($q) => $q->whereNull('driver_id'));
     }
 
     /**

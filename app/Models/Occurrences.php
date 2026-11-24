@@ -72,7 +72,7 @@ class Occurrences extends Model
                     ->orWhereRaw("occurrences.search_vector @@ plainto_tsquery('portuguese', ?)", [$filter]);
             }
         })->when($issuingId, fn ($query) => $query->where('occurrences.issuings_id', $issuingId))
-            ->orderBy('occurrences.updated_at', 'desc')->orderBy('occurrences.created_at', 'desc')->paginate();
+            ->orderByGravity()->paginate();
 
         return $occurrences;
     }
@@ -102,6 +102,20 @@ class Occurrences extends Model
         return $occurrences;
     }
 
+
+    /**
+     * Priorização por gravidade (Eixo 4): abertas antes das encerradas; depois maior peso
+     * de prioridade, prazo (SLA) mais próximo e mais recentes. Subconsultas para não colidir
+     * com os joins de Occurrence().
+     */
+    public function scopeOrderByGravity($query)
+    {
+        return $query
+            ->orderByRaw('(SELECT is_terminal FROM status_occurrences s WHERE s.id = occurrences.status_occurrences_id) ASC')
+            ->orderByRaw('(SELECT weight FROM priorities p WHERE p.id = occurrences.priority_id) DESC NULLS LAST')
+            ->orderByRaw('occurrences.due_at ASC NULLS LAST')
+            ->orderByDesc('occurrences.created_at');
+    }
 
     public function statusOccurence()
     {

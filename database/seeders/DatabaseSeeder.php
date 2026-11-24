@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             TypeOccurrenceTableSeeder::class,
             StatusOccurrenceTableSeeder::class,
             StatusOccurrenceDriverSeeder::class,
+            PrioritySeeder::class,
             IssuingsTableSeeder::class,
             ClientTableSeeder::class,
             OccurrenceTableSeeder::class,

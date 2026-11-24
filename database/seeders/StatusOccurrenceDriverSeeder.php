@@ -35,6 +35,8 @@ class StatusOccurrenceDriverSeeder extends Seeder
             ['name' => 'Cancelada', 'sort_order' => 101, 'is_terminal' => true],
             ['name' => 'Duplicada', 'sort_order' => 102, 'is_terminal' => true],
             ['name' => 'Reaberta', 'sort_order' => 103],
+            // Solicitação não procedente (Eixo 4): encerra sem execução, como Cancelada.
+            ['name' => 'Indeferida', 'sort_order' => 104, 'is_terminal' => true],
         ];
 
         foreach ($statuses as $status) {

@@ -125,14 +125,14 @@ class OccurrenceService
     }
 
     /**
-     * Ocorrências de um órgão (app do gestor), mais recentes primeiro.
+     * Ocorrências de um órgão (app do gestor), por gravidade (ver Occurrences::scopeOrderByGravity).
      */
     public function getOccurrencesForIssuing(int $issuingId, ?int $statusId = null, int $perPage = 15): LengthAwarePaginator
     {
         return Occurrences::where('issuings_id', $issuingId)
             ->when($statusId, fn ($query) => $query->where('status_occurrences_id', $statusId))
             ->with(['statusOccurence', 'typeOccurrence'])
-            ->orderByDesc('created_at')
+            ->orderByGravity()
             ->paginate($perPage);
     }
 
@@ -517,7 +517,7 @@ class OccurrenceService
         $driverStatus = match ($statusName) {
             'Em deslocamento' => Driver::STATUS_EM_DESLOCAMENTO,
             'Equipe no local', 'Em atendimento' => Driver::STATUS_EM_ATENDIMENTO,
-            'Finalizada', 'Cancelada', 'Duplicada', 'Recusada' => Driver::STATUS_DISPONIVEL,
+            'Finalizada', 'Cancelada', 'Duplicada', 'Indeferida', 'Recusada' => Driver::STATUS_DISPONIVEL,
             default => null,
         };
 

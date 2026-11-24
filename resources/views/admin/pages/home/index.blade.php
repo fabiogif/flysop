@@ -162,6 +162,15 @@
                             </select>
                         </div>
                         <div class="form-group mb-0">
+                            <label for="dash-filter-neighborhood">Bairro</label>
+                            <select id="dash-filter-neighborhood" name="neighborhood" class="form-control">
+                                <option value="">Todos</option>
+                                @foreach ($filterOptions['neighborhoods'] as $neighborhood)
+                                    <option value="{{ $neighborhood }}">{{ $neighborhood }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="form-group mb-0">
                             <label for="dash-filter-from">De</label>
                             <input id="dash-filter-from" type="date" name="date_from" class="form-control">
                         </div>
@@ -220,6 +229,72 @@
                 <div id="dashboard-map-loading" class="ciop-dash-map-loading">Carregando mapa…</div>
                 <div id="dashboard-occurrences-map" class="ciop-dash-map" style="display: none;"></div>
             </div>
+        </div>
+    </section>
+
+    <section class="ciop-dash-section" aria-labelledby="dash-indicators-title">
+        <div class="ciop-dash-section-head">
+            <h2 id="dash-indicators-title" class="ciop-dash-section-title">Indicadores</h2>
+            <p class="ciop-dash-section-desc">Desempenho do atendimento, regiões críticas e demandas mais recorrentes.</p>
+        </div>
+
+        <div class="ciop-dash-stats ciop-dash-stats-4 mb-3">
+            <div class="ciop-dash-stat tone-done">
+                <span class="ciop-dash-stat-icon" aria-hidden="true"><i class="fas fa-check-double"></i></span>
+                <div class="ciop-dash-stat-body">
+                    <p class="ciop-dash-stat-label">Concluídas</p>
+                    <p class="ciop-dash-stat-value">{{ $indicators['concluidas'] }}</p>
+                </div>
+            </div>
+            <div class="ciop-dash-stat tone-sla {{ $indicators['atrasadas'] > 0 ? 'is-alert' : '' }}">
+                <span class="ciop-dash-stat-icon" aria-hidden="true"><i class="fas fa-hourglass-end"></i></span>
+                <div class="ciop-dash-stat-body">
+                    <p class="ciop-dash-stat-label">Atrasadas</p>
+                    <p class="ciop-dash-stat-value">{{ $indicators['atrasadas'] }}</p>
+                </div>
+            </div>
+            <div class="ciop-dash-stat tone-progress">
+                <span class="ciop-dash-stat-icon" aria-hidden="true"><i class="fas fa-stopwatch"></i></span>
+                <div class="ciop-dash-stat-body">
+                    <p class="ciop-dash-stat-label">Tempo médio de atendimento</p>
+                    <p class="ciop-dash-stat-value">
+                        {{ $indicators['tempoMedioHoras'] !== null ? number_format($indicators['tempoMedioHoras'], 1, ',', '.') . ' h' : '—' }}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="ciop-dash-charts">
+            @foreach ([
+                ['title' => 'Regiões críticas (por bairro)', 'rows' => $indicators['porBairro'], 'open' => true],
+                ['title' => 'Por secretaria', 'rows' => $indicators['porSecretaria'], 'open' => false],
+                ['title' => 'Categorias mais recorrentes', 'rows' => $indicators['categorias'], 'open' => false],
+            ] as $ranking)
+                <div class="ciop-dash-panel card">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">{{ $ranking['title'] }}</h3>
+                    </div>
+                    <div class="card-body">
+                        @php $max = max(1, (int) collect($ranking['rows'])->max('total')); @endphp
+                        @forelse ($ranking['rows'] as $row)
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-truncate">{{ $row->name }}</span>
+                                    <small class="text-muted text-nowrap ml-2">
+                                        {{ $row->total }}@if ($ranking['open']) · {{ $row->abertas }} abertas @endif
+                                    </small>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ round($row->total * 100 / $max) }}%;"
+                                        aria-valuenow="{{ $row->total }}" aria-valuemin="0" aria-valuemax="{{ $max }}"></div>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="text-muted mb-0">Sem dados ainda.</p>
+                        @endforelse
+                    </div>
+                </div>
+            @endforeach
         </div>
     </section>
 
