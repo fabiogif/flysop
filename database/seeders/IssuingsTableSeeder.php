@@ -14,6 +14,8 @@ class IssuingsTableSeeder extends Seeder
      */
     public function run()
     {
-        return Issuing::factory()->count(10)->create();
+        foreach (Issuing::DEFAULT_NAMES as $name) {
+            Issuing::firstOrCreate(['name' => $name]);
+        }
     }
 }
