@@ -51,6 +51,12 @@ class OccurrenceResource extends JsonResource
             'nameStatus' => $this->nameStatus ?: ($this->statusOccurence?->name ?? ''),
             'anexo' => $anexo,
             'clients_id' => $hideIdentity ? null : $this->clients_id,
+            // Histórico de movimentações para o autor: só status e data — sem servidor nem
+            // observação interna. Presente apenas no detalhe (relação carregada).
+            'history' => $this->whenLoaded('statusHistory', fn () => $this->statusHistory->map(fn ($entry) => [
+                'status' => $entry->toStatus?->name,
+                'date' => $entry->created_at?->format('d/m/Y H:i'),
+            ])->values()),
             'created_at' => Carbon::parse($this->created_at)->format('d/m/Y')
         ];
     }

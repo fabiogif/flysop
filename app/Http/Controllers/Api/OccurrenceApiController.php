@@ -74,6 +74,20 @@ class OccurrenceApiController extends Controller
         }
 
         $occurrence->anexo = $this->occurrenceImage->where('occurrence_id', $id)->pluck('url')->all();
+        $occurrence->load('statusHistory.toStatus');
+
+        return new OccurrenceResource($occurrence);
+    }
+
+    /**
+     * Cidadão reabre a própria ocorrência concluída (regras em OccurrenceService::reopenByCitizen).
+     */
+    public function reopen(Request $request, int $id)
+    {
+        $data = $request->validate(['reason' => ['nullable', 'string', 'max:1000']]);
+
+        $occurrence = $this->occurrenceService->reopenByCitizen($id, $request->user(), $data['reason'] ?? null);
+        $occurrence->load('statusHistory.toStatus');
 
         return new OccurrenceResource($occurrence);
     }

@@ -24,6 +24,13 @@ Route::middleware(['auth:sanctum', 'ensure.citizen'])->group(function () {
     Route::put('/profile', [App\Http\Controllers\Api\ProfileApiController::class, 'update']);
     Route::post('/profile/avatar', [App\Http\Controllers\Api\ProfileApiController::class, 'uploadAvatar']);
     Route::get('/my-occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class, 'myOccurrences']);
+    Route::post('/occurrences/{id}/reopen', [App\Http\Controllers\Api\OccurrenceApiController::class, 'reopen'])->whereNumber('id');
+
+    // Feed de notificações do cidadão (conclusão/indeferimento) — mesmo controller do gestor.
+    Route::get('/notifications', [App\Http\Controllers\Api\NotificationApiController::class, 'index']);
+    Route::post('/notifications/read-all', [App\Http\Controllers\Api\NotificationApiController::class, 'readAll']);
+    Route::patch('/notifications/{id}/read', [App\Http\Controllers\Api\NotificationApiController::class, 'read']);
+    Route::delete('/notifications/{id}', [App\Http\Controllers\Api\NotificationApiController::class, 'destroy']);
 });
 
 // Gestor de órgão (User com issuing_id): ocorrências do órgão + feed de notificações.

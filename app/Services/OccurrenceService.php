@@ -15,6 +15,7 @@ use App\Events\OccurrenceUpdated;
 use App\Notifications\NewOccurrenceForIssuingNotification;
 use App\Notifications\OccurrenceAssignedNotification;
 use App\Notifications\OccurrenceStatusChangedNotification;
+use App\Notifications\OccurrenceStatusForCitizenNotification;
 use App\Repositories\Contracts\OccurrenceRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
@@ -32,6 +33,7 @@ class OccurrenceService
      */
     private const DUPLICATE_RADIUS_KM = 0.3;
     private const DUPLICATE_WINDOW_HOURS = 48;
+    public const REOPEN_WINDOW_DAYS = 30;
 
     /**
      * Agrupamento dos status para o painel público do app (abertas / em andamento / resolvidas).
@@ -452,7 +454,7 @@ class OccurrenceService
      * o histórico (occurrence_status_history). Nenhuma outra rotina deve escrever em
      * status_occurrences_id diretamente.
      */
-    private function recordStatusChange(Occurrences $occurrence, int $newStatusId, ?string $note = null): Occurrences
+    private function recordStatusChange(Occurrences $occurrence, int $newStatusId, ?string $note = null, bool $citizenReopen = false): Occurrences
     {
         $fromStatusId = $occurrence->status_occurrences_id;
 
@@ -460,7 +462,10 @@ class OccurrenceService
             return $occurrence;
         }
 
-        $this->guardStatusTransition($occurrence, $fromStatusId, $newStatusId);
+        // Reabertura pelo cidadão já foi validada em reopenByCitizen() (dono, status, prazo).
+        if (! $citizenReopen) {
+            $this->guardStatusTransition($occurrence, $fromStatusId, $newStatusId);
+        }
 
         $occurrence->update(['status_occurrences_id' => $newStatusId]);
 
@@ -473,6 +478,7 @@ class OccurrenceService
         ]);
 
         $this->notifyStatusChange($occurrence, $fromStatusId, $newStatusId);
+        $this->notifyCitizen($occurrence, $newStatusId);
         $this->syncDriverStatus($occurrence, $newStatusId);
         broadcast(new OccurrenceUpdated($occurrence))->toOthers();
 
@@ -644,6 +650,56 @@ class OccurrenceService
         $occurrence = $this->findOrFail($occurrenceId);
 
         return $this->recordStatusChange($occurrence, $statusOccurrencesId);
+    }
+
+    /**
+     * Cidadão reabre a própria ocorrência quando o problema não foi resolvido (Eixo 4):
+     * só o autor, só a partir de "Finalizada" e até REOPEN_WINDOW_DAYS após a conclusão.
+     * Passa pelo mesmo ponto único de mudança de status (histórico, notificações).
+     */
+    public function reopenByCitizen(int $occurrenceId, Client $client, ?string $reason = null): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        if ((int) $occurrence->clients_id !== (int) $client->id) {
+            abort(404);
+        }
+
+        if ($occurrence->statusOccurence?->name !== 'Finalizada') {
+            abort(422, 'Só é possível reabrir uma ocorrência concluída.');
+        }
+
+        if ($occurrence->updated_at && $occurrence->updated_at->lt(now()->subDays(self::REOPEN_WINDOW_DAYS))) {
+            abort(422, 'O prazo de ' . self::REOPEN_WINDOW_DAYS . ' dias para reabrir esta ocorrência terminou.');
+        }
+
+        $reabertaId = StatusOccurrence::where('name', 'Reaberta')->value('id');
+        if (! $reabertaId) {
+            abort(503, 'Status "Reaberta" não cadastrado. Avise a administração da prefeitura.');
+        }
+
+        $note = 'Reaberta pelo cidadão' . ($reason ? ': ' . $reason : '.');
+
+        return $this->recordStatusChange($occurrence, (int) $reabertaId, $note, citizenReopen: true);
+    }
+
+    /**
+     * Avisa o cidadão autor quando a ocorrência é concluída ou indeferida. Ocorrência sem
+     * conta (cliente "Anônimo" compartilhado) não tem a quem avisar.
+     */
+    private function notifyCitizen(Occurrences $occurrence, int $newStatusId): void
+    {
+        $statusName = StatusOccurrence::whereKey($newStatusId)->value('name');
+        if (! in_array($statusName, ['Finalizada', 'Indeferida'], true)) {
+            return;
+        }
+
+        $client = $occurrence->client;
+        if (! $client || $client->phone === ClientService::ANONYMOUS_PHONE) {
+            return;
+        }
+
+        $client->notify(new OccurrenceStatusForCitizenNotification($occurrence, $statusName));
     }
 
     /**
