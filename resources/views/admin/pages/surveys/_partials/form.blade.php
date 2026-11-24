@@ -5,6 +5,7 @@
     if ($existingQuestions === null && isset($survey)) {
         $existingQuestions = $survey->questions->map(function ($q) {
             return [
+                'id' => $q->id,
                 'type' => $q->type,
                 'prompt' => $q->prompt,
                 'required' => $q->required ? '1' : '0',
@@ -61,6 +62,7 @@
         <div id="survey-questions" data-initial='@json($existingQuestions)'></div>
         <template id="survey-question-template">
             <div class="survey-question-card border rounded p-3 mb-3">
+                <input type="hidden" class="survey-id">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <strong class="survey-question-label">Pergunta</strong>
                     <button type="button" class="btn btn-sm btn-outline-danger survey-remove-question" title="Remover">
@@ -117,6 +119,7 @@
         var cards = container.querySelectorAll('.survey-question-card');
         cards.forEach(function (card, index) {
             card.querySelector('.survey-question-label').textContent = 'Pergunta ' + (index + 1);
+            card.querySelector('.survey-id').name = 'questions[' + index + '][id]';
             card.querySelector('.survey-prompt').name = 'questions[' + index + '][prompt]';
             card.querySelector('.survey-type').name = 'questions[' + index + '][type]';
             card.querySelector('.survey-options').name = 'questions[' + index + '][options]';
@@ -140,6 +143,7 @@
         data = data || { type: 'text', prompt: '', required: '1', options: '' };
         var node = template.content.cloneNode(true);
         var card = node.querySelector('.survey-question-card');
+        card.querySelector('.survey-id').value = data.id || '';
         card.querySelector('.survey-prompt').value = data.prompt || '';
         card.querySelector('.survey-type').value = data.type || 'text';
         card.querySelector('.survey-options').value = data.options || '';
@@ -147,6 +151,7 @@
         card.querySelector('.survey-type').addEventListener('change', function () { toggleOptions(card); });
         card.querySelector('.survey-remove-question').addEventListener('click', function () {
             if (container.querySelectorAll('.survey-question-card').length <= 1) return;
+            if (card.querySelector('.survey-id').value && !confirm('Remover esta pergunta? As respostas já recebidas para ela serão excluídas ao salvar.')) return;
             card.remove();
             reindex();
         });

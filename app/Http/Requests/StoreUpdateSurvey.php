@@ -41,6 +41,7 @@ class StoreUpdateSurvey extends FormRequest
             'description' => ['nullable', 'string', 'max:5000'],
             'is_active' => ['sometimes', 'boolean'],
             'questions' => ['required', 'array', 'min:1'],
+            'questions.*.id' => ['nullable', 'integer'],
             'questions.*.type' => ['required', Rule::in(SurveyQuestion::TYPES)],
             'questions.*.prompt' => ['required', 'string', 'min:2', 'max:500'],
             'questions.*.required' => ['sometimes', 'boolean'],

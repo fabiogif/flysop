@@ -100,6 +100,9 @@
             <a href="{{ route('surveys.responses', $survey->id) }}" class="btn btn-outline-info btn-sm">
                 <i class="fas fa-inbox"></i> Ver respostas
             </a>
+            <a href="{{ route('surveys.responses.pdf', $survey->id) }}" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-print"></i> Imprimir respostas
+            </a>
             <form action="{{ route('surveys.toggle', $survey->id) }}" method="POST" class="d-inline">
                 @csrf
                 <button type="submit" class="btn btn-outline-secondary btn-sm">

@@ -3,6 +3,7 @@
 namespace Tests\Feature\Surveys;
 
 use App\Models\Survey;
+use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use App\Models\Tenant;
@@ -198,5 +199,91 @@ class SurveyModuleTest extends TestCase
             ]);
 
         $this->assertSame(0, SurveyResponse::where('survey_id', $survey->id)->count());
+    }
+
+    private function surveyWithAnswer(int $tenantId): array
+    {
+        $survey = Survey::factory()->create(['tenant_id' => $tenantId, 'is_active' => true]);
+        $question = SurveyQuestion::factory()->singleChoice(['Sim', 'Não'])->create([
+            'survey_id' => $survey->id,
+            'prompt' => 'Recomendaria?',
+        ]);
+        $response = SurveyResponse::create(['survey_id' => $survey->id, 'submitted_at' => now()]);
+        SurveyAnswer::create([
+            'survey_response_id' => $response->id,
+            'survey_question_id' => $question->id,
+            'value' => 'Sim',
+        ]);
+
+        return [$survey, $question];
+    }
+
+    public function test_editing_survey_keeps_existing_answers(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$survey, $question] = $this->surveyWithAnswer($user->tenant_id);
+
+        $this->put(route('surveys.update', $survey->id), [
+            'title' => 'Título novo',
+            'is_active' => '1',
+            'questions' => [
+                ['id' => $question->id, 'type' => 'single_choice', 'prompt' => 'Recomendaria o serviço?', 'required' => '1', 'options' => "Sim\nNão"],
+                ['type' => 'text', 'prompt' => 'Comentário', 'required' => '0', 'options' => ''],
+            ],
+        ])->assertRedirect(route('surveys.show', $survey->id));
+
+        $this->assertDatabaseHas('survey_questions', ['id' => $question->id, 'prompt' => 'Recomendaria o serviço?']);
+        $this->assertSame(1, SurveyAnswer::where('survey_question_id', $question->id)->count());
+        $this->assertSame(2, $survey->questions()->count());
+    }
+
+    public function test_editing_survey_ignores_question_id_from_other_survey(): void
+    {
+        $user = $this->actingAsAdmin();
+        $survey = Survey::factory()->create(['tenant_id' => $user->tenant_id]);
+        [, $foreign] = $this->surveyWithAnswer(Tenant::factory()->create()->id);
+
+        $this->put(route('surveys.update', $survey->id), [
+            'title' => 'Minha pesquisa',
+            'questions' => [
+                ['id' => $foreign->id, 'type' => 'text', 'prompt' => 'Sequestrada', 'required' => '1', 'options' => ''],
+            ],
+        ])->assertRedirect(route('surveys.show', $survey->id));
+
+        $this->assertDatabaseHas('survey_questions', ['id' => $foreign->id, 'prompt' => 'Recomendaria?']);
+        $this->assertDatabaseHas('survey_questions', ['survey_id' => $survey->id, 'prompt' => 'Sequestrada']);
+    }
+
+    public function test_responses_page_shows_summary_and_print_link(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$survey] = $this->surveyWithAnswer($user->tenant_id);
+
+        $this->get(route('surveys.responses', $survey->id))
+            ->assertOk()
+            ->assertSee('Resumo por pergunta')
+            ->assertSee('1 (100%)')
+            ->assertSee(route('surveys.responses.pdf', $survey->id));
+    }
+
+    public function test_admin_can_print_responses_as_pdf(): void
+    {
+        $user = $this->actingAsAdmin();
+        [$survey] = $this->surveyWithAnswer($user->tenant_id);
+
+        $response = $this->get(route('surveys.responses.pdf', $survey->id));
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertSame('%PDF', substr($response->getContent(), 0, 4));
+    }
+
+    public function test_admin_cannot_print_other_tenant_responses(): void
+    {
+        $this->actingAsAdmin();
+        [$survey] = $this->surveyWithAnswer(Tenant::factory()->create()->id);
+
+        $this->get(route('surveys.responses.pdf', $survey->id))
+            ->assertRedirect(route('surveys.index'));
     }
 }

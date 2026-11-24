@@ -51,9 +51,17 @@ class SurveyService
         return $survey->fresh('questions');
     }
 
+    /**
+     * Atualiza no lugar as perguntas que voltaram com id, cria as novas e apaga só as
+     * removidas. Apagar todas e recriar (como era antes) disparava o cascade de
+     * survey_answers e destruía todas as respostas já coletadas a cada edição.
+     * O id só é aceito se pertencer a esta pesquisa — id de outra pesquisa/tenant vira
+     * pergunta nova, nunca edita a alheia.
+     */
     public function syncQuestions(Survey $survey, array $questions): void
     {
-        $survey->questions()->delete();
+        $existing = $survey->questions()->get()->keyBy('id');
+        $keptIds = [];
 
         foreach (array_values($questions) as $index => $question) {
             $type = $question['type'];
@@ -63,14 +71,81 @@ class SurveyService
                 $options = array_values(array_filter(array_map('trim', $question['options'] ?? []), fn ($o) => $o !== ''));
             }
 
-            $survey->questions()->create([
+            $attributes = [
                 'type' => $type,
                 'prompt' => $question['prompt'],
                 'options' => $options,
                 'required' => (bool) ($question['required'] ?? true),
                 'sort_order' => (int) ($question['sort_order'] ?? $index),
-            ]);
+            ];
+
+            $current = $existing->get((int) ($question['id'] ?? 0));
+            if ($current) {
+                $current->update($attributes);
+                $keptIds[] = $current->id;
+            } else {
+                $survey->questions()->create($attributes);
+            }
         }
+
+        $removedIds = $existing->keys()->diff($keptIds);
+        if ($removedIds->isNotEmpty()) {
+            SurveyQuestion::whereIn('id', $removedIds)->delete();
+        }
+    }
+
+    /**
+     * Resumo por pergunta: total de respostas; contagem por opção (múltipla escolha e
+     * escala, incluindo opções com zero) e média da escala. Texto livre só tem total.
+     *
+     * @return array<int, array{question: SurveyQuestion, total: int, counts: array<string, int>, average: ?float}>
+     */
+    public function summarize(Survey $survey): array
+    {
+        $survey->loadMissing('questions');
+        $questions = $survey->questions;
+
+        $totals = SurveyAnswer::query()
+            ->whereIn('survey_question_id', $questions->pluck('id'))
+            ->selectRaw('survey_question_id, count(*) as total')
+            ->groupBy('survey_question_id')
+            ->pluck('total', 'survey_question_id');
+
+        $byValue = SurveyAnswer::query()
+            ->whereIn('survey_question_id', $questions->where('type', '!=', SurveyQuestion::TYPE_TEXT)->pluck('id'))
+            ->selectRaw('survey_question_id, value, count(*) as total')
+            ->groupBy('survey_question_id', 'value')
+            ->get()
+            ->groupBy('survey_question_id');
+
+        return $questions->map(function (SurveyQuestion $question) use ($totals, $byValue) {
+            $counts = [];
+            if ($question->type === SurveyQuestion::TYPE_SINGLE_CHOICE) {
+                $counts = array_fill_keys($question->options ?? [], 0);
+            } elseif ($question->type === SurveyQuestion::TYPE_SCALE) {
+                $counts = array_fill_keys(['1', '2', '3', '4', '5'], 0);
+            }
+
+            foreach ($byValue->get($question->id, collect()) as $row) {
+                $counts[(string) $row->value] = (int) $row->total;
+            }
+
+            $average = null;
+            if ($question->type === SurveyQuestion::TYPE_SCALE && array_sum($counts) > 0) {
+                $weighted = 0;
+                foreach ($counts as $value => $count) {
+                    $weighted += (int) $value * $count;
+                }
+                $average = round($weighted / array_sum($counts), 2);
+            }
+
+            return [
+                'question' => $question,
+                'total' => (int) ($totals[$question->id] ?? 0),
+                'counts' => $counts,
+                'average' => $average,
+            ];
+        })->values()->all();
     }
 
     public function findActiveByToken(string $token): ?Survey

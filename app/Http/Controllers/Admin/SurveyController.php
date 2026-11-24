@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateSurvey;
 use App\Models\Survey;
 use App\Services\SurveyService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\Builder\Builder;
 use Illuminate\Http\Request;
 
@@ -140,10 +141,32 @@ class SurveyController extends Controller
 
         $survey->load('questions');
         $responses = $survey->responses()
-            ->with(['answers.question'])
+            ->with('answers')
             ->paginate(20);
+        $summary = $this->surveyService->summarize($survey);
 
-        return view('admin.pages.surveys.responses', compact('survey', 'responses'));
+        return view('admin.pages.surveys.responses', compact('survey', 'responses', 'summary'));
+    }
+
+    /**
+     * Respostas em PDF para impressão — mesmo padrão síncrono de OccurrencesController::pdf(),
+     * aberto inline (stream) para o navegador já oferecer imprimir.
+     * ponytail: carrega todas as respostas de uma vez; se uma pesquisa passar de alguns
+     * milhares de respostas, mover para a fila (ver App\Jobs\GenerateReportJob).
+     */
+    public function responsesPdf($id)
+    {
+        $survey = $this->findTenantSurvey($id);
+        if (!$survey) {
+            return redirect()->route('surveys.index');
+        }
+
+        $survey->load('questions');
+        $responses = $survey->responses()->with('answers')->get();
+        $summary = $this->surveyService->summarize($survey);
+
+        return Pdf::loadView('pdf.survey-responses', compact('survey', 'responses', 'summary'))
+            ->stream('respostas-pesquisa-' . $survey->id . '.pdf');
     }
 
     public function qrcode($id)
