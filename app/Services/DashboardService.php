@@ -42,7 +42,7 @@ class DashboardService implements DashboardServiceInterface
 
             // KPIs operacionais (Fase 4)
             'occurrencesAbertas' => Occurrences::whereHas('statusOccurence', fn ($q) => $q->where('is_terminal', false))->count(),
-            'occurrencesEmAtendimento' => Occurrences::whereHas('statusOccurence', fn ($q) => $q->where('name', 'Em atendimento'))->count(),
+            'occurrencesEmAtendimento' => Occurrences::whereHas('statusOccurence', fn ($q) => $q->whereIn('name', ['Em atendimento', 'Em andamento']))->count(),
             'occurrencesFinalizadasHoje' => Occurrences::whereHas('statusOccurence', fn ($q) => $q->where('is_terminal', true))
                 ->whereDate('updated_at', today())
                 ->count(),

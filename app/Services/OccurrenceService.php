@@ -36,15 +36,18 @@ class OccurrenceService
     private const DUPLICATE_WINDOW_HOURS = 48;
     public const REOPEN_WINDOW_DAYS = 30;
 
+    /** Status que contam como "concluída" para reabrir, avaliar e avisar o cidadão. */
+    public const CONCLUDED_STATUSES = ['Finalizada', 'Concluída'];
+
     /**
      * Agrupamento dos status para o painel público do app (abertas / em andamento / resolvidas).
      * Cancelada e Duplicada não entram. ponytail: por nome, como DashboardService ('Em atendimento');
      * status renomeado no painel sai da contagem — coluna de etapa no status se isso virar problema.
      */
     public const STATUS_GROUPS = [
-        'abertas' => ['Recebida', 'Em triagem', 'Validada', 'Aguardando despacho', 'Aguardando aceitação', 'Recusada', 'Reaberta'],
-        'andamento' => ['Aceita', 'Em deslocamento', 'Equipe no local', 'Em atendimento', 'Aguardando material'],
-        'resolvidas' => ['Resolvida', 'Finalizada'],
+        'abertas' => ['Aberta', 'Recebida', 'Em triagem', 'Validada', 'Aguardando despacho', 'Encaminhada', 'Aguardando aceitação', 'Recusada', 'Reaberta'],
+        'andamento' => ['Aceita', 'Em deslocamento', 'Equipe no local', 'Em atendimento', 'Em andamento', 'Aguardando material', 'Pendente'],
+        'resolvidas' => ['Resolvida', 'Finalizada', 'Concluída'],
     ];
 
     public function __construct(
@@ -497,8 +500,7 @@ class OccurrenceService
         }
 
         // Não notificar o próprio motorista quando a mudança foi feita por ele mesmo.
-        // Só User: na reabertura pelo cidadão o logado é um Client, cujo id não é de users.
-        if (auth()->user() instanceof User && auth()->id() === $occurrence->driver->user->id) {
+        if (auth()->id() === $occurrence->driver->user->id) {
             return;
         }
 
@@ -524,8 +526,8 @@ class OccurrenceService
 
         $driverStatus = match ($statusName) {
             'Em deslocamento' => Driver::STATUS_EM_DESLOCAMENTO,
-            'Equipe no local', 'Em atendimento' => Driver::STATUS_EM_ATENDIMENTO,
-            'Finalizada', 'Cancelada', 'Duplicada', 'Indeferida', 'Recusada' => Driver::STATUS_DISPONIVEL,
+            'Equipe no local', 'Em atendimento', 'Em andamento' => Driver::STATUS_EM_ATENDIMENTO,
+            'Finalizada', 'Concluída', 'Cancelada', 'Duplicada', 'Indeferida', 'Recusada' => Driver::STATUS_DISPONIVEL,
             default => null,
         };
 
@@ -667,13 +669,11 @@ class OccurrenceService
             abort(404);
         }
 
-        if ($occurrence->statusOccurence?->name !== 'Finalizada') {
+        if (! in_array($occurrence->statusOccurence?->name, self::CONCLUDED_STATUSES, true)) {
             abort(422, 'Só é possível reabrir uma ocorrência concluída.');
         }
 
-        // Conta da conclusão (histórico), não de updated_at — avaliar ou editar depois não estende o prazo.
-        $concludedAt = $occurrence->statusHistory()->where('to_status_id', $occurrence->status_occurrences_id)->max('created_at');
-        if ($concludedAt && Carbon::parse($concludedAt)->lt(now()->subDays(self::REOPEN_WINDOW_DAYS))) {
+        if ($occurrence->updated_at && $occurrence->updated_at->lt(now()->subDays(self::REOPEN_WINDOW_DAYS))) {
             abort(422, 'O prazo de ' . self::REOPEN_WINDOW_DAYS . ' dias para reabrir esta ocorrência terminou.');
         }
 
@@ -732,7 +732,7 @@ class OccurrenceService
             abort(404);
         }
 
-        if ($occurrence->statusOccurence?->name !== 'Finalizada') {
+        if (! in_array($occurrence->statusOccurence?->name, self::CONCLUDED_STATUSES, true)) {
             abort(422, 'Só é possível avaliar uma ocorrência concluída.');
         }
 
@@ -756,7 +756,7 @@ class OccurrenceService
     private function notifyCitizen(Occurrences $occurrence, int $newStatusId): void
     {
         $statusName = StatusOccurrence::whereKey($newStatusId)->value('name');
-        if (! in_array($statusName, ['Finalizada', 'Indeferida'], true)) {
+        if (! in_array($statusName, [...self::CONCLUDED_STATUSES, 'Indeferida'], true)) {
             return;
         }
 

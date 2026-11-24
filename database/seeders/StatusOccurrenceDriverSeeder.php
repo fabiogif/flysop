@@ -18,19 +18,28 @@ class StatusOccurrenceDriverSeeder extends Seeder
 {
     public function run(): void
     {
+        // Fluxo simplificado da secretaria (Aberta → Em triagem → Encaminhada → Em andamento /
+        // Pendente → Concluída | Indeferida, Reaberta): convive com o fluxo detalhado do
+        // despacho. "Aberta" tem o menor sort_order: é o status inicial de toda ocorrência nova
+        // (OccurrenceService::createNewOccurrence pega o primeiro não terminal).
         $statuses = [
+            ['name' => 'Aberta', 'sort_order' => 5],
             ['name' => 'Recebida', 'sort_order' => 10],
             ['name' => 'Em triagem', 'sort_order' => 20],
             ['name' => 'Validada', 'sort_order' => 30],
             ['name' => 'Aguardando despacho', 'sort_order' => 40],
+            ['name' => 'Encaminhada', 'sort_order' => 45],
             ['name' => 'Aguardando aceitação', 'sort_order' => 50],
             ['name' => 'Aceita', 'sort_order' => 60],
             ['name' => 'Recusada', 'sort_order' => 61],
             ['name' => 'Em deslocamento', 'sort_order' => 70],
             ['name' => 'Equipe no local', 'sort_order' => 75],
             ['name' => 'Em atendimento', 'sort_order' => 80],
+            ['name' => 'Em andamento', 'sort_order' => 82],
             ['name' => 'Aguardando material', 'sort_order' => 85],
+            ['name' => 'Pendente', 'sort_order' => 86],
             ['name' => 'Resolvida', 'sort_order' => 90],
+            ['name' => 'Concluída', 'sort_order' => 99, 'is_terminal' => true],
             ['name' => 'Finalizada', 'sort_order' => 100, 'is_terminal' => true],
             ['name' => 'Cancelada', 'sort_order' => 101, 'is_terminal' => true],
             ['name' => 'Duplicada', 'sort_order' => 102, 'is_terminal' => true],

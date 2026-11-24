@@ -132,7 +132,7 @@
                                 @csrf
                                 <select name="team_id" class="form-control form-control-sm mr-1" aria-label="Equipe responsável" required>
                                     <option value="">{{ $occurrences->team ? '' : 'Selecione…' }}</option>
-                                    @foreach ($teams as $team)
+                                    @foreach (\App\Models\Team::availableForIssuing($occurrences->issuings_id)->orderBy('name')->get() as $team)
                                         <option value="{{ $team->id }}" {{ (int) $occurrences->team_id === $team->id ? 'selected' : '' }}>{{ $team->name }}</option>
                                     @endforeach
                                 </select>

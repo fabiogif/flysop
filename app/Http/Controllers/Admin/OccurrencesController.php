@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateOccurrences;
 use App\Models\DriverPosition;
 use App\Models\Occurrences;
-use App\Models\Team;
 use App\Services\OccurrenceService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
@@ -86,7 +85,6 @@ class OccurrencesController extends Controller
             'typeOccurrences' => $formData['typeOccurrences'],
             'statusOccurrences' => $formData['statusOccurrences'],
             'issuings' => $formData['issuings'],
-            'teams' => Team::availableForIssuing($occurrence->issuings_id)->orderBy('name')->get(),
         ]);
     }
 

@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OccurrenceResource;
 use App\Http\Resources\StatusOccurenceResource;
 use App\Models\StatusOccurrence;
-use App\Models\Team;
 use App\Services\OccurrenceService;
 use Illuminate\Http\Request;
 
@@ -90,7 +89,7 @@ class ManagerOccurrenceApiController extends Controller
     public function teams(Request $request)
     {
         return response()->json([
-            'data' => Team::availableForIssuing($request->user()->issuing_id)
+            'data' => \App\Models\Team::availableForIssuing($request->user()->issuing_id)
                 ->orderBy('name')->get(['id', 'name', 'issuing_id']),
         ]);
     }

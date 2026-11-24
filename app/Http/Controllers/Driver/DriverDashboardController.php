@@ -30,7 +30,7 @@ class DriverDashboardController extends Controller
                 ->count();
 
             $emAndamento = Occurrences::whereHas('statusOccurence', function ($q) {
-                $q->whereIn('name', ['Aceita', 'Em deslocamento', 'Em atendimento']);
+                $q->whereIn('name', ['Aceita', 'Em deslocamento', 'Em atendimento', 'Em andamento']);
             })->count();
         } else {
             if (! $driver) {
@@ -49,7 +49,7 @@ class DriverDashboardController extends Controller
 
             $emAndamento = Occurrences::forDriver($driver->id)
                 ->whereHas('statusOccurence', function ($q) {
-                    $q->whereIn('name', ['Aceita', 'Em deslocamento', 'Em atendimento']);
+                    $q->whereIn('name', ['Aceita', 'Em deslocamento', 'Em atendimento', 'Em andamento']);
                 })
                 ->count();
         }
