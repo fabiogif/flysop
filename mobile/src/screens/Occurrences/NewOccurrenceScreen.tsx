@@ -20,6 +20,7 @@ import { useAuth } from '../../context/AuthContext';
 import { saveGuestProtocol } from '../../services/guestProtocols';
 import { AppCameraModal } from '../../components/Camera/AppCameraModal';
 import { LocationPickerModal } from '../../components/Map/LocationPickerModal';
+import { CityPickerModal } from '../../components/Location/CityPickerModal';
 import { Coordinates } from '../../components/Map/osmStyle';
 
 interface NewOccurrenceScreenProps {
@@ -49,6 +50,7 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
   const [isGpsLoading, setIsGpsLoading] = useState(false);
   const [locationSource, setLocationSource] = useState<'gps' | 'map'>('gps');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isCityPickerOpen, setIsCityPickerOpen] = useState(false);
 
   // Fotos e Câmera
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -302,6 +304,12 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
             </Text>
           )}
 
+          <TouchableOpacity onPress={() => setIsCityPickerOpen(true)} accessibilityRole="button">
+            <Text style={styles.cityLink}>
+              {city && state ? `✏️ Corrigir município (${city} - ${state})` : '🏙️ Informar estado e município'}
+            </Text>
+          </TouchableOpacity>
+
           {/* Um ou outro: a localização atual ou qualquer ponto escolhido no mapa */}
           <View style={styles.locationActions}>
             <TouchableOpacity
@@ -331,6 +339,17 @@ export const NewOccurrenceScreen: React.FC<NewOccurrenceScreenProps> = ({
           initial={latitude && longitude ? { latitude, longitude } : null}
           onConfirm={handlePickOnMap}
           onClose={() => setIsPickerOpen(false)}
+        />
+
+        <CityPickerModal
+          visible={isCityPickerOpen}
+          initialUf={state}
+          onSelect={(uf, cityName) => {
+            setState(uf);
+            setCity(cityName);
+            setIsCityPickerOpen(false);
+          }}
+          onClose={() => setIsCityPickerOpen(false)}
         />
 
         {/* Tipo de Ocorrência */}
@@ -528,6 +547,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
     fontWeight: '600',
+  },
+  cityLink: {
+    color: '#1E3A8A',
+    fontWeight: '600',
+    fontSize: 14,
+    paddingVertical: 10,
   },
   locationActions: {
     flexDirection: 'row',

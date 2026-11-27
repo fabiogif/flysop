@@ -216,17 +216,26 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="locality-input">Cidade</label>
-                                <input type="text" name="city" id="locality-input" readonly
-                                    class="form-control form-control-sm bg-light"
+                                <input type="text" name="city" id="locality-input" list="city-options"
+                                    class="form-control form-control-sm" autocomplete="off"
+                                    placeholder="Escolha a UF e digite"
                                     value="{{ old('city', $occurrences->city ?? '') }}">
+                                <datalist id="city-options"></datalist>
                             </div>
                         </div>
                         <div class="col-md-2">
                             <div class="form-group">
                                 <label for="administrative_area_level_1-input">UF</label>
-                                <input type="text" name="state" id="administrative_area_level_1-input" readonly
-                                    class="form-control form-control-sm bg-light"
-                                    value="{{ old('state', $occurrences->state ?? '') }}">
+                                {{-- Opções carregadas de /api/states (IBGE); a atual fica como opção inicial
+                                     para não perder o valor antes do fetch. Registros antigos podem ter o nome
+                                     do estado ("Bahia") em vez da UF — o JS converte pelo nome. --}}
+                                @php $currentState = old('state', $occurrences->state ?? ''); @endphp
+                                <select name="state" id="administrative_area_level_1-input"
+                                    class="form-control form-control-sm {{ $errors->has('state') ? 'is-invalid' : '' }}"
+                                    data-current="{{ $currentState }}">
+                                    <option value="">—</option>
+                                </select>
+                                @error('state') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -381,6 +390,65 @@
         if (el) el.style.display = show ? 'block' : 'none';
     }
 
+    // UF/cidade: lista do IBGE (tabelas states/cities via /api). A cidade continua texto livre
+    // (geocoder pode trazer grafia diferente), com sugestões da UF escolhida.
+    var statesList = [];
+
+    function normalizeName(s) {
+        return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    }
+
+    function loadCityOptions(uf) {
+        var datalist = getEl('city-options');
+        if (!datalist) return;
+        datalist.innerHTML = '';
+        if (!uf) return;
+        fetch('/api/states/' + uf + '/cities', { headers: { 'Accept': 'application/json' } })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                (res.data || []).forEach(function(c) {
+                    var opt = document.createElement('option');
+                    opt.value = c.name;
+                    datalist.appendChild(opt);
+                });
+            })
+            .catch(function() {});
+    }
+
+    // Aceita UF ("BA") ou nome ("Bahia"); valor desconhecido deixa o campo vazio.
+    function setStateField(value) {
+        var select = getInput('administrative_area_level_1');
+        if (!select) return;
+        var key = normalizeName(value);
+        var found = statesList.find(function(s) { return s.uf.toLowerCase() === key || normalizeName(s.name) === key; });
+        var uf = found ? found.uf : '';
+        if (!found && value && !statesList.length) {
+            select.setAttribute('data-current', value); // lista ainda carregando
+            return;
+        }
+        select.value = uf;
+        loadCityOptions(uf);
+    }
+
+    function initStateSelect() {
+        var select = getInput('administrative_area_level_1');
+        if (!select) return;
+        select.addEventListener('change', function() { loadCityOptions(select.value); });
+        fetch('/api/states', { headers: { 'Accept': 'application/json' } })
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                statesList = res.data || [];
+                statesList.forEach(function(s) {
+                    var opt = document.createElement('option');
+                    opt.value = s.uf;
+                    opt.textContent = s.uf + ' — ' + s.name;
+                    select.appendChild(opt);
+                });
+                setStateField(select.getAttribute('data-current'));
+            })
+            .catch(function() {});
+    }
+
     // Preenche os campos a partir de um resultado do Nominatim (OpenStreetMap) — mesmo
     // formato usado tanto pela busca (search-as-you-type) quanto pelo reverse geocoding.
     function fillFormFromNominatim(result) {
@@ -395,7 +463,7 @@
         var zipEl = getInput('postal_code');
         var sublocalityEl = getInput('sublocality');
         if (localityEl) localityEl.value = addr.city || addr.town || addr.village || addr.municipality || '';
-        if (stateEl) stateEl.value = addr.state || '';
+        if (stateEl) setStateField(addr['ISO3166-2-lvl4'] ? addr['ISO3166-2-lvl4'].replace('BR-', '') : addr.state);
         if (zipEl) zipEl.value = addr.postcode || '';
         if (sublocalityEl) sublocalityEl.value = addr.suburb || addr.neighbourhood || '';
         if (getEl('country-input')) getEl('country-input').value = addr.country || 'Brasil';
@@ -543,8 +611,10 @@
     // caso o restante do DOM (inputs de lat/lng etc.) ainda não tenha sido parseado.
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initOccurrenceMapWidget);
+        document.addEventListener('DOMContentLoaded', initStateSelect);
     } else {
         initOccurrenceMapWidget();
+        initStateSelect();
     }
 
     var anexoInput = getEl('anexo');

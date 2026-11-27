@@ -37,7 +37,7 @@ class StoreUpdateOccurrences extends FormRequest
             'address' => 'nullable|string|max:255',
             'neighborhood' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
-            'state' => 'nullable|string|max:2',
+            'state' => 'nullable|string|size:2|exists:states,uf',
             'zip' => 'nullable|string|max:20',
             'description' => 'nullable|string|max:5000',
             // Anexos de fotos

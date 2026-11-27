@@ -81,6 +81,13 @@ Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'in
 Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
 Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);
 
+// Estados/municípios (IBGE): dado público de referência, sem PII, só leitura e cacheado — público
+// porque o form web do gestor (sessão, não Sanctum) e o app usam o mesmo endpoint. Throttle contra abuso.
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/states', [App\Http\Controllers\Api\LocationApiController::class, 'states']);
+    Route::get('/states/{uf}/cities', [App\Http\Controllers\Api\LocationApiController::class, 'cities'])->where('uf', '[A-Za-z]{2}');
+});
+
 /*
 |--------------------------------------------------------------------------
 | Rotas autenticadas (auth:sanctum)
