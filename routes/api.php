@@ -76,7 +76,7 @@ Route::get('/occurrence-stats', [App\Http\Controllers\Api\OccurrenceApiControlle
 Route::get('/announcements', [App\Http\Controllers\Api\AnnouncementApiController::class, 'index']);
 
 // Pesquisas: públicas como no web (PublicSurveyController, link/QR sem login); a resposta grava
-// só o IP, nunca o cidadão. Reaproveita SurveyService/StoreSurveyResponse sem duplicar regra.
+// o IP e, se o respondente quiser, o nome digitado (opcional) — nunca o cidadão logado. Reaproveita SurveyService/StoreSurveyResponse sem duplicar regra.
 Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);
 Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
 Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);

@@ -21,6 +21,7 @@
                 <legend><label for="respondent_name">Seu nome (opcional)</label></legend>
                 <input type="text" id="respondent_name" name="respondent_name" maxlength="255" autocomplete="name"
                     value="{{ old('respondent_name') }}">
+                <p class="ciop-survey-hint">Deixe em branco para responder anonimamente. Se informado, o nome fica visível para a equipe que analisa as respostas.</p>
                 @error('respondent_name')
                     <p class="ciop-survey-error">{{ $message }}</p>
                 @enderror

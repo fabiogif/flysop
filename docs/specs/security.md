@@ -52,6 +52,7 @@ O endpoint `GET /api/profile/{username}` utiliza `PublicProfileResource`, que re
 ## LGPD (Fase 6 do plano de execução)
 
 - Consentimento explícito: `App\Http\Requests\Api\StoreUpdateOccurrences` (formulário público, sem login) exige `lgpd_consent` (`required|accepted`). O request do admin (`App\Http\Requests\StoreUpdateOccurrences`) não exige — quem preenche é o atendente, não o titular dos dados
+- Pesquisas: a resposta é anônima por padrão; `survey_responses.respondent_name` é opcional e digitado pelo próprio respondente (aviso no formulário web e no app de que fica visível para a equipe). Sem consentimento formal: dado voluntário e não obrigatório
 - Log de acesso: `Admin\OccurrencesController::show()` grava em `activity('lgpd_access')` — log nomeado separado do log `default` de auditoria de campo (`spatie/laravel-activitylog`), para não misturar "quem viu" com "quem editou"
 - Direito ao esquecimento: `OccurrenceService::forgetPersonalData()`, ability `forget` do `OccurrencePolicy` (só Supervisor/Administrador), rota `DELETE /admin/occurrences/{id}/forget` — anonimiza nome/CPF/RG/e-mail/telefone com `disableLogging()`/`enableLogging()` ao redor do update, para o dado não ficar gravado no diff do audit log antes de ser apagado
 - Retenção/anonimização em lote: `App\Console\Commands\AnonymizeOldOccurrencesCommand` (`occurrences:anonymize-old --days=730`), agendado mensalmente em `app/Console/Kernel.php` — só atinge ocorrências com status terminal

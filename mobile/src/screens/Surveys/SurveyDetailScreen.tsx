@@ -165,6 +165,9 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
               maxLength={255}
               autoComplete="name"
             />
+            <Text style={styles.nameHint}>
+              Se informado, o nome fica visível para a equipe que analisa as respostas.
+            </Text>
           </View>
 
           {survey.questions?.map((q, idx) => (
@@ -365,6 +368,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#111827',
     backgroundColor: '#FFFFFF',
+  },
+  nameHint: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 6,
   },
   choiceGroup: {
     gap: 8,

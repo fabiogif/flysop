@@ -34,7 +34,11 @@ class BrazilianLocationsSeeder extends Seeder
     /** @return array<int, array<string, string>> */
     private function readCsv(string $file): array
     {
-        $handle = fopen(database_path("data/ibge/{$file}"), 'r');
+        $path = database_path("data/ibge/{$file}");
+        $handle = is_readable($path) ? fopen($path, 'r') : false;
+        if ($handle === false) {
+            throw new \RuntimeException("CSV de estados/municípios não encontrado: {$path}");
+        }
         $header = fgetcsv($handle);
         $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]); // BOM do estados.csv
         $rows = [];

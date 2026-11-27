@@ -234,6 +234,9 @@
                                     class="form-control form-control-sm {{ $errors->has('state') ? 'is-invalid' : '' }}"
                                     data-current="{{ $currentState }}">
                                     <option value="">—</option>
+                                    @if (strlen($currentState) === 2)
+                                        <option value="{{ $currentState }}" selected>{{ $currentState }}</option>
+                                    @endif
                                 </select>
                                 @error('state') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                             </div>
@@ -438,6 +441,7 @@
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 statesList = res.data || [];
+                select.length = 1; // mantém só o "—"; a opção atual renderizada no servidor é recriada abaixo
                 statesList.forEach(function(s) {
                     var opt = document.createElement('option');
                     opt.value = s.uf;
