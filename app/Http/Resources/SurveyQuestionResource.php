@@ -14,6 +14,7 @@ class SurveyQuestionResource extends JsonResource
             'prompt' => $this->prompt,
             'options' => $this->options,
             'required' => $this->required,
+            'allow_justification' => $this->allow_justification,
             'sort_order' => $this->sort_order,
         ];
     }

@@ -4,15 +4,50 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 /* |-------------------------------------------------------------------------- | API Routes |-------------------------------------------------------------------------- | | Here is where you can register API routes for your application. These | routes are loaded by the RouteServiceProvider within a group which | is assigned the "api" middleware group. Enjoy building your API! | */
-Route::post('/sanctum/token', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'auth']);
+// Login do cidadão no app (e-mail + senha); throttle contra força bruta, como o login do gestor
+Route::post('/sanctum/token', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'auth'])->middleware('throttle:5,1');
 
-// Login leve do cidadão (app/site público): nome + celular obrigatórios, sem senha —
-// ver análise de impacto em docs/specs/flysop.md e app/Services/ClientService.php.
-Route::post('/auth/citizen', [App\Http\Controllers\Api\Auth\CitizenAuthController::class, 'auth']);
+Route::post('/auth/forgot-password', [App\Http\Controllers\Api\Auth\ClientPasswordResetController::class, 'sendLink'])->middleware('throttle:5,1');
+Route::post('/auth/register', [App\Http\Controllers\Api\Auth\CitizenRegisterController::class, 'register']);
+Route::get('/profile/{username}', [App\Http\Controllers\Api\ProfileApiController::class, 'show']);
+
+// Login do gestor de órgão no app (público por ser o login; throttle contra força bruta).
+Route::post('/auth/staff/login', [App\Http\Controllers\Api\Auth\StaffAuthController::class, 'login'])->middleware('throttle:5,1');
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/auth/me', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'me']);
     Route::post('/auth/logout', [App\Http\Controllers\Api\Auth\AuthClientController::class, 'logout']);
+});
+
+// Cidadão (Client): token de gestor não entra aqui.
+Route::middleware(['auth:sanctum', 'ensure.citizen'])->group(function () {
+    Route::put('/profile', [App\Http\Controllers\Api\ProfileApiController::class, 'update']);
+    Route::post('/profile/avatar', [App\Http\Controllers\Api\ProfileApiController::class, 'uploadAvatar']);
+    Route::get('/my-occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class, 'myOccurrences']);
+    Route::post('/occurrences/{id}/reopen', [App\Http\Controllers\Api\OccurrenceApiController::class, 'reopen'])->whereNumber('id');
+    Route::post('/occurrences/{id}/rating', [App\Http\Controllers\Api\OccurrenceApiController::class, 'rate'])->whereNumber('id');
+
+    // Feed de notificações do cidadão (conclusão/indeferimento) — mesmo controller do gestor.
+    Route::get('/notifications', [App\Http\Controllers\Api\NotificationApiController::class, 'index']);
+    Route::post('/notifications/read-all', [App\Http\Controllers\Api\NotificationApiController::class, 'readAll']);
+    Route::patch('/notifications/{id}/read', [App\Http\Controllers\Api\NotificationApiController::class, 'read']);
+    Route::delete('/notifications/{id}', [App\Http\Controllers\Api\NotificationApiController::class, 'destroy']);
+});
+
+// Gestor de órgão (User com issuing_id): ocorrências do órgão + feed de notificações.
+Route::middleware(['auth:sanctum', 'ensure.manager'])->prefix('manager')->group(function () {
+    Route::get('/occurrences', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'index']);
+    Route::get('/occurrences/{id}', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'show']);
+    Route::patch('/occurrences/{id}/status', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'updateStatus']);
+    Route::get('/status-occurrences', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'statuses']);
+    Route::get('/teams', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'teams']);
+    Route::patch('/occurrences/{id}/team', [App\Http\Controllers\Api\ManagerOccurrenceApiController::class, 'forwardToTeam']);
+
+    Route::get('/notifications', [App\Http\Controllers\Api\NotificationApiController::class, 'index']);
+    Route::post('/notifications/read-all', [App\Http\Controllers\Api\NotificationApiController::class, 'readAll']);
+    Route::patch('/notifications/{id}/read', [App\Http\Controllers\Api\NotificationApiController::class, 'read']);
+    Route::delete('/notifications/{id}', [App\Http\Controllers\Api\NotificationApiController::class, 'destroy']);
+    Route::put('/notification-settings', [App\Http\Controllers\Api\NotificationApiController::class, 'updateSettings']);
 });
 
 
@@ -27,6 +62,31 @@ Route::post('/clientConsumer', [App\Http\Controllers\Api\Auth\RegisterController
 //Route::post('/occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class , 'store']);
 
 Route::post('/occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class, 'createNewOccurrence']);
+
+// Públicas para quem usa o app sem cadastro (ocorrência anônima): tipos para o formulário,
+// mapa e consulta por protocolo — sem dados pessoais (PublicOccurrenceResource); o autor
+// logado recebe o detalhe completo pelo token, se mandar.
+Route::get('/typeOccurrence', [App\Http\Controllers\Api\TypeOccurrenceApiController::class, 'index']);
+Route::get('/occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class, 'index']);
+Route::get('/occurrences/protocol/{protocol}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'showByProtocol']);
+Route::get('/occurrences/{id}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'show'])->whereNumber('id');
+
+// Página inicial do app (também sem conta): só totais agregados por etapa e informativos publicados
+Route::get('/occurrence-stats', [App\Http\Controllers\Api\OccurrenceApiController::class, 'stats']);
+Route::get('/announcements', [App\Http\Controllers\Api\AnnouncementApiController::class, 'index']);
+
+// Pesquisas: públicas como no web (PublicSurveyController, link/QR sem login); a resposta grava
+// o IP e, se o respondente quiser, o nome digitado (opcional) — nunca o cidadão logado. Reaproveita SurveyService/StoreSurveyResponse sem duplicar regra.
+Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);
+Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
+Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);
+
+// Estados/municípios (IBGE): dado público de referência, sem PII, só leitura e cacheado — público
+// porque o form web do gestor (sessão, não Sanctum) e o app usam o mesmo endpoint. Throttle contra abuso.
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/states', [App\Http\Controllers\Api\LocationApiController::class, 'states']);
+    Route::get('/states/{uf}/cities', [App\Http\Controllers\Api\LocationApiController::class, 'cities'])->where('uf', '[A-Za-z]{2}');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -44,15 +104,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/tenants/{uuid}', [App\Http\Controllers\Api\TenantApiController::class, 'show']);
     Route::get('/tenants', [App\Http\Controllers\Api\TenantApiController::class, 'index']);
 
-    Route::get('/occurrences', [App\Http\Controllers\Api\OccurrenceApiController::class, 'index']);
-    Route::get('/occurrences/{uuid}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'show']);
     Route::get('/occurrences/getOccurrenceByClientId/{clientId}', [App\Http\Controllers\Api\OccurrenceApiController::class, 'getOccurrenceByClientId']);
-
-    Route::get('/typeOccurrence', [App\Http\Controllers\Api\TypeOccurrenceApiController::class, 'index']);
-
-    // Pesquisas (app/site público, cidadão logado) — espelha PublicSurveyController (Blade),
-    // reaproveita SurveyService/StoreSurveyResponse sem duplicar regra de negócio.
-    Route::get('/surveys', [App\Http\Controllers\Api\SurveyApiController::class, 'index']);
-    Route::get('/surveys/{token}', [App\Http\Controllers\Api\SurveyApiController::class, 'show']);
-    Route::post('/surveys/{token}/responses', [App\Http\Controllers\Api\SurveyApiController::class, 'store']);
 });

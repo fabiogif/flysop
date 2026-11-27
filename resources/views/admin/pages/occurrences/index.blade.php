@@ -43,7 +43,7 @@
                             <tr>
                                 <td>{{ $occurrence->protocol ?? '—' }}</td>
                                 <td>{{ $occurrence->title }}</td>
-                                <td>{{ $occurrence->name ?? '—' }}</td>
+                                <td>{{ $occurrence->is_anonymous ? 'Anônimo' : ($occurrence->name ?? '—') }}</td>
                                 <td>{{ $occurrence->nameType ?? '—' }}</td>
                                 <td>
                                     @if ($occurrence->priority)

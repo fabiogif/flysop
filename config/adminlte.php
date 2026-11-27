@@ -354,6 +354,12 @@ return [
             'icon' => 'fas fa-poll',
             'can' => 'surveys',
         ],
+        [
+            'text' => 'Informativos',
+            'url' => 'admin/announcements',
+            'icon' => 'fas fa-bullhorn',
+            'can' => 'announcements',
+        ],
 
         // Configuração do tenant / SaaS
         ['header' => 'SISTEMA'],

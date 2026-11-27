@@ -129,6 +129,7 @@ Route::prefix('admin')
         //Central de despacho (mapa + lista)
         Route::get('/dispatch', [App\Http\Controllers\Admin\DispatchController::class, 'console'])->name('dispatch.console');
         Route::get('/occurrences/{id}/pdf', [App\Http\Controllers\Admin\OccurrencesController::class, 'pdf'])->name('occurrences.pdf');
+        Route::post('/occurrences/{id}/team', [App\Http\Controllers\Admin\OccurrencesController::class, 'forwardToTeam'])->name('occurrences.forward-team');
         Route::post('/occurrences/{id}/dismiss-duplicate', [App\Http\Controllers\Admin\OccurrencesController::class, 'dismissDuplicate'])->name('occurrences.dismiss-duplicate');
         Route::delete('/occurrences/{id}/forget', [App\Http\Controllers\Admin\OccurrencesController::class, 'forget'])->name('occurrences.forget');
         Route::resource('occurrences', OccurrencesController::class);
@@ -163,13 +164,21 @@ Route::prefix('admin')
         Route::any('/surveys/search', [SurveyController::class, 'search'])->name('surveys.search');
         Route::post('/surveys/{id}/toggle', [SurveyController::class, 'toggle'])->name('surveys.toggle');
         Route::get('/surveys/{id}/responses', [SurveyController::class, 'responses'])->name('surveys.responses');
+        Route::get('/surveys/{id}/responses/pdf', [SurveyController::class, 'responsesPdf'])->name('surveys.responses.pdf');
+        Route::get('/surveys/{id}/responses/{response}/pdf', [SurveyController::class, 'responsePdf'])->name('surveys.response.pdf');
+        Route::delete('/surveys/{id}/responses/{response}', [SurveyController::class, 'destroyResponse'])->name('surveys.response.destroy');
         Route::get('/surveys/{id}/qrcode', [SurveyController::class, 'qrcode'])->name('surveys.qrcode');
         Route::resource('surveys', SurveyController::class);
+
+        // Informativos do órgão (exibidos na home do site e do app)
+        Route::resource('announcements', App\Http\Controllers\Admin\AnnouncementController::class)->except(['show']);
 
         //Notificações internas
         Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
         Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
         Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->name('notifications.read');
+        Route::put('/notifications/settings', [NotificationController::class, 'updateSettings'])->name('notifications.settings');
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
 
         //Busca global
         Route::get('/search', [App\Http\Controllers\Admin\SearchController::class, 'index'])->name('search.index');
@@ -194,9 +203,13 @@ Route::middleware(['auth', 'ensure.driver'])->prefix('driver')->name('driver.')-
 Route::get('/', [App\Http\Controllers\Site\SiteController::class , 'index'])->name('site.home');
 //Route::get('/', [App\Http\Controllers\HomeController::class , 'index'])->name('login');
 
+// Redefinição de senha do cidadão (link enviado por e-mail a pedido do app)
+Route::get('/cidadao/redefinir-senha/{token}', [App\Http\Controllers\Api\Auth\ClientPasswordResetController::class, 'showResetForm'])->name('client.password.reset');
+Route::post('/cidadao/redefinir-senha', [App\Http\Controllers\Api\Auth\ClientPasswordResetController::class, 'reset'])->name('client.password.update')->middleware('throttle:5,1');
+
 // Pesquisas públicas (anônimas) por token
 Route::get('/p/{token}', [PublicSurveyController::class, 'show'])->name('public.surveys.show');
-Route::post('/p/{token}', [PublicSurveyController::class, 'store'])->name('public.surveys.store');
+Route::post('/p/{token}', [PublicSurveyController::class, 'store'])->name('public.surveys.store')->middleware('throttle:10,1');
 Route::get('/p/{token}/obrigado', [PublicSurveyController::class, 'thanks'])->name('public.surveys.thanks');
 
 /*Route::get('/home', function () {

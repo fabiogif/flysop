@@ -46,18 +46,6 @@ class Survey extends Model
         return $this->hasMany(SurveyResponse::class)->orderByDesc('submitted_at');
     }
 
-    public function search($filter = null)
-    {
-        return $this->when($filter, function ($query) use ($filter) {
-            $query->where(function ($q) use ($filter) {
-                $q->where('title', 'ILIKE', "%{$filter}%")
-                    ->orWhere('description', 'ILIKE', "%{$filter}%");
-            });
-        })
-            ->orderByDesc('updated_at')
-            ->paginate();
-    }
-
     public function publicUrl(): string
     {
         return route('public.surveys.show', $this->public_token);

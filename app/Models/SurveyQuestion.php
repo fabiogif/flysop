@@ -12,11 +12,13 @@ class SurveyQuestion extends Model
     public const TYPE_TEXT = 'text';
     public const TYPE_SINGLE_CHOICE = 'single_choice';
     public const TYPE_SCALE = 'scale';
+    public const TYPE_NUMBER = 'number';
 
     public const TYPES = [
         self::TYPE_TEXT,
         self::TYPE_SINGLE_CHOICE,
         self::TYPE_SCALE,
+        self::TYPE_NUMBER,
     ];
 
     protected $fillable = [
@@ -25,12 +27,14 @@ class SurveyQuestion extends Model
         'prompt',
         'options',
         'required',
+        'allow_justification',
         'sort_order',
     ];
 
     protected $casts = [
         'options' => 'array',
         'required' => 'boolean',
+        'allow_justification' => 'boolean',
         'sort_order' => 'integer',
     ];
 
@@ -50,6 +54,7 @@ class SurveyQuestion extends Model
             self::TYPE_TEXT => 'Texto livre',
             self::TYPE_SINGLE_CHOICE => 'Múltipla escolha (única)',
             self::TYPE_SCALE => 'Escala 1–5',
+            self::TYPE_NUMBER => 'Número',
         ];
     }
 }

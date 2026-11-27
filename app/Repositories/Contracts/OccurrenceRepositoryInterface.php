@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Model;
 
 interface OccurrenceRepositoryInterface
 {
-    public function getAllOccurrences(int $pre_page);
-
     public function getOccurrenceById(string $id): ?Model;
+
+    /** @return array<string, int> nome do status => quantidade */
+    public function countByStatusName(?int $issuingId = null): array;
 
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator;
 
     public function createNewOccurrence(array $data): Model;
 
-    public function getPaginatedList(int $perPage = 15): LengthAwarePaginator;
+    public function getPaginatedList(int $perPage = 15, ?int $issuingId = null): LengthAwarePaginator;
 
     public function find(int $id): ?Model;
 
@@ -23,5 +24,5 @@ interface OccurrenceRepositoryInterface
 
     public function delete(int $id): bool;
 
-    public function search(?string $filter = null): LengthAwarePaginator;
+    public function search(?string $filter = null, ?int $issuingId = null): LengthAwarePaginator;
 }

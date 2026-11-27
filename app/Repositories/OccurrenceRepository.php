@@ -14,14 +14,21 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
     ) {
     }
 
-    public function getAllOccurrences(int $pre_page): LengthAwarePaginator
-    {
-        return $this->entity->Occurrence();
-    }
-
     public function getOccurrenceById(string $id): ?Model
     {
         return $this->entity->where('id', $id)->first();
+    }
+
+    public function countByStatusName(?int $issuingId = null): array
+    {
+        return $this->entity->newQuery()
+            ->join('status_occurrences', 'status_occurrences.id', '=', 'occurrences.status_occurrences_id')
+            ->when($issuingId, fn ($q) => $q->where('occurrences.issuings_id', $issuingId))
+            ->groupBy('status_occurrences.name')
+            ->selectRaw('status_occurrences.name, count(*) as total')
+            ->pluck('total', 'name')
+            ->map(fn ($total) => (int) $total)
+            ->all();
     }
 
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator
@@ -34,9 +41,9 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
         return $this->entity->create($data);
     }
 
-    public function getPaginatedList(int $perPage = 15): LengthAwarePaginator
+    public function getPaginatedList(int $perPage = 15, ?int $issuingId = null): LengthAwarePaginator
     {
-        return $this->entity->Occurrence(null);
+        return $this->entity->Occurrence(null, $issuingId);
     }
 
     public function find(int $id): ?Model
@@ -58,8 +65,8 @@ class OccurrenceRepository implements OccurrenceRepositoryInterface
         return $occurrence ? (bool) $occurrence->delete() : false;
     }
 
-    public function search(?string $filter = null): LengthAwarePaginator
+    public function search(?string $filter = null, ?int $issuingId = null): LengthAwarePaginator
     {
-        return $this->entity->Occurrence($filter);
+        return $this->entity->Occurrence($filter, $issuingId);
     }
 }

@@ -100,21 +100,59 @@
                         @endif
                     </dd>
                 </div>
-                <div class="ciop-detail-item">
-                    <dt>Solicitante</dt>
-                    <dd>{{ $occurrences->name ?? '—' }}</dd>
-                </div>
-                <div class="ciop-detail-item">
-                    <dt>E-mail</dt>
-                    <dd>{{ $occurrences->email ?? '—' }}</dd>
-                </div>
-                <div class="ciop-detail-item">
-                    <dt>Telefone</dt>
-                    <dd>{{ $occurrences->phone ?? '—' }}</dd>
-                </div>
+                {{-- Anônima: o cidadão pediu para o órgão não saber quem abriu --}}
+                @if ($occurrences->is_anonymous)
+                    <div class="ciop-detail-item">
+                        <dt>Solicitante</dt>
+                        <dd><i class="fas fa-user-secret" aria-hidden="true"></i> Anônimo</dd>
+                    </div>
+                @else
+                    <div class="ciop-detail-item">
+                        <dt>Solicitante</dt>
+                        <dd>{{ $occurrences->name ?? '—' }}</dd>
+                    </div>
+                    <div class="ciop-detail-item">
+                        <dt>E-mail</dt>
+                        <dd>{{ $occurrences->email ?? '—' }}</dd>
+                    </div>
+                    <div class="ciop-detail-item">
+                        <dt>Telefone</dt>
+                        <dd>{{ $occurrences->phone ?? '—' }}</dd>
+                    </div>
+                @endif
                 <div class="ciop-detail-item">
                     <dt>Motorista</dt>
                     <dd>{{ $occurrences->driver->name ?? '—' }}</dd>
+                </div>
+                <div class="ciop-detail-item">
+                    <dt>Equipe responsável</dt>
+                    <dd>
+                        @can('update', $occurrences)
+                            <form action="{{ route('occurrences.forward-team', $occurrences->id) }}" method="POST" class="form-inline">
+                                @csrf
+                                <select name="team_id" class="form-control form-control-sm mr-1" aria-label="Equipe responsável" required>
+                                    <option value="">{{ $occurrences->team ? '' : 'Selecione…' }}</option>
+                                    @foreach (\App\Models\Team::availableForIssuing($occurrences->issuings_id)->orderBy('name')->get() as $team)
+                                        <option value="{{ $team->id }}" {{ (int) $occurrences->team_id === $team->id ? 'selected' : '' }}>{{ $team->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Encaminhar</button>
+                            </form>
+                        @else
+                            {{ $occurrences->team->name ?? '—' }}
+                        @endcan
+                    </dd>
+                </div>
+                <div class="ciop-detail-item">
+                    <dt>Avaliação do cidadão</dt>
+                    <dd>
+                        @if ($occurrences->rating)
+                            {{ $occurrences->rating }}/5
+                            @if ($occurrences->rating_comment) — “{{ $occurrences->rating_comment }}” @endif
+                        @else
+                            —
+                        @endif
+                    </dd>
                 </div>
                 <div class="ciop-detail-item">
                     <dt>Endereço</dt>
@@ -147,7 +185,7 @@
                         @foreach ($imagensDaFase as $occurrencesImagen)
                             <div class="col-lg-3 col-md-4 col-sm-6 mb-3">
                                 <div class="ciop-evidence-card">
-                                    <img src="https://sopanexos.s3.amazonaws.com/{{ $occurrencesImagen->url }}"
+                                    <img src="{{ $occurrencesImagen->public_url }}"
                                         alt="{{ $occurrences->title }}" />
                                     <p class="ciop-evidence-meta">
                                         {{ $occurrencesImagen->uploadedBy->name ?? 'Sistema' }} —

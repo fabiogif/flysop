@@ -9,16 +9,21 @@ use App\Models\OccurrenceStatusHistory;
 use App\Models\Occurrences;
 use App\Models\Priority;
 use App\Models\StatusOccurrence;
+use App\Models\Team;
 use App\Models\TypeOccurrence;
+use App\Models\User;
 use App\Events\OccurrenceUpdated;
+use App\Notifications\NewOccurrenceForIssuingNotification;
 use App\Notifications\OccurrenceAssignedNotification;
 use App\Notifications\OccurrenceStatusChangedNotification;
+use App\Notifications\OccurrenceStatusForCitizenNotification;
 use App\Repositories\Contracts\OccurrenceRepositoryInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class OccurrenceService
@@ -29,6 +34,21 @@ class OccurrenceService
      */
     private const DUPLICATE_RADIUS_KM = 0.3;
     private const DUPLICATE_WINDOW_HOURS = 48;
+    public const REOPEN_WINDOW_DAYS = 30;
+
+    /** Status que contam como "concluída" para reabrir, avaliar e avisar o cidadão. */
+    public const CONCLUDED_STATUSES = ['Finalizada', 'Concluída'];
+
+    /**
+     * Agrupamento dos status para o painel público do app (abertas / em andamento / resolvidas).
+     * Cancelada e Duplicada não entram. ponytail: por nome, como DashboardService ('Em atendimento');
+     * status renomeado no painel sai da contagem — coluna de etapa no status se isso virar problema.
+     */
+    public const STATUS_GROUPS = [
+        'abertas' => ['Aberta', 'Recebida', 'Em triagem', 'Validada', 'Aguardando despacho', 'Encaminhada', 'Aguardando aceitação', 'Recusada', 'Reaberta'],
+        'andamento' => ['Aceita', 'Em deslocamento', 'Equipe no local', 'Em atendimento', 'Em andamento', 'Aguardando material', 'Pendente'],
+        'resolvidas' => ['Resolvida', 'Finalizada', 'Concluída'],
+    ];
 
     public function __construct(
         protected OccurrenceRepositoryInterface $repository,
@@ -36,14 +56,21 @@ class OccurrenceService
     ) {
     }
 
-    public function getAllOccurrences(int $perPage = 15): LengthAwarePaginator
-    {
-        return $this->repository->getAllOccurrences($perPage);
-    }
-
     public function getOccurrenceById(string $id): ?Model
     {
         return $this->repository->getOccurrenceById($id);
+    }
+
+    /**
+     * Totais por etapa (só números, nenhum dado de ocorrência) para a página inicial do app.
+     */
+    public function publicStats(?int $issuingId = null): array
+    {
+        $byStatus = $this->repository->countByStatusName($issuingId);
+
+        return collect(self::STATUS_GROUPS)
+            ->map(fn (array $names) => (int) collect($names)->sum(fn ($name) => $byStatus[$name] ?? 0))
+            ->all();
     }
 
     public function getOccurrenceByClientId(int $clientId): LengthAwarePaginator
@@ -56,16 +83,20 @@ class OccurrenceService
      * a coluna "clients_id" é NOT NULL mas nunca era preenchida aqui, derrubando toda
      * submissão pública com erro 500.
      *
-     * Client de origem: se o app/site já mandou "clients_id" (cidadão logado via
-     * CitizenAuthController), usa esse. Se "is_anonymous" foi marcado, ou nenhum client foi
-     * informado, usa o placeholder "Anônimo" (ClientService::anonymousClient()) — visível e
-     * identificável no admin, em vez do antigo default arbitrário "primeiro client cadastrado".
+     * Client de origem: o cidadão logado ("clients_id" vem do token, nunca do payload — ver
+     * OccurrenceApiController). Sem cidadão logado (cadastro sem conta), usa o placeholder
+     * "Anônimo" (ClientService::anonymousClient()) e a ocorrência é sempre anônima.
+     *
+     * "is_anonymous" com cidadão logado mantém o vínculo com a conta (ele acompanha em
+     * "Minhas ocorrências"), mas a identidade fica oculta para o órgão (OccurrenceResource).
      */
-    public function createNewOccurrence(array $data): Model
+    public function createNewOccurrence(array $data, array $anexos = []): Model
     {
-        if (!empty($data['is_anonymous']) || empty($data['clients_id'])) {
+        if (empty($data['clients_id'])) {
             $data['clients_id'] = $this->clientService->anonymousClient()->id;
+            $data['is_anonymous'] = true;
         }
+        $data['is_anonymous'] = ! empty($data['is_anonymous']);
 
         if (empty($data['status_occurrences_id'])) {
             $data['status_occurrences_id'] = StatusOccurrence::where('is_terminal', false)
@@ -73,7 +104,42 @@ class OccurrenceService
                 ->value('id');
         }
 
-        return $this->createOccurrenceWithDefaults($data);
+        // Órgão: o responsável pelo tipo (configurado no web); sem isso, o primeiro órgão.
+        if (empty($data['issuings_id'])) {
+            $data['issuings_id'] = TypeOccurrence::whereKey($data['type_occurrences_id'] ?? null)->value('issuing_id')
+                ?? Issuing::query()->value('id');
+        }
+
+        // Ambiente sem cadastros básicos (ex.: produção recém-criada) dava 500 por violação de
+        // NOT NULL/FK; responde com o motivo para quem configura o sistema.
+        if (empty($data['status_occurrences_id']) || empty($data['issuings_id'])) {
+            abort(503, 'O sistema ainda não tem status de ocorrência ou órgão cadastrado. Avise a administração da prefeitura.');
+        }
+
+        // Ocorrência e fotos juntas: se a gravação de uma foto falhar, nada fica salvo pela metade
+        return DB::transaction(function () use ($data, $anexos) {
+            $occurrence = $this->createOccurrenceWithDefaults($data);
+
+            foreach ($anexos as $file) {
+                if ($file instanceof UploadedFile && $file->isValid()) {
+                    $this->storeEvidence($occurrence, $file, null);
+                }
+            }
+
+            return $occurrence;
+        });
+    }
+
+    /**
+     * Ocorrências de um órgão (app do gestor), por gravidade (ver Occurrences::scopeOrderByGravity).
+     */
+    public function getOccurrencesForIssuing(int $issuingId, ?int $statusId = null, int $perPage = 15): LengthAwarePaginator
+    {
+        return Occurrences::where('issuings_id', $issuingId)
+            ->when($statusId, fn ($query) => $query->where('status_occurrences_id', $statusId))
+            ->with(['statusOccurence', 'typeOccurrence'])
+            ->orderByGravity()
+            ->paginate($perPage);
     }
 
     /**
@@ -81,7 +147,17 @@ class OccurrenceService
      */
     public function getPaginatedList(int $perPage = 15): LengthAwarePaginator
     {
-        return $this->repository->getPaginatedList($perPage);
+        return $this->repository->getPaginatedList($perPage, $this->managerIssuingScope());
+    }
+
+    /**
+     * Gestor de órgão (não admin) só lista o próprio órgão no painel; demais, tudo.
+     */
+    private function managerIssuingScope(): ?int
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && $user->isManager() && ! $user->isAdmin() ? $user->issuing_id : null;
     }
 
     /**
@@ -145,7 +221,8 @@ class OccurrenceService
 
         $occurrence->imagens()->create([
             'url' => $url,
-            'uploaded_by_user_id' => auth()->id(),
+            // FK para users: foto enviada por cidadão (Client) fica sem autor de equipe
+            'uploaded_by_user_id' => $this->staffUserId(),
             'phase' => $phase,
             'captured_at' => now(),
         ]);
@@ -166,13 +243,15 @@ class OccurrenceService
             'occurrence_id' => $occurrence->id,
             'from_status_id' => null,
             'to_status_id' => $occurrence->status_occurrences_id,
-            'changed_by_user_id' => auth()->id(),
+            'changed_by_user_id' => $this->staffUserId(),
             'note' => 'Ocorrência registrada.',
         ]);
 
         if (! empty($data['driver_id'])) {
             $this->notifyAssignment((int) $data['driver_id'], $occurrence);
         }
+
+        $this->notifyIssuingManagers($occurrence);
 
         $this->detectPossibleDuplicate($occurrence);
 
@@ -344,15 +423,16 @@ class OccurrenceService
 
     /**
      * Gera o protocolo sequencial da ocorrência no formato OC-{ano}-{sequencial}.
-     * Simplificação aceitável para o volume atual (painel único, sem concorrência alta);
-     * não usa lock/sequência dedicada.
+     * Parte do maior protocolo do ano, não da contagem: com contagem, excluir uma ocorrência
+     * fazia o próximo número repetir um protocolo existente (violação do unique → 500).
+     * ponytail: sem lock/sequência dedicada (volume baixo); o max() lexical vale até 99999/ano.
      */
     private function generateProtocol(): string
     {
         $year = now()->year;
-        $count = Occurrences::whereYear('created_at', $year)->count();
+        $last = Occurrences::where('protocol', 'like', "OC-{$year}-%")->max('protocol');
 
-        return sprintf('OC-%d-%05d', $year, $count + 1);
+        return sprintf('OC-%d-%05d', $year, $last ? (int) substr($last, -5) + 1 : 1);
     }
 
     /**
@@ -378,7 +458,7 @@ class OccurrenceService
      * o histórico (occurrence_status_history). Nenhuma outra rotina deve escrever em
      * status_occurrences_id diretamente.
      */
-    private function recordStatusChange(Occurrences $occurrence, int $newStatusId, ?string $note = null): Occurrences
+    private function recordStatusChange(Occurrences $occurrence, int $newStatusId, ?string $note = null, bool $citizenReopen = false): Occurrences
     {
         $fromStatusId = $occurrence->status_occurrences_id;
 
@@ -386,7 +466,10 @@ class OccurrenceService
             return $occurrence;
         }
 
-        $this->guardStatusTransition($occurrence, $fromStatusId, $newStatusId);
+        // Reabertura pelo cidadão já foi validada em reopenByCitizen() (dono, status, prazo).
+        if (! $citizenReopen) {
+            $this->guardStatusTransition($occurrence, $fromStatusId, $newStatusId);
+        }
 
         $occurrence->update(['status_occurrences_id' => $newStatusId]);
 
@@ -394,11 +477,12 @@ class OccurrenceService
             'occurrence_id' => $occurrence->id,
             'from_status_id' => $fromStatusId,
             'to_status_id' => $newStatusId,
-            'changed_by_user_id' => auth()->id(),
+            'changed_by_user_id' => $this->staffUserId(),
             'note' => $note,
         ]);
 
         $this->notifyStatusChange($occurrence, $fromStatusId, $newStatusId);
+        $this->notifyCitizen($occurrence, $newStatusId);
         $this->syncDriverStatus($occurrence, $newStatusId);
         broadcast(new OccurrenceUpdated($occurrence))->toOthers();
 
@@ -442,8 +526,8 @@ class OccurrenceService
 
         $driverStatus = match ($statusName) {
             'Em deslocamento' => Driver::STATUS_EM_DESLOCAMENTO,
-            'Equipe no local', 'Em atendimento' => Driver::STATUS_EM_ATENDIMENTO,
-            'Finalizada', 'Cancelada', 'Duplicada', 'Recusada' => Driver::STATUS_DISPONIVEL,
+            'Equipe no local', 'Em atendimento', 'Em andamento' => Driver::STATUS_EM_ATENDIMENTO,
+            'Finalizada', 'Concluída', 'Cancelada', 'Duplicada', 'Indeferida', 'Recusada' => Driver::STATUS_DISPONIVEL,
             default => null,
         };
 
@@ -495,7 +579,7 @@ class OccurrenceService
 
     public function search(?string $filter = null): LengthAwarePaginator
     {
-        return $this->repository->search($filter);
+        return $this->repository->search($filter, $this->managerIssuingScope());
     }
 
     /**
@@ -570,5 +654,141 @@ class OccurrenceService
         $occurrence = $this->findOrFail($occurrenceId);
 
         return $this->recordStatusChange($occurrence, $statusOccurrencesId);
+    }
+
+    /**
+     * Cidadão reabre a própria ocorrência quando o problema não foi resolvido (Eixo 4):
+     * só o autor, só a partir de "Finalizada" e até REOPEN_WINDOW_DAYS após a conclusão.
+     * Passa pelo mesmo ponto único de mudança de status (histórico, notificações).
+     */
+    public function reopenByCitizen(int $occurrenceId, Client $client, ?string $reason = null): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        if ((int) $occurrence->clients_id !== (int) $client->id) {
+            abort(404);
+        }
+
+        if (! in_array($occurrence->statusOccurence?->name, self::CONCLUDED_STATUSES, true)) {
+            abort(422, 'Só é possível reabrir uma ocorrência concluída.');
+        }
+
+        if ($occurrence->updated_at && $occurrence->updated_at->lt(now()->subDays(self::REOPEN_WINDOW_DAYS))) {
+            abort(422, 'O prazo de ' . self::REOPEN_WINDOW_DAYS . ' dias para reabrir esta ocorrência terminou.');
+        }
+
+        $reabertaId = StatusOccurrence::where('name', 'Reaberta')->value('id');
+        if (! $reabertaId) {
+            abort(503, 'Status "Reaberta" não cadastrado. Avise a administração da prefeitura.');
+        }
+
+        $note = 'Reaberta pelo cidadão' . ($reason ? ': ' . $reason : '.');
+
+        return $this->recordStatusChange($occurrence, (int) $reabertaId, $note, citizenReopen: true);
+    }
+
+    /**
+     * Encaminha a ocorrência para uma equipe (Eixo 4). A equipe precisa ser da secretaria da
+     * ocorrência ou compartilhada — gestor não manda trabalho para equipe de outro órgão.
+     * Registra no histórico (status não muda; a nota diz para quem foi).
+     */
+    public function forwardToTeam(int $occurrenceId, int $teamId): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        $team = Team::availableForIssuing($occurrence->issuings_id)->whereKey($teamId)->first();
+        if (! $team) {
+            abort(422, 'Equipe não encontrada para a secretaria desta ocorrência.');
+        }
+
+        if ((int) $occurrence->team_id === $team->id) {
+            return $occurrence;
+        }
+
+        $occurrence->update(['team_id' => $team->id]);
+
+        OccurrenceStatusHistory::create([
+            'occurrence_id' => $occurrence->id,
+            'from_status_id' => $occurrence->status_occurrences_id,
+            'to_status_id' => $occurrence->status_occurrences_id,
+            'changed_by_user_id' => $this->staffUserId(),
+            'note' => "Encaminhada para a equipe {$team->name}.",
+        ]);
+
+        broadcast(new OccurrenceUpdated($occurrence))->toOthers();
+
+        return $occurrence->fresh();
+    }
+
+    /**
+     * Avaliação do atendimento pelo cidadão (índice de satisfação): só o autor, só de
+     * ocorrência concluída (Finalizada) e uma única vez.
+     */
+    public function rateByCitizen(int $occurrenceId, Client $client, int $rating, ?string $comment = null): Occurrences
+    {
+        $occurrence = $this->findOrFail($occurrenceId);
+
+        if ((int) $occurrence->clients_id !== (int) $client->id) {
+            abort(404);
+        }
+
+        if (! in_array($occurrence->statusOccurence?->name, self::CONCLUDED_STATUSES, true)) {
+            abort(422, 'Só é possível avaliar uma ocorrência concluída.');
+        }
+
+        if ($occurrence->rating !== null) {
+            abort(422, 'Esta ocorrência já foi avaliada.');
+        }
+
+        $occurrence->update([
+            'rating' => $rating,
+            'rating_comment' => $comment,
+            'rated_at' => now(),
+        ]);
+
+        return $occurrence->fresh();
+    }
+
+    /**
+     * Avisa o cidadão autor quando a ocorrência é concluída ou indeferida. Ocorrência sem
+     * conta (cliente "Anônimo" compartilhado) não tem a quem avisar.
+     */
+    private function notifyCitizen(Occurrences $occurrence, int $newStatusId): void
+    {
+        $statusName = StatusOccurrence::whereKey($newStatusId)->value('name');
+        if (! in_array($statusName, [...self::CONCLUDED_STATUSES, 'Indeferida'], true)) {
+            return;
+        }
+
+        $client = $occurrence->client;
+        if (! $client || $client->phone === ClientService::ANONYMOUS_PHONE) {
+            return;
+        }
+
+        $client->notify(new OccurrenceStatusForCitizenNotification($occurrence, $statusName));
+    }
+
+    /**
+     * Avisa os gestores do órgão da ocorrência (quem desligou a preferência fica de fora;
+     * quem cadastrou pelo painel não é avisado da própria ocorrência).
+     */
+    private function notifyIssuingManagers(Occurrences $occurrence): void
+    {
+        $managers = User::where('issuing_id', $occurrence->issuings_id)
+            ->where('notify_new_occurrences', true)
+            ->when($this->staffUserId(), fn ($query, $userId) => $query->where('id', '!=', $userId))
+            ->get();
+
+        Notification::send($managers, new NewOccurrenceForIssuingNotification($occurrence));
+    }
+
+    /**
+     * changed_by_user_id é FK para users: cidadão (Client via Sanctum) não pode ser gravado ali.
+     */
+    private function staffUserId(): ?int
+    {
+        $user = auth()->user();
+
+        return $user instanceof User ? $user->id : null;
     }
 }

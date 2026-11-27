@@ -160,3 +160,82 @@ Este documento descreve melhorias e novas funcionalidades organizadas em dois ei
 - **Baixa:** atalho “Nova ocorrência”, campos condicionais, som/badge, resumo diário, PWA, log de acesso.
 
 Este plano pode ser usado como backlog: cada item pode virar tarefa em quadro (Kanban/Issues) e as fases servem como releases ou marcos de entrega.
+
+---
+
+## Eixo 4 – Gestão por secretaria, indicadores e mapa (nov/2026)
+
+Pedido: priorização por gravidade, distribuição automática por secretaria, encaminhamento para
+equipes, histórico de movimentações, reabertura, SLA, indicadores, mapa geográfico e o fluxo
+do "exemplo prático" (cidadão → protocolo → secretaria → equipe → reparo com foto → validação
+do gestor → notificação ao cidadão).
+
+### 4.1 O que já existe (não reimplementar)
+
+| Pedido | Situação hoje | Onde |
+|---|---|---|
+| Distribuição automática por secretaria | ✅ Tipo de ocorrência → órgão (`type_occurrences.issuing_id`); gestor do órgão é notificado | `OccurrenceService::createNewOccurrence`, `notifyIssuingManagers` |
+| Histórico de movimentações | ✅ `occurrence_status_history` gravado em ponto único; exibido no admin, PDF e app do gestor | `recordStatusChange` |
+| Reabertura | ✅ Só pela equipe (permissão `reopen`), status terminal → "Reaberta" | `guardStatusTransition`, `OccurrencePolicy` |
+| Controle de prazos (SLA) | ✅ `due_at` por prioridade/tipo, alerta de SLA em risco, KPIs estourado/em risco | `calculateDueAt`, `CheckOccurrenceSlaCommand` |
+| Prioridade | ⚠️ Tabela `priorities` com `weight` e SLA, mas **produção tem 0 prioridades** e as listas não ordenam por gravidade | `Priority` |
+| Protocolo | ✅ `OC-2026-00001` (exemplo pedia `2026-000123`) | `generateProtocol` |
+| Foto do reparo | ✅ Evidência com fase (antes/depois) | `storeEvidence` |
+| Mapa | ✅ Mapa + calor no dashboard com filtros de tipo/status/prioridade/data | `DashboardController::occurrencesHeatmap` |
+| Indicadores | ⚠️ Abertas, finalizadas hoje, SLA estourado/em risco; faltam os demais | `DashboardService::getStats` |
+| Encaminhar para equipe | ❌ Equipes existem, mas a ocorrência só tem motorista (`driver_id`) | — |
+| Notificar cidadão na conclusão | ❌ Notificação de status vai só ao motorista | `notifyStatusChange` |
+| Reabertura pelo cidadão | ❌ | — |
+| Índice de satisfação | ❌ | — |
+
+### 4.2 Fluxo de status: mapear, não renomear
+
+Os nomes de status são usados no código (`syncDriverStatus`, grupos abertas/resolvidas,
+`guardStatusTransition`, dashboard, app). Renomear quebra o fluxo; o fluxo sugerido é
+coberto pelos status atuais, faltando só **Indeferida**.
+
+| Sugerido | Status atual equivalente |
+|---|---|
+| Aberta | Recebida |
+| Em triagem | Em triagem |
+| Encaminhada | Validada / Aguardando despacho |
+| Em andamento | Em deslocamento / Equipe no local / Em atendimento |
+| Pendente | Aguardando material |
+| Concluída | Resolvida (equipe) → **Finalizada** (validada pelo gestor) |
+| Indeferida | **novo** — terminal |
+| Reaberta | Reaberta |
+
+### 4.3 Plano de execução
+
+**Fase A — sem mudança de schema**
+1. Status "Indeferida" (terminal) no seeder; entra no grupo "resolvidas" e libera o motorista.
+2. Prioridades padrão no seeder (Baixa/Média/Alta/Crítica, com peso e SLA).
+3. Priorização por gravidade: listas do admin e do gestor ordenadas por peso da prioridade, depois prazo (`due_at`).
+4. Indicadores no dashboard: concluídas, atrasadas, tempo médio de atendimento (abertura → primeiro status terminal no histórico), por bairro, por secretaria, categorias mais recorrentes.
+5. Mapa: filtro por bairro e ranking de bairros com mais ocorrências abertas (regiões críticas).
+
+**Fase B — cidadão**
+6. Cidadão vê o histórico de movimentações da própria ocorrência (sem nome de servidor).
+7. Notificação ao cidadão quando a ocorrência é concluída (Finalizada) ou indeferida (feed de notificações já lido pelo app).
+8. Reabertura pelo cidadão: só o dono, só de ocorrência concluída, até 30 dias; reaproveita `recordStatusChange`.
+
+**Fase C — schema aditivo (colunas nulas)**
+9. `occurrences.team_id` + ação "Encaminhar para equipe" (gestor só para equipes/ocorrências do próprio órgão), com registro no histórico.
+10. Avaliação do cidadão (nota 1–5 + comentário) em ocorrência concluída, uma vez, só o dono → **índice de satisfação** = média.
+
+**Fora deste lote (com motivo)**
+- Trocar o formato do protocolo: quebraria consultas e protocolos já entregues.
+- Push no celular: exige infraestrutura nova (Expo/FCM); a notificação vai para o feed do app.
+- Categorias por secretaria: é cadastro de negócio (produção tem 1 tipo); propor lista para aprovação.
+
+**Deploy:** cada fase com testes; migrations da Fase C e seeders em produção só após confirmação.
+
+### 4.4 Situação da execução (24/11/2026)
+
+| Fase | Status | Observação |
+|---|---|---|
+| A | ✅ Implementada | Indeferida fica fora dos grupos abertas/andamento/resolvidas do app (como Cancelada). |
+| B | ✅ Implementada (backend) | Falta a tela de notificações do cidadão no app (`GET /api/notifications` já existe) e os botões "Reabrir"/"Avaliar". |
+| C | ✅ Implementada (backend + painel) | Migration `2026_11_24_130000`; no app do gestor faltam a tela de escolher equipe (`GET /api/manager/teams`, `PATCH /api/manager/occurrences/{id}/team`). |
+
+Pendente em produção: deploy (roda a migration) e `db:seed --class=PrioritySeeder` e `--class=StatusOccurrenceDriverSeeder` (Indeferida).

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Issuing;
 use App\Models\TypeOccurrence;
 use Illuminate\Http\Request;
 use App\Http\Requests\StoreUpdateTypeOccurrence;
@@ -33,8 +34,9 @@ class TypeOccurrenceController extends Controller
     public function create()
     {
         $parentOptions = $this->repository->whereNull('parent_id')->orderBy('name')->get();
+        $issuings = Issuing::orderBy('name')->get();
 
-        return view('admin.pages.typeOccurrences.create', compact('parentOptions'));
+        return view('admin.pages.typeOccurrences.create', compact('parentOptions', 'issuings'));
     }
 
     public function store(StoreUpdateTypeOccurrence $request)
@@ -95,7 +97,7 @@ class TypeOccurrenceController extends Controller
 
         return view(
             'admin.pages.typeOccurrences.edit',
-            ['typeOccurrence' => $typeOccurrences, 'parentOptions' => $parentOptions]
+            ['typeOccurrence' => $typeOccurrences, 'parentOptions' => $parentOptions, 'issuings' => Issuing::orderBy('name')->get()]
         );
     }
 

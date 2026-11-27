@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Builder;
+use Laravel\Sanctum\HasApiTokens;
 
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, UserACLTrait;
+    use HasApiTokens, HasFactory, Notifiable, UserACLTrait;
 
     /**
      * The attributes that are mass assignable.
@@ -23,7 +24,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'tenant_id'
+        'tenant_id',
+        'issuing_id',
+        'notify_new_occurrences',
     ];
 
     /**
@@ -43,6 +46,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'notify_new_occurrences' => 'boolean',
     ];
 
 
@@ -55,6 +59,20 @@ class User extends Authenticatable
     public function driver()
     {
         return $this->hasOne(Driver::class);
+    }
+
+    public function issuing()
+    {
+        return $this->belongsTo(Issuing::class);
+    }
+
+    /**
+     * Gestor = usuário vinculado a um órgão: acessa pelo app só as ocorrências desse órgão
+     * e recebe aviso das novas (ver OccurrencePolicy e NewOccurrenceForIssuingNotification).
+     */
+    public function isManager(): bool
+    {
+        return $this->issuing_id !== null;
     }
 
     public function roles()

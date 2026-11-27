@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class TypeOccurrence extends Model
 {
 
-    protected $fillable = ['id', 'name', 'sla_hours', 'parent_id'];
+    protected $fillable = ['id', 'name', 'sla_hours', 'parent_id', 'issuing_id'];
     use HasFactory;
 
     public function search($filtter = null)
@@ -26,5 +26,13 @@ class TypeOccurrence extends Model
     public function children()
     {
         return $this->hasMany(TypeOccurrence::class, 'parent_id');
+    }
+
+    /**
+     * Órgão responsável: para onde vai a ocorrência aberta pelo app com este tipo.
+     */
+    public function issuing()
+    {
+        return $this->belongsTo(Issuing::class);
     }
 }

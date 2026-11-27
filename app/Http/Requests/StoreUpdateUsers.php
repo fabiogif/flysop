@@ -32,6 +32,8 @@ class StoreUpdateUsers extends FormRequest
             'name' => ['required', 'string', 'min:3', 'max:255'],
             'email' => ['required', 'string', 'min:3', 'max:255', "unique:users,email,{$id},id"],
             'password' => ['required', 'string', 'min:3', 'max:16'],
+            // Órgão do gestor: preenchido = gestor daquele órgão (acesso no app + avisos)
+            'issuing_id' => ['nullable', 'integer', 'exists:issuings,id'],
         ];
         if ($this->method() == 'PUT') {
             $rules['password'] = ['nullable', 'string', 'min:3', 'max:16'];

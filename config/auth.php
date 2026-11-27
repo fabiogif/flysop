@@ -71,6 +71,11 @@ return [
             'model' => App\Models\User::class,
         ],
 
+        'clients' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Client::class,
+        ],
+
         // 'users' => [
         //     'driver' => 'database',
         //     'table' => 'users',
@@ -96,6 +101,14 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => 'password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        // Cidadão do app: tabela própria para não colidir com o e-mail de um usuário do painel
+        'clients' => [
+            'provider' => 'clients',
+            'table' => 'client_password_resets',
             'expire' => 60,
             'throttle' => 60,
         ],

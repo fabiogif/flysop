@@ -37,6 +37,12 @@ class AuthServiceProvider extends ServiceProvider
                 });
             }
 
+            // Informativos: todo gestor de órgão publica os do próprio órgão, sem precisar de perfil
+            // com a permissão (que segue disponível para liberar a outros usuários)
+            Gate::define('announcements', function (User $user) {
+                return $user->isManager() || $user->hasPermission('announcements');
+            });
+
             Gate::define('owner', function (User $user, $object) {
                 return $user->id === $object->user_id;
             });

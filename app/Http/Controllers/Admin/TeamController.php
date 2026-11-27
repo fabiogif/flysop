@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateTeam;
 use App\Models\Department;
+use App\Models\Issuing;
 use App\Models\Team;
 use App\Models\TypeOccurrence;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class TeamController extends Controller
         $departments = Department::orderBy('name')->get();
         $typeOccurrences = TypeOccurrence::orderBy('name')->get();
 
-        return view('admin.pages.teams.create', compact('departments', 'typeOccurrences'));
+        return view('admin.pages.teams.create', compact('departments', 'typeOccurrences') + ['issuings' => Issuing::orderBy('name')->get()]);
     }
 
     public function store(StoreUpdateTeam $request)
@@ -63,7 +64,7 @@ class TeamController extends Controller
         $departments = Department::orderBy('name')->get();
         $typeOccurrences = TypeOccurrence::orderBy('name')->get();
 
-        return view('admin.pages.teams.edit', ['team' => $team, 'departments' => $departments, 'typeOccurrences' => $typeOccurrences]);
+        return view('admin.pages.teams.edit', ['team' => $team, 'departments' => $departments, 'typeOccurrences' => $typeOccurrences, 'issuings' => Issuing::orderBy('name')->get()]);
     }
 
     public function update(StoreUpdateTeam $request, $id)
@@ -95,7 +96,7 @@ class TeamController extends Controller
     public function search(Request $request)
     {
         $filters = $request->all();
-        $teams = $this->repository->with('department')->search($request->filter);
+        $teams = $this->repository->search($request->filter);
 
         return view('admin.pages.teams.index', [
             'teams' => $teams,

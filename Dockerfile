@@ -1,69 +1,58 @@
-# fly.io / deploy – imagem oficial PHP (Debian), evita 404 em apt
-# Para uso local via docker-compose use: Dockerfile.dev
+# syntax = docker/dockerfile:experimental
 
-FROM php:8.2-fpm AS base
+# Default to PHP 8.2, but we attempt to match
+# the PHP version from the user (wherever `flyctl launch` is run)
+# Valid version values are PHP 7.4+
+ARG PHP_VERSION=8.2
+ARG NODE_VERSION=18
+FROM fideloper/fly-laravel:${PHP_VERSION} as base
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        git \
-        unzip \
-        nginx \
-        libzip-dev \
-        libpng-dev \
-        libjpeg-dev \
-        libonig-dev \
-        libxml2-dev \
-        libpq-dev \
-        curl \
-    && docker-php-ext-configure gd --with-jpeg \
-    && docker-php-ext-install -j$(nproc) \
-        zip \
-        pdo \
-        pdo_pgsql \
-        mbstring \
-        xml \
-        bcmath \
-        gd \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+# PHP_VERSION needs to be repeated here
+# See https://docs.docker.com/engine/reference/builder/#understand-how-arg-and-from-interact
+ARG PHP_VERSION
 
-# opcache.enable_cli=1 evita recompilar o framework do zero nos comandos "php artisan"
-# de boot (config:cache/route:cache/view:cache, release_command). memory_consumption
-# reduzido de 128 (padrao) para 64MB porque a maquina de producao tem so 256MB de RAM.
-RUN { \
-        echo 'opcache.enable=1'; \
-        echo 'opcache.enable_cli=1'; \
-        echo 'opcache.memory_consumption=64'; \
-        echo 'opcache.max_accelerated_files=10000'; \
-        echo 'opcache.validate_timestamps=0'; \
-    } > /usr/local/etc/php/conf.d/zz-opcache.ini
+LABEL fly_launch_runtime="laravel"
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# copy application code, skipping files based on .dockerignore
+COPY . /var/www/html
 
-WORKDIR /app
+RUN composer install --optimize-autoloader --no-dev \
+    && mkdir -p storage/logs \
+    && php artisan optimize:clear \
+    && chown -R www-data:www-data /var/www/html \
+    && echo "MAILTO=\"\"\n* * * * * www-data /usr/bin/php /var/www/html/artisan schedule:run" > /etc/cron.d/laravel \
+    && cp .fly/entrypoint.sh /entrypoint \
+    && chmod +x /entrypoint
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+# Sem o sed de TrustProxies do template: app/Http/Middleware/TrustProxies.php já define
+# $proxies = '*', e o sed gerava "$proxies = "*" = '*'" (ParseError, derrubou o deploy v57).
 
-COPY . .
-RUN composer dump-autoload --optimize \
-    && composer run-script post-install-cmd 2>/dev/null || true
+# Caches que não dependem dos secrets ficam prontos na imagem: no boot a frio da máquina
+# 256MB eles somavam boa parte dos ~60s de espera (config:cache continua no boot, em
+# .fly/scripts/caches.sh, porque precisa do .env/secrets de produção).
+RUN php artisan route:cache \
+    && php artisan view:cache \
+    && chown -R www-data:www-data storage bootstrap/cache
 
-RUN chown -R www-data:www-data /app \
-    && chmod -R 755 /app/storage /app/bootstrap/cache
+# If we're using Octane...
+RUN if grep -Fq "laravel/octane" /var/www/html/composer.json; then \
+        rm -rf /etc/supervisor/conf.d/fpm.conf; \
+        if grep -Fq "spiral/roadrunner" /var/www/html/composer.json; then \
+            mv /etc/supervisor/octane-rr.conf /etc/supervisor/conf.d/octane-rr.conf; \
+            if [ -f ./vendor/bin/rr ]; then ./vendor/bin/rr get-binary; fi; \
+            rm -f .rr.yaml; \
+        else \
+            mv .fly/octane-swoole /etc/services.d/octane; \
+            mv /etc/supervisor/octane-swoole.conf /etc/supervisor/conf.d/octane-swoole.conf; \
+        fi; \
+        rm /etc/nginx/sites-enabled/default; \
+        ln -sf /etc/nginx/sites-available/default-octane /etc/nginx/sites-enabled/default; \
+    fi
 
-# Antes rodava tudo (inclusive JS/CSS/imagens) via "php artisan serve" — servidor de
-# dev single-threaded, sem front-end de webserver. Toda requisicao, ate um .svg
-# estatico, passava pelo bootstrap completo do Laravel e ficava numa fila serializada
-# (~3-6s por asset, medido em producao). Agora nginx serve estatico direto do disco e
-# so repassa .php para o php-fpm (pm=ondemand, ver docker/fly/www.conf — poucos
-# workers residentes, adequado aos 256MB de RAM da maquina).
-COPY deploy-fly/nginx.conf /etc/nginx/sites-enabled/default
-COPY deploy-fly/www.conf /usr/local/etc/php-fpm.d/www.conf
-COPY deploy-fly/start.sh /start.sh
-RUN chmod +x /start.sh
+# Sem etapa de build de assets (Node) do template do fly launch: o CSS/JS compilado já vem
+# versionado em public/ — é o que produção sempre serviu — e o Laravel Mix deste projeto
+# (webpack antigo) não compila no Node 18 (ERR_OSSL_EVP_UNSUPPORTED).
 
-ENV PORT=8080
 EXPOSE 8080
 
-CMD ["/start.sh"]
+ENTRYPOINT ["/entrypoint"]

@@ -25,15 +25,24 @@ class StoreUpdateOccurrences extends FormRequest
     {
         return [
             'title' => "required|max:255",
-            // Antes "required": o login leve do cidadão (ver CitizenAuthController) nunca
-            // coleta e-mail — exigir aqui derrubaria toda submissão de quem só informou
-            // nome+celular.
+            // Opcional: quem registra sem conta não informa e-mail.
             'email' => "nullable|email|max:255",
-            // type_occurrences_id/issuings_id são NOT NULL no banco e sempre foram exigidos
-            // pelo formulário admin; a API pública nunca validava isso e toda submissão sem
-            // esses campos derrubava com erro 500 (bug pré-existente, corrigido junto da LGPD).
+            // type_occurrences_id é obrigatório. issuings_id é opcional na API pública (app/cidadão)
+            // e recebe fallback para o órgão padrão no controller/service se omitido.
             'type_occurrences_id' => 'required|exists:type_occurrences,id',
-            'issuings_id' => 'required|exists:issuings,id',
+            'issuings_id' => 'nullable|exists:issuings,id',
+            // Geolocalização e endereço
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'address' => 'nullable|string|max:255',
+            'neighborhood' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+            'state' => 'nullable|string|size:2|exists:states,uf',
+            'zip' => 'nullable|string|max:20',
+            'description' => 'nullable|string|max:5000',
+            // Anexos de fotos
+            'anexo' => 'nullable|array',
+            'anexo.*' => 'nullable|image|max:5120',
             // Consentimento explícito (LGPD, Fase 6): o cliente que consome a API pública
             // precisa confirmar que o cidadão foi informado e concordou com o tratamento
             // dos dados pessoais enviados nesta ocorrência.

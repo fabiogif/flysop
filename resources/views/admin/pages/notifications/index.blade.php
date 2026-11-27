@@ -11,6 +11,18 @@
             <i class="fas fa-check-double" aria-hidden="true"></i> Marcar todas como lidas
         </button>
     </form>
+    @if (auth()->user()->isManager())
+        {{-- Atalho de preferências: gestor de órgão escolhe se recebe aviso de novas ocorrências --}}
+        <form action="{{ route('notifications.settings') }}" method="POST" class="d-inline ml-2">
+            @csrf
+            @method('PUT')
+            <input type="hidden" name="notify_new_occurrences" value="{{ auth()->user()->notify_new_occurrences ? 0 : 1 }}">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                <i class="fas {{ auth()->user()->notify_new_occurrences ? 'fa-bell-slash' : 'fa-bell' }}" aria-hidden="true"></i>
+                {{ auth()->user()->notify_new_occurrences ? 'Pausar avisos de novas ocorrências' : 'Receber avisos de novas ocorrências' }}
+            </button>
+        </form>
+    @endif
     @php
         $actionsHtml = ob_get_clean();
         $unreadCount = auth()->user()->unreadNotifications()->count();
@@ -59,6 +71,7 @@
                 $isUnread = is_null($notification->read_at);
                 $type = class_basename($notification->type);
                 $icon = match (true) {
+                    str_contains($type, 'NewOccurrence') => 'fa-plus-circle',
                     str_contains($type, 'Sla') => 'fa-exclamation-triangle',
                     str_contains($type, 'Assigned') => 'fa-user-check',
                     str_contains($type, 'Status') => 'fa-exchange-alt',
@@ -67,6 +80,7 @@
                     default => 'fa-bell',
                 };
                 $tone = match (true) {
+                    str_contains($type, 'NewOccurrence') => 'accent',
                     str_contains($type, 'Sla') => 'warn',
                     str_contains($type, 'Assigned') => 'accent',
                     str_contains($type, 'Status') => 'info',
@@ -109,6 +123,13 @@
                                 {{ $isUnread ? 'Marcar como lida' : 'Abrir' }}
                             </button>
                         </form>
+                        <form action="{{ route('notifications.destroy', $notification->id) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Remover notificação">
+                                <i class="fas fa-trash-alt" aria-hidden="true"></i> Remover
+                            </button>
+                        </form>
                     </div>
                 </div>
             </article>
@@ -116,7 +137,7 @@
             <div class="ciop-notif-empty">
                 <span class="ciop-notif-empty-icon" aria-hidden="true"><i class="fas fa-bell-slash"></i></span>
                 <h2>Nenhuma notificação</h2>
-                <p>Quando houver atribuições, mudanças de status ou alertas de SLA, elas aparecem aqui.</p>
+                <p>Quando houver novas ocorrências do seu órgão, atribuições, mudanças de status ou alertas de SLA, elas aparecem aqui.</p>
             </div>
         @endforelse
     </div>

@@ -1,36 +1,49 @@
-# fly.toml app configuration file generated for flysop on 2026-09-09T19:23:53Z
+# fly.toml app configuration file generated for flysop-calm-hollow-9541 on 2026-10-20T15:13:54-03:00
+# Ajustado para a app de produção "flysop" (a app gerada pelo fly launch não tem banco/secrets).
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = "flysop"
-primary_region = 'gru'
+app = 'flysop'
+# sjc (San José): ao lado do Postgres (Aiven, Santa Clara/CA). Em gru cada query custava
+# ~540ms (3 idas e voltas de ~180ms) e as páginas levavam 2,5-3,5s; em sjc caem para ~0,5s.
+primary_region = 'sjc'
+console_command = 'php /var/www/html/artisan tinker'
 kill_signal = 'SIGINT'
 kill_timeout = '10s'
+# Mesma máquina de antes (256MB): swap evita OOM em pico sem aumentar o custo
 swap_size_mb = 512
 
 [build]
-  dockerfile = "Dockerfile"
+  [build.args]
+    NODE_VERSION = '18'
+    # 8.2: o código usa match, nullsafe (?->) e promoção de propriedades (PHP 8+)
+    PHP_VERSION = '8.2'
 
 [deploy]
+  # Roda as migrations antes de liberar a nova versão
   release_command = 'php artisan migrate --force'
 
 [env]
-  APP_ENV = "production"
-  APP_DEBUG = "false"
-  # Use a URL real do app (troque flysop pelo nome do seu app)
-  APP_URL = "https://flysop.fly.dev"
-  # Cookie de sessão via HTTPS (obrigatório para login no fly.io)
-  SESSION_SECURE_COOKIE = "true"
-  # Sessão no cooki1e evita 419 quando não há Redis/DB de sessão no fly.io
-  SESSION_DRIVER = "cookie"
+  APP_ENV = 'production'
+  APP_DEBUG = 'false'
+  LOG_CHANNEL = 'stderr'
+  LOG_LEVEL = 'info'
+  LOG_STDERR_FORMATTER = 'Monolog\Formatter\JsonFormatter'
+  SESSION_DRIVER = 'cookie'
+  SESSION_SECURE_COOKIE = 'true'
+  # Uploads no Tigris (o disco da máquina é apagado a cada deploy). Credenciais e bucket nos secrets.
+  FILESYSTEM_DISK = 's3'
 
 [http_service]
   internal_port = 8080
   force_https = true
+  auto_stop_machines = 'stop'
   auto_start_machines = true
-  auto_stop_machines = true
+  # 0 = sem custo fixo (máquinas param quando ociosas e sobem sob demanda). Manter assim para
+  # ficar no uso gratuito; o custo do boot a frio é reduzido no entrypoint (.fly/entrypoint.sh).
   min_machines_running = 0
+  processes = ['app']
 
 [[vm]]
   size = 'shared-cpu-1x'

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
+use App\Models\Tenant;
 
 class SiteController extends Controller
 {
@@ -12,6 +14,11 @@ class SiteController extends Controller
      */
     public function index()
     {
-        return view('site.pages.home.index');
+        // Site público tem um tenant só (mesmo default de Api\SurveyApiController)
+        $tenantId = Tenant::query()->value('id') ?? 1;
+
+        return view('site.pages.home.index', [
+            'announcements' => Announcement::publishedFor($tenantId)->with('issuing')->limit(6)->get(),
+        ]);
     }
 }

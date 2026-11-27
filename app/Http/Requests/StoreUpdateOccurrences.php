@@ -20,7 +20,7 @@ class StoreUpdateOccurrences extends FormRequest
             'address' => ['required', 'string', 'max:500'],
             'neighborhood' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
-            'state' => ['nullable', 'string', 'max:255'],
+            'state' => ['nullable', 'string', 'size:2', 'exists:states,uf'],
             'zip' => ['nullable', 'string', 'max:20'],
             'email' => ['required', 'email'],
             'phone' => ['required', 'string', 'max:20'],

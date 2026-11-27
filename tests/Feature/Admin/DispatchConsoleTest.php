@@ -110,7 +110,8 @@ class DispatchConsoleTest extends TestCase
         $user = $this->actingAsAdmin();
 
         $status = StatusOccurrence::factory()->create(['name' => 'Recebida', 'is_terminal' => false, 'sort_order' => 1]);
-        $awaiting = StatusOccurrence::factory()->create(['name' => 'Aguardando aceitação', 'is_terminal' => false, 'sort_order' => 50]);
+        // Já semeado pela migration de status; o service busca por nome.
+        $awaiting = StatusOccurrence::firstOrCreate(['name' => 'Aguardando aceitação'], ['is_terminal' => false, 'sort_order' => 50]);
         $occurrence = Occurrences::factory()->create(['status_occurrences_id' => $status->id, 'driver_id' => null]);
         $driver = Driver::create([
             'name' => 'Motorista Atribuído',

@@ -16,6 +16,18 @@
             <label for="password">Senha:</label>
             <input type="password" name="password" class="form-control" placeholder="Senha:" value="">
         </div>
+        <div class="form-group">
+            <label for="issuing_id">Órgão (gestor)</label>
+            <select name="issuing_id" id="issuing_id" class="form-control">
+                <option value="">Nenhum — não é gestor de órgão</option>
+                @foreach ($issuings ?? [] as $issuing)
+                    <option value="{{ $issuing->id }}"
+                        {{ (string) old('issuing_id', $user->issuing_id ?? '') === (string) $issuing->id ? 'selected' : '' }}>
+                        {{ $issuing->name }}</option>
+                @endforeach
+            </select>
+            <small class="form-text text-muted">Gestores acessam pelo app as ocorrências do órgão e recebem aviso das novas.</small>
+        </div>
         <!--form-group-->
         <div class="form-group">
             <button type="submit" class="btn btn-success">Salvar</button>

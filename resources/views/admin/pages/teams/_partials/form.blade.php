@@ -1,5 +1,5 @@
 @include('admin.includes.alerts')
-<?php $departments = $departments ?? collect(); $typeOccurrences = $typeOccurrences ?? collect(); ?>
+<?php $departments = $departments ?? collect(); $typeOccurrences = $typeOccurrences ?? collect(); $issuings = $issuings ?? collect(); ?>
 <div class="row">
     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
         <div class="row">
@@ -24,6 +24,21 @@
                         @endforeach
                     </select>
                     @error('department_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                <div class="form-group">
+                    <label for="issuing_id">Secretaria:</label>
+                    <select name="issuing_id" id="issuing_id" class="form-control {{ $errors->has('issuing_id') ? 'is-invalid' : '' }}">
+                        <option value="">Compartilhada (todas)</option>
+                        @foreach ($issuings as $issuing)
+                            <option value="{{ $issuing->id }}" {{ (string) ($team->issuing_id ?? old('issuing_id')) === (string) $issuing->id ? 'selected' : '' }}>
+                                {{ $issuing->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('issuing_id') <span class="invalid-feedback d-block">{{ $message }}</span> @enderror
                 </div>
             </div>
         </div>

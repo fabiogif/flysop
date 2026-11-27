@@ -23,12 +23,18 @@
         <server name="BCRYPT_ROUNDS" value="4"/>
         <server name="BROADCAST_DRIVER" value="null"/>
         <server name="CACHE_DRIVER" value="array"/>
+        <!-- O .env local pode apontar para o bucket do Tigris de produção: testes nunca gravam nele -->
+        <server name="FILESYSTEM_DISK" value="local"/>
         <server name="DB_CONNECTION" value="pgsql"/>
         <server name="DB_HOST" value="pgsql"/>
         <server name="DB_PORT" value="5432"/>
         <server name="DB_DATABASE" value="laravel_testing"/>
         <server name="DB_USERNAME" value="laravel"/>
         <server name="DB_PASSWORD" value="secret"/>
+        <!-- Conexão persistente é compartilhada entre os PDOs de testes diferentes: quando o GC
+             destrói o PDO de um teste anterior, ele manda ROLLBACK e desfaz a transação do teste
+             atual (falhas intermitentes em SurveyModuleTest, "There is no active transaction") -->
+        <server name="DB_PERSISTENT" value="false"/>
         <server name="MAIL_MAILER" value="array"/>
         <server name="QUEUE_CONNECTION" value="sync"/>
         <server name="SESSION_DRIVER" value="array"/>

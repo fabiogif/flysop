@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Guia do Usuário — CIOP</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 18mm 15mm; }
+  :root {
+    --ink: #0f172a; --muted: #475569; --line: #e2e8f0; --soft: #f1f5f9;
+    --brand: #0b4f4a; --accent: #1fa8a0; --app: #1e3a8a; --warn: #b45309; --ok: #047857; --danger: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Arial, sans-serif; color: var(--ink); font-size: 10.5pt; line-height: 1.55; margin: 0; }
+  h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
+  h1 { font-size: 20pt; color: var(--brand); margin: 0 0 6px; }
+  h2 { font-size: 15pt; color: var(--brand); border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin: 26px 0 10px; }
+  h3 { font-size: 12pt; color: var(--brand); margin: 18px 0 6px; }
+  h4 { font-size: 10.5pt; margin: 12px 0 4px; }
+  p { margin: 6px 0; }
+  ul, ol { margin: 6px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .part { page-break-before: always; break-before: page; }
+  .part-title { background: var(--brand); color: #fff; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px; }
+  .part-title.app { background: var(--app); }
+  .part-title h1 { color: #fff; margin: 0; }
+  .part-title p { margin: 4px 0 0; color: #dbeafe; }
+
+  /* Capa */
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; padding: 22mm 14mm;
+    background: linear-gradient(160deg, #073834 0%, #0b4f4a 55%, #1fa8a0 100%); color: #fff; border-radius: 6px; page-break-after: always; }
+  .cover .eyebrow { letter-spacing: .14em; text-transform: uppercase; font-size: 10pt; font-weight: 700; color: #a7f3d0; }
+  .cover h1 { color: #fff; font-size: 34pt; line-height: 1.1; margin: 10px 0; }
+  .cover .sub { font-size: 13pt; color: #d1fae5; max-width: 140mm; }
+  .cover .meta { font-size: 10.5pt; color: #ccfbf1; }
+  .cover .meta strong { color: #fff; }
+
+  .toc ol { padding-left: 18px; }
+  .toc li { margin: 3px 0; }
+  .toc .group { font-weight: 700; color: var(--brand); margin-top: 8px; list-style: none; margin-left: -18px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 9.5pt; page-break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: var(--soft); color: var(--brand); }
+
+  .box { border: 1px solid var(--line); border-left: 4px solid var(--accent); background: #f8fafc; padding: 8px 12px; margin: 10px 0; page-break-inside: avoid; }
+  .box.tip { border-left-color: var(--ok); background: #ecfdf5; }
+  .box.warn { border-left-color: var(--warn); background: #fffbeb; }
+  .box.lock { border-left-color: var(--app); background: #eff6ff; }
+  .box strong:first-child { display: block; margin-bottom: 2px; }
+
+  figure { margin: 10px 0 14px; text-align: center; page-break-inside: avoid; break-inside: avoid; }
+  figure img { max-width: 100%; border: 1px solid var(--line); border-radius: 4px; }
+  figure.web img { width: 100%; }
+  figcaption { font-size: 8.5pt; color: var(--muted); margin-top: 3px; }
+  .phones { display: flex; gap: 8mm; justify-content: center; margin: 10px 0 14px; page-break-inside: avoid; break-inside: avoid; }
+  .phones figure { margin: 0; flex: 0 0 52mm; }
+  .phones figure img { width: 52mm; border-radius: 6px; }
+
+  .steps { counter-reset: s; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 28px; margin: 6px 0; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: 1px; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-size: 9pt; font-weight: 700; text-align: center; line-height: 20px; }
+  .app-part .steps > li::before { background: var(--app); }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 8.5pt; font-weight: 700; margin: 0 2px; }
+  .pill.open { background: #fef3c7; color: var(--warn); }
+  .pill.prog { background: #dbeafe; color: var(--app); }
+  .pill.done { background: #d1fae5; color: var(--ok); }
+  .pill.off { background: #e5e7eb; color: #374151; }
+  .kbd { font-family: Consolas, monospace; background: var(--soft); border: 1px solid var(--line); border-radius: 3px; padding: 0 4px; font-size: 9pt; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; page-break-inside: avoid; }
+  .card h4 { margin-top: 0; color: var(--brand); }
+</style>
+</head>
+<body>
+
+<!-- CAPA -->
+<section class="cover">
+  <div>
+    <div class="eyebrow">Guia do usuário</div>
+    <h1>CIOP<br>Central Inteligente de Ocorrências Públicas</h1>
+    <p class="sub">Como usar a aplicação web (site, painel administrativo e painel do motorista) e o aplicativo
+      (cidadão e gestor de órgão), com todas as funcionalidades disponíveis.</p>
+  </div>
+  <div class="meta">
+    <p><strong>Para quem:</strong> cidadãos, gestores de órgão, atendentes, supervisores, administradores e agentes de campo.</p>
+    <p><strong>Endereço web:</strong> https://flysop.fly.dev &nbsp;·&nbsp; <strong>App:</strong> Android (APK)</p>
+    <p><strong>Versão do guia:</strong> outubro de 2026</p>
+  </div>
+</section>
+
+<!-- SUMÁRIO -->
+<section class="toc">
+  <h1>Sumário</h1>
+  <ol>
+    <li class="group">Visão geral</li>
+    <li><a href="#s1">O que é o CIOP</a></li>
+    <li><a href="#s2">Quem usa e o que cada um vê</a></li>
+    <li><a href="#s3">Como uma ocorrência anda (status)</a></li>
+    <li class="group">Parte A — Aplicação web</li>
+    <li><a href="#a1">Site público e informativos</a></li>
+    <li><a href="#a2">Entrar no painel</a></li>
+    <li><a href="#a3">Painel de Controle</a></li>
+    <li><a href="#a4">Notificações e Busca</a></li>
+    <li><a href="#a5">Ocorrências</a></li>
+    <li><a href="#a6">Central de Despacho</a></li>
+    <li><a href="#a7">Relatórios</a></li>
+    <li><a href="#a8">Parâmetros: status, tipos, prioridades e órgãos</a></li>
+    <li><a href="#a9">Equipes: motoristas, departamentos e equipes</a></li>
+    <li><a href="#a10">Acesso: usuários, perfis, cargos, permissões e auditoria</a></li>
+    <li><a href="#a11">Pesquisas</a></li>
+    <li><a href="#a12">Informativos</a></li>
+    <li><a href="#a13">Sistema: organização e empresas</a></li>
+    <li><a href="#a14">Painel do motorista</a></li>
+    <li class="group">Parte B — Aplicativo</li>
+    <li><a href="#b1">Instalação e primeiro acesso</a></li>
+    <li><a href="#b2">Início</a></li>
+    <li><a href="#b3">Mapa</a></li>
+    <li><a href="#b4">Registrar uma ocorrência</a></li>
+    <li><a href="#b5">Acompanhar ocorrências</a></li>
+    <li><a href="#b6">Pesquisas</a></li>
+    <li><a href="#b7">Perfil</a></li>
+    <li><a href="#b8">App do gestor de órgão</a></li>
+    <li class="group">Parte C — Privacidade e suporte</li>
+    <li><a href="#c1">Quem vê cada informação</a></li>
+    <li><a href="#c2">Dúvidas frequentes</a></li>
+    <li><a href="#c3">Glossário</a></li>
+  </ol>
+</section>
+
+<!-- VISÃO GERAL -->
+<section class="part">
+  <h2 id="s1">1. O que é o CIOP</h2>
+  <p>O CIOP é a plataforma da prefeitura para <strong>registrar, priorizar, despachar e acompanhar ocorrências públicas</strong>
+    — buracos, alagamentos, iluminação, descarte irregular de lixo e outras demandas — do primeiro registro até o encerramento.
+    Cada ocorrência recebe um <strong>protocolo</strong> (ex.: <span class="kbd">OC-2026-00012</span>), um prazo de atendimento,
+    localização no mapa, fotos e o histórico completo de tudo que aconteceu com ela.</p>
+  <p>O sistema tem cinco portas de entrada:</p>
+  <table>
+    <tr><th>Canal</th><th>Quem usa</th><th>Para quê</th></tr>
+    <tr><td><strong>Site público</strong></td><td>Qualquer pessoa</td><td>Conhecer o serviço, ler os informativos dos órgãos e responder pesquisas por link/QR Code</td></tr>
+    <tr><td><strong>Painel administrativo (web)</strong></td><td>Atendentes, supervisores, gestores de órgão, administradores</td><td>Operar a central: ocorrências, despacho, cadastros, relatórios, pesquisas e informativos</td></tr>
+    <tr><td><strong>Painel do motorista (web)</strong></td><td>Agentes de campo/motoristas</td><td>Aceitar chamados, atualizar status e compartilhar a localização em tempo real</td></tr>
+    <tr><td><strong>App do cidadão</strong></td><td>Cidadãos (com ou sem cadastro)</td><td>Registrar e acompanhar ocorrências, ver os totais da cidade e os informativos, responder pesquisas</td></tr>
+    <tr><td><strong>App do gestor</strong></td><td>Gestores de órgão</td><td>Ver as ocorrências do seu órgão, mudar o status e receber avisos de novas ocorrências</td></tr>
+  </table>
+
+  <h2 id="s2">2. Quem usa e o que cada um vê</h2>
+  <table>
+    <tr><th>Perfil</th><th>O que faz</th><th>O que vê</th></tr>
+    <tr><td><strong>Cidadão com conta</strong></td><td>Registra ocorrências (identificadas ou anônimas) e acompanha pela conta</td><td>Só as próprias ocorrências; totais da cidade; informativos</td></tr>
+    <tr><td><strong>Cidadão sem cadastro</strong></td><td>Registra ocorrências sempre anônimas</td><td>Só as que registrou, pelo protocolo + código de acompanhamento</td></tr>
+    <tr><td><strong>Gestor de órgão</strong></td><td>Analisa e movimenta as ocorrências do órgão; publica informativos</td><td>Só as ocorrências e informativos do próprio órgão</td></tr>
+    <tr><td><strong>Atendente / Supervisor</strong></td><td>Registra, faz triagem, despacha e acompanha prazos. Supervisor também reabre casos encerrados e aplica a LGPD</td><td>Conforme as permissões do seu perfil</td></tr>
+    <tr><td><strong>Administrador</strong></td><td>Configura o sistema, usuários e permissões</td><td>Tudo</td></tr>
+    <tr><td><strong>Motorista / Agente de campo</strong></td><td>Atende na rua</td><td>As ocorrências atribuídas a ele</td></tr>
+  </table>
+  <div class="box lock"><strong>Regra de privacidade</strong>Uma ocorrência só aparece para <strong>quem a registrou</strong> e para
+    o <strong>gestor do órgão responsável</strong> (além da equipe da central, conforme permissões). O mapa e os totais públicos
+    nunca mostram dados de uma ocorrência específica — veja a <a href="#c1">Parte C</a>.</div>
+
+  <h2 id="s3">3. Como uma ocorrência anda (status)</h2>
+  <p>Ao ser registrada, a ocorrência vai automaticamente para o <strong>órgão responsável pelo tipo</strong> escolhido
+    (ex.: Alagamento → Defesa Civil), recebe protocolo, prazo e o status <em>Recebida</em>. Os gestores desse órgão são avisados.</p>
+  <table>
+    <tr><th>Etapa no app</th><th>Status</th><th>Significado</th></tr>
+    <tr><td><span class="pill open">Aberta</span></td><td>Recebida, Em triagem, Validada, Aguardando despacho, Aguardando aceitação, Recusada, Reaberta</td><td>Ainda não começou a ser atendida</td></tr>
+    <tr><td><span class="pill prog">Em andamento</span></td><td>Aceita, Em deslocamento, Equipe no local, Em atendimento, Aguardando material</td><td>Uma equipe está cuidando do caso</td></tr>
+    <tr><td><span class="pill done">Resolvida</span></td><td>Resolvida, Finalizada</td><td>Serviço executado / caso encerrado</td></tr>
+    <tr><td><span class="pill off">Fora da contagem</span></td><td>Cancelada, Duplicada</td><td>Encerrada sem atendimento</td></tr>
+  </table>
+  <div class="box"><strong>Encerramento e reabertura</strong>Finalizada, Cancelada e Duplicada são status de encerramento: a
+    ocorrência só sai deles para <em>Reaberta</em>, e somente um Supervisor ou Administrador pode reabrir.</div>
+</section>
+
+<!-- PARTE A -->
+<section class="part">
+  <div class="part-title"><h1>Parte A — Aplicação web</h1><p>Site público, painel administrativo e painel do motorista · https://flysop.fly.dev</p></div>
+
+  <h2 id="a1">A1. Site público e informativos</h2>
+  <p>A página inicial apresenta o serviço e traz o bloco <strong>Informativos</strong>, com os últimos avisos publicados
+    pelos órgãos (título, órgão, data e texto). Textos longos abrem em <em>“Ler informativo completo”</em>. O bloco só aparece
+    quando há algum informativo publicado. O botão <strong>Acessar</strong> (canto superior) leva ao login do painel.</p>
+  <figure class="web"><img src="img/web-01-site-informativos.jpg" alt=""><figcaption>Figura 1 — Informativos na página inicial do site</figcaption></figure>
+  <p><strong>Pesquisas por link:</strong> cada pesquisa ativa tem um endereço público (<span class="kbd">/p/código</span>) e um QR Code,
+    que podem ser divulgados em cartazes e redes sociais. Qualquer pessoa responde sem precisar de conta.</p>
+
+  <h2 id="a2">A2. Entrar no painel</h2>
+  <ol class="steps">
+    <li>Acesse <span class="kbd">https://flysop.fly.dev/login</span> (ou clique em <strong>Acessar</strong> no site).</li>
+    <li>Informe o e-mail e a senha cadastrados pelo administrador.</li>
+    <li>Você cai no <strong>Painel de Controle</strong>. O menu lateral mostra apenas os módulos que o seu perfil pode usar.</li>
+  </ol>
+  <figure class="web"><img src="img/web-02-login.jpg" alt=""><figcaption>Figura 2 — Tela de login</figcaption></figure>
+  <div class="box warn"><strong>Não consigo entrar no painel</strong>O acesso ao painel exige um perfil com pelo menos uma permissão.
+    Se aparecer “Sem permissão para acessar o painel administrativo”, peça ao administrador para vincular um perfil ao seu usuário.
+    Motoristas são levados direto para o Painel do Motorista.</div>
+</section>
+
+<section class="part">
+  <h2 id="a3">A3. Painel de Controle</h2>
+  <p>É a visão operacional da central, atualizada automaticamente:</p>
+  <ul>
+    <li><strong>Cadastros:</strong> quantidade de usuários, órgãos, tipos e ocorrências, com atalho para cada módulo.</li>
+    <li><strong>Operação:</strong> ocorrências abertas, em atendimento, finalizadas hoje, prazo (SLA) estourado e em risco.</li>
+    <li><strong>Filtros:</strong> status, tipo, prioridade, motorista e período — refinam o mapa e a lista.</li>
+    <li><strong>Ocorrências recentes</strong> (atualiza a cada minuto e na hora, quando algo muda) e <strong>Mapa das ocorrências</strong>,
+      com marcadores coloridos pela prioridade, agrupamento de pontos, posição dos motoristas e <strong>mapa de calor</strong>.</li>
+    <li><strong>Gráficos</strong> de ocorrências por dia, por status e por prioridade.</li>
+    <li><strong>Exportar uso:</strong> baixa um arquivo CSV (abre no Excel) com os números de uso do sistema.</li>
+  </ul>
+  <figure class="web"><img src="img/web-03-dashboard.jpg" alt=""><figcaption>Figura 3 — Painel de Controle</figcaption></figure>
+
+  <h2 id="a4">A4. Notificações e Busca</h2>
+  <div class="two">
+    <div class="card"><h4>Notificações</h4>
+      <p>Avisos internos sobre ocorrência atribuída a você, mudança de status, prazo em risco, relatório pronto e nova
+        ocorrência para o seu órgão. Clique para abrir o caso; marque como lidas quando tratar.</p></div>
+    <div class="card"><h4>Busca</h4>
+      <p>Pesquisa em todo o sistema por protocolo, título, descrição ou endereço — aceita trechos de palavras e variações
+        (ex.: “alagado” encontra “alagamento”).</p></div>
+  </div>
+  <figure class="web"><img src="img/web-04-notificacoes.jpg" alt=""><figcaption>Figura 4 — Notificações</figcaption></figure>
+</section>
+
+<section class="part">
+  <h2 id="a5">A5. Ocorrências</h2>
+  <h3>Lista</h3>
+  <p>Mostra protocolo, título, tipo, status, prioridade e prazo, com busca por protocolo/texto. O <strong>gestor de órgão</strong>
+    vê somente as ocorrências do próprio órgão.</p>
+  <figure class="web"><img src="img/web-05-ocorrencias.jpg" alt=""><figcaption>Figura 5 — Lista de ocorrências</figcaption></figure>
+
+  <h3>Cadastrar ocorrência (atendimento por telefone/balcão)</h3>
+  <ol class="steps">
+    <li>Em <strong>Ocorrências</strong>, clique em <strong>Adicionar</strong>.</li>
+    <li>Preencha título, tipo (o órgão e o prazo vêm do tipo), prioridade e descrição.</li>
+    <li>Marque o local no mapa: clique ou arraste o marcador, ou digite o endereço — bairro, cidade, UF e CEP são preenchidos sozinhos.</li>
+    <li>Informe os dados do solicitante, se houver, e anexe fotos indicando a fase: <em>antes</em> ou <em>depois</em> do atendimento.</li>
+    <li>Use <strong>Sugerir mais próximo</strong> para indicar o motorista disponível mais perto, e salve.</li>
+  </ol>
+  <figure class="web"><img src="img/web-07-ocorrencia-cadastro.jpg" alt=""><figcaption>Figura 6 — Cadastro de ocorrência</figcaption></figure>
+
+  <h3>Detalhe da ocorrência</h3>
+  <ul>
+    <li><strong>Dados principais:</strong> protocolo, status, tipo, órgão, prioridade, prazo (SLA), motorista, endereço e solicitante
+      (em ocorrências anônimas o solicitante aparece como “Anônimo”).</li>
+    <li><strong>Possível duplicata:</strong> o sistema avisa quando há outra ocorrência do mesmo tipo a menos de 300 m nas últimas 48 h.
+      Se não for, clique em <strong>Não é duplicata</strong>.</li>
+    <li><strong>Evidências:</strong> fotos separadas em <em>antes</em> e <em>depois</em>, com autor e data.</li>
+    <li><strong>Histórico de status</strong> e <strong>auditoria</strong>: quem mudou o quê e quando.</li>
+    <li><strong>Baixar ficha (PDF)</strong> — documento da ocorrência para impressão ou anexo a processos.</li>
+    <li><strong>Esquecer dados pessoais (LGPD)</strong> — apaga nome, CPF, RG, e-mail e telefone do solicitante, mantendo o histórico
+      do atendimento (Supervisor/Administrador).</li>
+    <li><strong>Editar</strong>, <strong>Excluir</strong> e acompanhar a rota do motorista no mapa em tempo real.</li>
+  </ul>
+  <figure class="web"><img src="img/web-06-ocorrencia-detalhe.jpg" alt=""><figcaption>Figura 7 — Detalhe da ocorrência</figcaption></figure>
+</section>
+
+<section class="part">
+  <h2 id="a6">A6. Central de Despacho</h2>
+  <p>Tela para decidir rápido quem atende cada caso: lista filtrável ao lado do mapa.</p>
+  <ul>
+    <li><strong>Filtros rápidos:</strong> Todas, Críticas, Últimas 24h, Em aberto, Sem atendimento e Próximas (ordena pela distância até você).</li>
+    <li>Ao escolher uma ocorrência, o sistema <strong>sugere os motoristas</strong> disponíveis mais próximos e da especialidade certa,
+      desenhando-os no mapa com uma linha até o local.</li>
+    <li>Clique em <strong>Atribuir</strong>: a ocorrência vai para “Aguardando aceitação” e o motorista é notificado.
+      A sugestão nunca atribui sozinha — a decisão é sempre de uma pessoa.</li>
+  </ul>
+  <figure class="web"><img src="img/web-08-despacho.jpg" alt=""><figcaption>Figura 8 — Central de Despacho</figcaption></figure>
+
+  <h2 id="a7">A7. Relatórios</h2>
+  <p>Gere relatórios por período e filtros: <strong>Listagem de ocorrências</strong> e <strong>Tempo médio por etapa</strong>
+    (quanto tempo as ocorrências ficam em cada status). Eles são preparados em segundo plano — você recebe uma notificação quando
+    o arquivo estiver pronto para baixar.</p>
+  <figure class="web"><img src="img/web-09-relatorios.jpg" alt=""><figcaption>Figura 9 — Relatórios</figcaption></figure>
+</section>
+
+<section class="part">
+  <h2 id="a8">A8. Parâmetros: status, tipos, prioridades e órgãos</h2>
+  <p>Ficam em <strong>Ocorrências → Parâmetros</strong> e definem como a operação funciona:</p>
+  <table>
+    <tr><th>Cadastro</th><th>Para que serve</th></tr>
+    <tr><td><strong>Status</strong></td><td>Etapas do fluxo, com ordem e marcação de encerramento. <em>Atenção:</em> renomear um status
+      tira suas ocorrências da contagem Aberta/Em andamento/Resolvida do app.</td></tr>
+    <tr><td><strong>Tipos</strong></td><td>Categorias (e subtipos) de ocorrência, com o <strong>órgão responsável</strong> e o prazo em horas.
+      É o tipo que define para qual órgão a ocorrência do cidadão vai.</td></tr>
+    <tr><td><strong>Prioridades</strong></td><td>Níveis de urgência, com cor e prazo próprios (o prazo da prioridade vale mais que o do tipo).</td></tr>
+    <tr><td><strong>Órgãos</strong></td><td>Secretarias/órgãos que recebem as ocorrências (ex.: Defesa Civil, Obras).</td></tr>
+  </table>
+  <figure class="web"><img src="img/web-11-tipos.jpg" alt=""><figcaption>Figura 10 — Tipos de ocorrência</figcaption></figure>
+
+  <h2 id="a9">A9. Equipes: motoristas, departamentos e equipes</h2>
+  <ul>
+    <li><strong>Motoristas:</strong> agentes de campo, com status de disponibilidade (atualizado sozinho conforme a ocorrência anda) e equipe.</li>
+    <li><strong>Departamentos</strong> e <strong>Equipes:</strong> organizam a força de trabalho. Uma equipe pode ter uma especialidade
+      (tipo de ocorrência) — o despacho sugere equipes da especialidade certa.</li>
+  </ul>
+  <figure class="web"><img src="img/web-14-motoristas.jpg" alt=""><figcaption>Figura 11 — Motoristas</figcaption></figure>
+</section>
+
+<section class="part">
+  <h2 id="a10">A10. Acesso: usuários, perfis, cargos, permissões e auditoria</h2>
+  <ul>
+    <li><strong>Usuários:</strong> quem acessa o painel. Ao vincular um usuário a um <strong>órgão</strong>, ele vira
+      <strong>gestor daquele órgão</strong>: vê só as ocorrências do órgão (no painel e no app do gestor) e pode publicar informativos.</li>
+    <li><strong>Cargos</strong> e <strong>Perfis:</strong> agrupam permissões. Cargos padrão: Administrador, Supervisor, Atendente.</li>
+    <li><strong>Permissões:</strong> liberam cada módulo do menu (ex.: <em>occurrences</em>, <em>surveys</em>, <em>announcements</em>).</li>
+    <li><strong>Auditoria:</strong> registro de alterações e de acessos a dados pessoais (quem viu e quem editou, separadamente).</li>
+  </ul>
+  <figure class="web"><img src="img/web-16-usuarios.jpg" alt=""><figcaption>Figura 12 — Usuários</figcaption></figure>
+  <div class="box tip"><strong>Como criar um gestor de órgão</strong>Cadastre o usuário, selecione o órgão dele e vincule um cargo
+    com acesso ao painel (por exemplo, com a permissão de Ocorrências). O módulo Informativos é liberado automaticamente a todo gestor.</div>
+
+  <h2 id="a11">A11. Pesquisas</h2>
+  <ol class="steps">
+    <li>Em <strong>Engajamento → Pesquisas</strong>, clique em <strong>Adicionar</strong>.</li>
+    <li>Informe título e descrição e monte as perguntas: <strong>texto livre</strong>, <strong>escolha única</strong> (uma opção por linha)
+      ou <strong>escala de 1 a 5</strong>. Marque as obrigatórias.</li>
+    <li>Deixe a pesquisa <strong>ativa</strong>. Ela passa a aparecer no app e ganha link público e QR Code para divulgação.</li>
+    <li>Acompanhe as respostas no ícone <strong>Respostas</strong>. Desative quando quiser encerrar.</li>
+  </ol>
+  <figure class="web"><img src="img/web-19-pesquisas.jpg" alt=""><figcaption>Figura 13 — Pesquisas</figcaption></figure>
+</section>
+
+<section class="part">
+  <h2 id="a12">A12. Informativos</h2>
+  <p>Avisos do órgão para a população — interdições, alertas de chuva, mutirões. Aparecem na <strong>página inicial do site</strong>
+    e na <strong>página inicial do app</strong>.</p>
+  <ol class="steps">
+    <li>Em <strong>Engajamento → Informativos</strong>, clique em <strong>Adicionar</strong>.</li>
+    <li>O <strong>gestor de órgão</strong> publica sempre para o próprio órgão (o campo não aparece). O <strong>administrador</strong> escolhe o órgão.</li>
+    <li>Escreva o título (até 120 caracteres) e o texto (até 5.000 caracteres; as quebras de linha são mantidas).</li>
+    <li>Deixe <strong>Publicado</strong> marcado para exibir imediatamente, ou desmarque para salvar como <strong>rascunho</strong>.</li>
+    <li>Edite ou exclua pela lista. Despublicar tira o informativo do site e do app na hora.</li>
+  </ol>
+  <figure class="web"><img src="img/web-20-informativos.jpg" alt=""><figcaption>Figura 14 — Lista de informativos</figcaption></figure>
+  <figure class="web"><img src="img/web-21-informativo-form.jpg" alt=""><figcaption>Figura 15 — Cadastro de informativo (visão do administrador)</figcaption></figure>
+</section>
+
+<section class="part">
+  <h2 id="a13">A13. Sistema: organização e empresas</h2>
+  <p><strong>Organização:</strong> nome, CNPJ, e-mail, endereço e logotipo da prefeitura exibidos no sistema. <strong>Empresas:</strong> cadastro da
+    organização que usa o sistema (uso do administrador).</p>
+  <figure class="web"><img src="img/web-22-organizacao.jpg" alt=""><figcaption>Figura 16 — Organização</figcaption></figure>
+
+  <h2 id="a14">A14. Painel do motorista</h2>
+  <p>Área web para o agente de campo, pensada para uso no celular pelo navegador:</p>
+  <ol class="steps">
+    <li>Entre com seu usuário. Você vê o painel com as ocorrências atribuídas a você.</li>
+    <li>Ao receber um chamado, clique em <strong>Aceitar</strong> ou <strong>Recusar</strong> — a central é avisada na hora.</li>
+    <li>Com a página aberta, sua <strong>localização é enviada em tempo real</strong> (autorize a localização no navegador);
+      a central acompanha o trajeto no mapa.</li>
+    <li>Use <strong>Atualizar status</strong> conforme avança (por exemplo: Em deslocamento → Equipe no local → Em atendimento → Resolvida). Cada mudança entra no histórico e atualiza sua disponibilidade.</li>
+  </ol>
+  <figure class="web"><img src="img/web-24-motorista-painel.jpg" alt=""><figcaption>Figura 17 — Painel do motorista</figcaption></figure>
+</section>
+
+<!-- PARTE B -->
+<section class="part app-part">
+  <div class="part-title app"><h1>Parte B — Aplicativo</h1><p>App do cidadão e app do gestor de órgão · Android</p></div>
+
+  <h2 id="b1">B1. Instalação e primeiro acesso</h2>
+  <ol class="steps">
+    <li>Instale o arquivo APK fornecido pela prefeitura (o Android pode pedir para permitir a instalação de fontes externas).</li>
+    <li>Ao abrir, passe pelas telas de boas-vindas (ou toque em <strong>Pular</strong>).</li>
+    <li>Escolha como usar:
+      <ul>
+        <li><strong>Criar conta</strong> — nome, e-mail, telefone (opcional) e senha com pelo menos 8 caracteres, uma letra e um número;
+          aceite os Termos de Uso e a Política de Privacidade.</li>
+        <li><strong>Conectar-se</strong> — se já tem conta, entre com o e-mail e a senha do cadastro. Após 5 tentativas erradas, aguarde um minuto para tentar de novo.</li>
+        <li><strong>Registrar sem cadastro (anônimo)</strong> — usa o app sem conta. O app lembra essa escolha nas próximas vezes.</li>
+        <li><strong>Acesso do gestor</strong> — para gestores de órgão, com o usuário e a senha do painel.</li>
+      </ul></li>
+    <li>Permita o acesso à <strong>localização</strong> e à <strong>câmera</strong> quando o app pedir.</li>
+  </ol>
+  <div class="phones">
+    <figure><img src="img/app-01-boas-vindas.jpg" alt=""><figcaption>Figura 18 — Boas-vindas</figcaption></figure>
+    <figure><img src="img/app-02-cadastro.jpg" alt=""><figcaption>Figura 19 — Criar conta</figcaption></figure>
+    <figure><img src="img/app-02b-entrar.jpg" alt=""><figcaption>Figura 20 — Entrar</figcaption></figure>
+  </div>
+  <div class="box"><strong>Com conta ou sem cadastro?</strong>Com conta você acompanha suas ocorrências de qualquer aparelho e pode
+    registrar de forma identificada ou anônima. Sem cadastro, toda ocorrência é anônima e o acompanhamento depende do protocolo e do
+    código de acompanhamento.</div>
+</section>
+
+<section class="part app-part">
+  <h2 id="b2">B2. Início</h2>
+  <p>É a primeira tela depois de entrar. Mostra:</p>
+  <ul>
+    <li>Os totais de ocorrências da cidade: <span class="pill open">Abertas</span> <span class="pill prog">Em andamento</span>
+      <span class="pill done">Resolvidas</span>.</li>
+    <li>O filtro por órgão (<em>Todos os órgãos</em> ou um órgão específico), que vale para os totais e os informativos.</li>
+    <li>O botão <strong>Ver mapa</strong>.</li>
+    <li>Os <strong>Informativos</strong> publicados pelos órgãos — toque em <strong>Ler mais</strong> nos textos longos.</li>
+  </ul>
+  <p>Puxe a tela para baixo para atualizar.</p>
+  <div class="phones">
+    <figure><img src="img/app-03-inicio.jpg" alt=""><figcaption>Figura 21 — Início</figcaption></figure>
+    <figure><img src="img/app-04-mapa.jpg" alt=""><figcaption>Figura 22 — Mapa</figcaption></figure>
+  </div>
+
+  <h2 id="b3">B3. Mapa</h2>
+  <ul>
+    <li>Abra pelo botão <strong>Ver mapa</strong> no Início; volte com <strong>← Voltar ao início</strong>.</li>
+    <li>Mostra sua posição e as <strong>suas</strong> ocorrências (quem usa sem cadastro não vê ocorrências no mapa).</li>
+    <li>Filtre por tipo nos botões do topo e centralize em você com o botão de alvo.</li>
+    <li><strong>Toque e segure</strong> em qualquer ponto para registrar uma ocorrência naquele local; o botão <strong>+</strong> registra no seu local atual.</li>
+    <li>Sem internet, o mapa avisa que você está offline.</li>
+  </ul>
+</section>
+
+<section class="part app-part">
+  <h2 id="b4">B4. Registrar uma ocorrência</h2>
+  <ol class="steps">
+    <li>Toque no <strong>+</strong> no centro do menu.</li>
+    <li><strong>Local do problema:</strong> o app usa sua localização (<em>Minha localização</em>) e mostra o endereço; para outro ponto,
+      toque em <strong>Escolher no mapa</strong>.</li>
+    <li>Escolha o <strong>tipo de ocorrência</strong> — ele define o órgão que vai atender.</li>
+    <li>Escreva um <strong>título</strong> curto e, se quiser, uma <strong>descrição</strong> com pontos de referência.</li>
+    <li>Toque em <strong>Tirar Foto da Ocorrência</strong>, fotografe e confirme em <strong>Usar Foto</strong> (opcional, mas ajuda muito).</li>
+    <li>Com conta, ligue <strong>Enviar de forma anônima</strong> se não quiser que o órgão saiba quem registrou (sem cadastro, é sempre anônimo).</li>
+    <li>Confirme o termo de veracidade e de tratamento de dados (LGPD) e toque em <strong>Registrar Chamado</strong>.</li>
+  </ol>
+  <div class="phones">
+    <figure><img src="img/app-05-nova-ocorrencia.jpg" alt=""><figcaption>Figura 23 — Nova ocorrência</figcaption></figure>
+    <figure><img src="img/app-07-protocolo-codigo.jpg" alt=""><figcaption>Figura 24 — Protocolo e código</figcaption></figure>
+  </div>
+  <div class="box warn"><strong>Anote o protocolo e o código de acompanhamento</strong>Sem cadastro, a tela de sucesso mostra o
+    <strong>protocolo</strong> e um <strong>código de acompanhamento</strong> (ex.: <span class="kbd">YC68-WCJ2</span>). O app guarda os dois
+    neste aparelho, mas para acompanhar de outro celular — ou se o app for reinstalado — você precisa deles. O código é mostrado só uma vez.</div>
+</section>
+
+<section class="part app-part">
+  <h2 id="b5">B5. Acompanhar ocorrências</h2>
+  <div class="two">
+    <div class="card"><h4>Com conta — Minhas Ocorrências</h4>
+      <p>A aba <strong>Ocorrências</strong> lista tudo o que você registrou, com status e foto. Toque para ver o detalhe:
+        situação atual, local, descrição e fotos.</p></div>
+    <div class="card"><h4>Sem cadastro — Acompanhar ocorrência</h4>
+      <p>As ocorrências registradas neste aparelho aparecem sozinhas. De outro aparelho, informe <strong>protocolo</strong> e
+        <strong>código</strong> e toque em <strong>Consultar</strong>; a ocorrência passa a ficar salva também nele.</p></div>
+  </div>
+  <div class="phones">
+    <figure><img src="img/app-08-acompanhar.jpg" alt=""><figcaption>Figura 25 — Acompanhar sem cadastro</figcaption></figure>
+    <figure><img src="img/app-06-ocorrencia-foto.jpg" alt=""><figcaption>Figura 26 — Ocorrência com foto antes do envio</figcaption></figure>
+  </div>
+
+  <h2 id="b6">B6. Pesquisas</h2>
+  <p>A aba <strong>Pesquisas</strong> lista as pesquisas ativas da prefeitura. O número vermelho no ícone mostra quantas você ainda não
+    respondeu neste aparelho. Toque em <strong>Responder Pesquisa</strong>, preencha (as obrigatórias têm *) e toque em
+    <strong>Enviar Respostas</strong>, ou volte sem responder em <strong>Voltar às Pesquisas</strong>. As respostas não ficam ligadas à sua conta.</p>
+  <div class="phones">
+    <figure><img src="img/app-09-pesquisas.jpg" alt=""><figcaption>Figura 27 — Pesquisas</figcaption></figure>
+    <figure><img src="img/app-10-pesquisa.jpg" alt=""><figcaption>Figura 28 — Respondendo</figcaption></figure>
+    <figure><img src="img/app-11-pesquisa-enviada.jpg" alt=""><figcaption>Figura 29 — Enviada</figcaption></figure>
+  </div>
+</section>
+
+<section class="part app-part">
+  <h2 id="b7">B7. Perfil</h2>
+  <p>Com conta, a aba <strong>Perfil</strong> permite alterar <strong>nome</strong> e <strong>e-mail</strong> (<em>Salvar Alterações</em>)
+    e <strong>Sair</strong>. Sem cadastro, mostra a opção <strong>Criar conta ou entrar</strong>.</p>
+  <div class="phones">
+    <figure><img src="img/app-12-perfil.jpg" alt=""><figcaption>Figura 30 — Perfil sem cadastro</figcaption></figure>
+    <figure><img src="img/app-13-acesso-gestor.jpg" alt=""><figcaption>Figura 31 — Acesso do gestor</figcaption></figure>
+  </div>
+
+  <h2 id="b8">B8. App do gestor de órgão</h2>
+  <p>Na tela de entrada, toque em <strong>É gestor de um órgão? Acesso do gestor</strong> e use o mesmo e-mail e senha do painel web.
+    O usuário precisa estar vinculado a um órgão.</p>
+  <ul>
+    <li><strong>Ocorrências do órgão:</strong> lista das ocorrências do seu órgão, com filtro por status. Toque para ver o detalhe
+      (local, descrição, solicitante e histórico de status) e, em <strong>Salvar status</strong>, mova a ocorrência para a próxima etapa.
+      Em ocorrências anônimas, o solicitante aparece como “Cidadão anônimo”.</li>
+    <li><strong>Notificações:</strong> aviso de cada nova ocorrência do órgão; o número no ícone mostra as não lidas.</li>
+    <li><strong>Minha conta:</strong> ligue ou desligue <em>Novas ocorrências do órgão</em> — “Receber aviso quando um cidadão registrar
+      uma ocorrência” — e saia do app.</li>
+  </ul>
+</section>
+
+<!-- PARTE C -->
+<section class="part">
+  <div class="part-title"><h1>Parte C — Privacidade e suporte</h1></div>
+
+  <h2 id="c1">C1. Quem vê cada informação</h2>
+  <table>
+    <tr><th>Informação</th><th>Quem vê</th></tr>
+    <tr><td>Uma ocorrência (dados, fotos, status)</td><td>Quem registrou (pela conta ou pelo protocolo + código), o gestor do órgão responsável e a equipe da central com permissão</td></tr>
+    <tr><td>Identidade de quem registrou como anônimo</td><td>Ninguém do órgão — nem o gestor nem o painel. Com conta, a ocorrência continua na sua lista para você acompanhar</td></tr>
+    <tr><td>Fotos das ocorrências</td><td>Guardadas em armazenamento privado; só abrem por um link temporário (válido por 1 hora) gerado para quem pode ver a ocorrência</td></tr>
+    <tr><td>Totais Abertas / Em andamento / Resolvidas</td><td>Público — são apenas números, sem dados de nenhuma ocorrência</td></tr>
+    <tr><td>Informativos publicados</td><td>Público (site e app). Rascunhos só no painel</td></tr>
+    <tr><td>Respostas de pesquisa</td><td>Equipe com acesso a Pesquisas — as respostas não identificam o cidadão</td></tr>
+    <tr><td>Dados pessoais do solicitante</td><td>Equipe autorizada; cada acesso fica registrado. Podem ser apagados (LGPD) por Supervisor/Administrador; ocorrências encerradas antigas podem ser anonimizadas em lote pela equipe técnica</td></tr>
+  </table>
+
+  <h2 id="c2">C2. Dúvidas frequentes</h2>
+  <h4>Perdi o código de acompanhamento. E agora?</h4>
+  <p>Se ainda estiver no mesmo aparelho, a ocorrência continua na aba Ocorrências. Sem o aparelho e sem o código, não é possível
+    consultá-la — por segurança, o protocolo sozinho não abre a ocorrência. Crie uma conta para não depender do código nas próximas.</p>
+  <h4>Não consigo entrar no app com minha conta.</h4>
+  <p>Confira o e-mail e a senha usados no cadastro. Após 5 tentativas erradas, o app bloqueia novas tentativas por um minuto.
+    Nesta versão não há recuperação de senha pelo app — procure o atendimento da prefeitura.</p>
+  <h4>Apareceu “Não foi possível carregar”.</h4>
+  <p>É falta de conexão ou o servidor demorou a responder. Toque em <strong>Tentar novamente</strong> (ou puxe a tela para baixo);
+    o formulário de ocorrência também tenta de novo sozinho quando você volta para ele.</p>
+  <h4>Registrei sem cadastro e a ocorrência não aparece no mapa.</h4>
+  <p>É esperado: o mapa mostra apenas as ocorrências da sua conta. Acompanhe pela aba Ocorrências.</p>
+  <h4>Publiquei um informativo e ele não aparece no app.</h4>
+  <p>Confira se está marcado como <em>Publicado</em> e, no app, puxe a tela Início para baixo para atualizar. Se um órgão estiver
+    selecionado no filtro, só aparecem os informativos dele.</p>
+  <h4>O gestor não vê o menu Informativos ou não entra no painel.</h4>
+  <p>O usuário precisa estar vinculado a um órgão <em>e</em> ter um cargo com acesso ao painel. Peça ao administrador.</p>
+  <h4>Uma ocorrência sumiu dos totais do app.</h4>
+  <p>Ocorrências canceladas ou marcadas como duplicadas não entram na contagem. Se um status tiver sido renomeado no painel, as
+    ocorrências nele também saem da contagem — fale com o administrador.</p>
+  <h4>O número de pesquisas pendentes não muda.</h4>
+  <p>Ele conta as pesquisas ativas que você ainda não respondeu <em>neste aparelho</em> e é atualizado ao trocar de aba.</p>
+
+  <h2 id="c3">C3. Glossário</h2>
+  <table>
+    <tr><th>Termo</th><th>Significado</th></tr>
+    <tr><td>Protocolo</td><td>Número único da ocorrência (ex.: OC-2026-00012)</td></tr>
+    <tr><td>Código de acompanhamento</td><td>Senha de 8 caracteres entregue a quem registra sem cadastro; junto com o protocolo, dá acesso à ocorrência</td></tr>
+    <tr><td>Órgão</td><td>Secretaria ou setor responsável pelo tipo de ocorrência</td></tr>
+    <tr><td>Gestor de órgão</td><td>Usuário vinculado a um órgão; analisa as ocorrências e publica os informativos dele</td></tr>
+    <tr><td>SLA / Prazo</td><td>Tempo máximo esperado para resolver, definido pela prioridade ou pelo tipo</td></tr>
+    <tr><td>Despacho</td><td>Atribuição da ocorrência a um motorista/equipe</td></tr>
+    <tr><td>Evidência</td><td>Foto do antes ou do depois do atendimento</td></tr>
+    <tr><td>Informativo</td><td>Aviso público de um órgão, exibido no site e no app</td></tr>
+    <tr><td>LGPD</td><td>Lei Geral de Proteção de Dados — regras de uso e exclusão de dados pessoais</td></tr>
+  </table>
+</section>
+
+</body>
+</html>

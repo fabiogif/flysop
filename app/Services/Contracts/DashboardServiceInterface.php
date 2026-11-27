@@ -16,4 +16,10 @@ interface DashboardServiceInterface
      * por status e por prioridade.
      */
     public function getChartsData(): array;
+
+    /**
+     * Indicadores de gestão (Eixo 4): concluídas, atrasadas, tempo médio de atendimento,
+     * rankings por bairro, secretaria e categoria.
+     */
+    public function getIndicators(): array;
 }

@@ -10,14 +10,20 @@ use Spatie\Activitylog\Traits\LogsActivity;
 class Occurrences extends Model
 {
     use LogsActivity;
-    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'nameType', 'nameStatus'];
+    protected $fillable = ['protocol', 'title', 'name', 'description', 'cpf', 'rg', 'address', 'neighborhood', 'city', 'state', 'zip', 'users_id', 'email', 'issuings_id', 'type_occurrences_id', 'phone', 'latitude', 'longitude', 'status_occurrences_id', 'priority_id', 'due_at', 'driver_id', 'possible_duplicate_of_id', 'clients_id', 'is_anonymous', 'tracking_code_hash', 'team_id', 'rating', 'rating_comment', 'rated_at', 'nameType', 'nameStatus'];
 
     protected $casts = [
         'due_at' => 'datetime',
+        'rated_at' => 'datetime',
+        'rating' => 'integer',
+        'is_anonymous' => 'boolean',
+        // decimal do Postgres chega como string; API/app tratam como número
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     // Coluna gerada pelo Postgres (busca global — Fase 4), nunca setada via PHP.
-    protected $hidden = ['search_vector'];
+    protected $hidden = ['search_vector', 'tracking_code_hash'];
 
     use HasFactory;
 
@@ -44,7 +50,7 @@ class Occurrences extends Model
     }
 
 
-    public function Occurrence($filter = null)
+    public function Occurrence($filter = null, ?int $issuingId = null)
     {
 
         $occurrences = $this->select(
@@ -67,7 +73,8 @@ class Occurrences extends Model
                     ->orWhere('occurrences.protocol', 'ILIKE', "%{$filter}%")
                     ->orWhereRaw("occurrences.search_vector @@ plainto_tsquery('portuguese', ?)", [$filter]);
             }
-        })->orderBy('occurrences.updated_at', 'desc')->orderBy('occurrences.created_at', 'desc')->paginate();
+        })->when($issuingId, fn ($query) => $query->where('occurrences.issuings_id', $issuingId))
+            ->orderByGravity()->paginate();
 
         return $occurrences;
     }
@@ -98,6 +105,20 @@ class Occurrences extends Model
     }
 
 
+    /**
+     * Priorização por gravidade (Eixo 4): abertas antes das encerradas; depois maior peso
+     * de prioridade, prazo (SLA) mais próximo e mais recentes. Subconsultas para não colidir
+     * com os joins de Occurrence().
+     */
+    public function scopeOrderByGravity($query)
+    {
+        return $query
+            ->orderByRaw('(SELECT is_terminal FROM status_occurrences s WHERE s.id = occurrences.status_occurrences_id) ASC')
+            ->orderByRaw('(SELECT weight FROM priorities p WHERE p.id = occurrences.priority_id) DESC NULLS LAST')
+            ->orderByRaw('occurrences.due_at ASC NULLS LAST')
+            ->orderByDesc('occurrences.created_at');
+    }
+
     public function statusOccurence()
     {
         return $this->belongsTo(StatusOccurrence::class, 'status_occurrences_id');
@@ -113,6 +134,11 @@ class Occurrences extends Model
         return $this->belongsTo(Issuing::class, 'issuings_id');
     }
 
+    public function client()
+    {
+        return $this->belongsTo(Client::class, 'clients_id');
+    }
+
     public function imagens()
     {
         return $this->hasMany(OccurrencesImagens::class, 'occurrence_id');
@@ -121,6 +147,11 @@ class Occurrences extends Model
     public function driver()
     {
         return $this->belongsTo(Driver::class);
+    }
+
+    public function team()
+    {
+        return $this->belongsTo(Team::class);
     }
 
     public function priority()

@@ -11,6 +11,8 @@ class SurveyResponse extends Model
 
     protected $fillable = [
         'survey_id',
+        'respondent_name',
+        'respondent_key',
         'submitted_at',
         'ip',
     ];

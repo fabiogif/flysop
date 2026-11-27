@@ -5,9 +5,11 @@
     if ($existingQuestions === null && isset($survey)) {
         $existingQuestions = $survey->questions->map(function ($q) {
             return [
+                'id' => $q->id,
                 'type' => $q->type,
                 'prompt' => $q->prompt,
                 'required' => $q->required ? '1' : '0',
+                'allow_justification' => $q->allow_justification ? '1' : '0',
                 'options' => is_array($q->options) ? implode("\n", $q->options) : '',
             ];
         })->values()->all();
@@ -61,6 +63,7 @@
         <div id="survey-questions" data-initial='@json($existingQuestions)'></div>
         <template id="survey-question-template">
             <div class="survey-question-card border rounded p-3 mb-3">
+                <input type="hidden" class="survey-id">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <strong class="survey-question-label">Pergunta</strong>
                     <button type="button" class="btn btn-sm btn-outline-danger survey-remove-question" title="Remover">
@@ -78,6 +81,7 @@
                             <option value="text">Texto livre</option>
                             <option value="single_choice">Múltipla escolha (única)</option>
                             <option value="scale">Escala 1–5</option>
+                            <option value="number">Número</option>
                         </select>
                     </div>
                 </div>
@@ -85,6 +89,10 @@
                     <label>Opções (uma por linha)</label>
                     <textarea class="form-control survey-options" rows="3" placeholder="Opção A&#10;Opção B&#10;Opção C"></textarea>
                     <small class="form-text text-muted">Obrigatório para múltipla escolha.</small>
+                    <div class="custom-control custom-checkbox mt-2">
+                        <input type="checkbox" class="custom-control-input survey-justification">
+                        <label class="custom-control-label">Permitir justificativa (campo de texto opcional após a escolha, ex.: Sim/Não + por quê)</label>
+                    </div>
                 </div>
                 <div class="custom-control custom-checkbox">
                     <input type="checkbox" class="custom-control-input survey-required" checked>
@@ -117,6 +125,7 @@
         var cards = container.querySelectorAll('.survey-question-card');
         cards.forEach(function (card, index) {
             card.querySelector('.survey-question-label').textContent = 'Pergunta ' + (index + 1);
+            card.querySelector('.survey-id').name = 'questions[' + index + '][id]';
             card.querySelector('.survey-prompt').name = 'questions[' + index + '][prompt]';
             card.querySelector('.survey-type').name = 'questions[' + index + '][type]';
             card.querySelector('.survey-options').name = 'questions[' + index + '][options]';
@@ -133,6 +142,24 @@
                 req.parentNode.insertBefore(hidden, req);
             }
             hidden.name = 'questions[' + index + '][required]';
+
+            var just = card.querySelector('.survey-justification');
+            just.name = 'questions[' + index + '][allow_justification]';
+            just.value = '1';
+            var justHidden = card.querySelector('.survey-justification-hidden');
+            if (!justHidden) {
+                justHidden = document.createElement('input');
+                justHidden.type = 'hidden';
+                justHidden.className = 'survey-justification-hidden';
+                justHidden.value = '0';
+                just.parentNode.insertBefore(justHidden, just);
+            }
+            justHidden.name = 'questions[' + index + '][allow_justification]';
+
+            req.id = 'survey-required-' + index;
+            req.nextElementSibling.htmlFor = req.id;
+            just.id = 'survey-justification-' + index;
+            just.nextElementSibling.htmlFor = just.id;
         });
     }
 
@@ -140,13 +167,16 @@
         data = data || { type: 'text', prompt: '', required: '1', options: '' };
         var node = template.content.cloneNode(true);
         var card = node.querySelector('.survey-question-card');
+        card.querySelector('.survey-id').value = data.id || '';
         card.querySelector('.survey-prompt').value = data.prompt || '';
         card.querySelector('.survey-type').value = data.type || 'text';
         card.querySelector('.survey-options').value = data.options || '';
         card.querySelector('.survey-required').checked = data.required === true || data.required === '1' || data.required === 1;
+        card.querySelector('.survey-justification').checked = data.allow_justification === true || data.allow_justification === '1' || data.allow_justification === 1;
         card.querySelector('.survey-type').addEventListener('change', function () { toggleOptions(card); });
         card.querySelector('.survey-remove-question').addEventListener('click', function () {
             if (container.querySelectorAll('.survey-question-card').length <= 1) return;
+            if (card.querySelector('.survey-id').value && !confirm('Remover esta pergunta? As respostas já recebidas para ela serão excluídas ao salvar.')) return;
             card.remove();
             reindex();
         });

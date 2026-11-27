@@ -70,6 +70,7 @@ class OccurrencesController extends Controller
             'typeOccurrence',
             'issuing',
             'driver',
+            'team',
             'statusHistory.fromStatus',
             'statusHistory.toStatus',
             'statusHistory.changedBy',
@@ -171,6 +172,21 @@ class OccurrencesController extends Controller
         $this->occurrenceService->dismissDuplicateFlag($id);
 
         return redirect()->route('occurrences.show', $id)->with('messageSuccess', 'Marcada como não duplicata.');
+    }
+
+    /**
+     * Encaminha para uma equipe da secretaria da ocorrência (Eixo 4).
+     */
+    public function forwardToTeam(Request $request, int $id): RedirectResponse
+    {
+        $data = $request->validate(['team_id' => 'required|integer']);
+
+        $occurrence = $this->occurrenceService->findOrFail($id);
+        $this->authorize('update', $occurrence);
+
+        $this->occurrenceService->forwardToTeam($id, $data['team_id']);
+
+        return redirect()->route('occurrences.show', $id)->with('messageSuccess', 'Ocorrência encaminhada para a equipe.');
     }
 
     /**

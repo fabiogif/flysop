@@ -20,7 +20,7 @@
 
     <table class="fields">
         <tr><td class="label">Título</td><td>{{ $occurrence->title }}</td></tr>
-        <tr><td class="label">Solicitante</td><td>{{ $occurrence->name }}</td></tr>
+        <tr><td class="label">Solicitante</td><td>{{ $occurrence->is_anonymous ? 'Anônimo' : $occurrence->name }}</td></tr>
         <tr><td class="label">Status</td><td>{{ $occurrence->statusOccurence->name ?? '—' }}</td></tr>
         <tr><td class="label">Tipo</td><td>{{ $occurrence->typeOccurrence->name ?? '—' }}</td></tr>
         <tr><td class="label">Prioridade</td><td>{{ $occurrence->priority->name ?? '—' }}</td></tr>
