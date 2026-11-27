@@ -36,6 +36,11 @@
                     @if ($question->type === 'text')
                         <textarea name="answers[{{ $question->id }}]" rows="3"
                             {{ $question->required ? 'required' : '' }}>{{ old('answers.'.$question->id) }}</textarea>
+                    @elseif ($question->type === 'number')
+                        <input type="text" inputmode="decimal" pattern="-?[0-9]+([.,][0-9]+)?"
+                            title="Informe apenas números" maxlength="30"
+                            name="answers[{{ $question->id }}]" value="{{ old('answers.'.$question->id) }}"
+                            {{ $question->required ? 'required' : '' }}>
                     @elseif ($question->type === 'single_choice')
                         <div class="ciop-survey-choices">
                             @foreach ($question->options ?? [] as $option)

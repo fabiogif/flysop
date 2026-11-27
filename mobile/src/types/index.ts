@@ -52,7 +52,7 @@ export interface Occurrence {
 
 export interface SurveyQuestion {
   id: number;
-  type: 'text' | 'single_choice' | 'scale';
+  type: 'text' | 'single_choice' | 'scale' | 'number';
   prompt: string;
   options?: string[];
   required: boolean;
@@ -66,6 +66,8 @@ export interface Survey {
   description?: string;
   public_token: string;
   is_active: boolean;
+  // Já respondida por este cidadão/aparelho (calculado pela API)
+  answered?: boolean;
   questions?: SurveyQuestion[];
 }
 

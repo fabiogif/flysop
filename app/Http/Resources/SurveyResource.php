@@ -14,6 +14,7 @@ class SurveyResource extends JsonResource
             'description' => $this->description,
             'public_token' => $this->public_token,
             'is_active' => $this->is_active,
+            'answered' => (bool) $this->answered,
             'questions' => SurveyQuestionResource::collection($this->whenLoaded('questions')),
         ];
     }

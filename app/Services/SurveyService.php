@@ -9,10 +9,13 @@ use App\Models\SurveyResponse;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\ValidationException;
 
 class SurveyService
 {
+    public const ALREADY_ANSWERED = 'Você já respondeu esta pesquisa.';
+
     /**
      * Sem DB::transaction() envolvendo múltiplos statements — em produção (Fly.io) a
      * conexão passa por um pooler local (PgCat/PgBouncer-style, 127.0.0.1:5432) em modo
@@ -133,7 +136,7 @@ class SurveyService
 
         $byValue = SurveyAnswer::query()
             ->whereIn('survey_response_id', $responseIds)
-            ->whereIn('survey_question_id', $questions->where('type', '!=', SurveyQuestion::TYPE_TEXT)->pluck('id'))
+            ->whereIn('survey_question_id', $questions->whereIn('type', [SurveyQuestion::TYPE_SINGLE_CHOICE, SurveyQuestion::TYPE_SCALE])->pluck('id'))
             ->selectRaw('survey_question_id, value, count(*) as total')
             ->groupBy('survey_question_id', 'value')
             ->get()
@@ -185,15 +188,54 @@ class SurveyService
     }
 
     /**
-     * @param  array<int|string, mixed>  $answers  keyed by question id
-     * @param  array<int|string, mixed>  $justifications  keyed by question id (só perguntas com allow_justification)
-     * @param  ?string  $respondentName  opcional — sem nome a resposta continua anônima
+     * Chave anônima do respondente (HMAC com a APP_KEY): barra a segunda resposta sem gravar
+     * quem respondeu. $identity ex.: "client:12", "device:<id do app>", "web:<cookie>".
      */
-    public function submitResponse(Survey $survey, array $answers, ?string $ip = null, array $justifications = [], ?string $respondentName = null): SurveyResponse
+    public function respondentKey(?string $identity): ?string
     {
+        return $identity ? hash_hmac('sha256', $identity, (string) config('app.key')) : null;
+    }
+
+    public function hasResponded(Survey $survey, ?string $respondentKey): bool
+    {
+        return $respondentKey !== null
+            && $survey->responses()->where('respondent_key', $respondentKey)->exists();
+    }
+
+    /**
+     * Ids das pesquisas já respondidas por esta chave (marca "Respondida" na lista do app).
+     *
+     * @return array<int, int>
+     */
+    public function answeredSurveyIds(?string $respondentKey): array
+    {
+        if ($respondentKey === null) {
+            return [];
+        }
+
+        return SurveyResponse::where('respondent_key', $respondentKey)->pluck('survey_id')->all();
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $answers  keyed by question id
+     * @param  array{ip?: ?string, justifications?: array<int|string, mixed>, respondent_name?: ?string, respondent_key?: ?string}  $meta
+     *         justifications: por id de pergunta (só as com allow_justification); respondent_name: opcional,
+     *         sem nome a resposta continua anônima; respondent_key: ver respondentKey()
+     */
+    public function submitResponse(Survey $survey, array $answers, array $meta = []): SurveyResponse
+    {
+        $justifications = $meta['justifications'] ?? [];
+        $respondentKey = $meta['respondent_key'] ?? null;
+
         if (!$survey->is_active) {
             throw ValidationException::withMessages([
                 'survey' => 'Esta pesquisa está encerrada.',
+            ]);
+        }
+
+        if ($this->hasResponded($survey, $respondentKey)) {
+            throw ValidationException::withMessages([
+                'survey' => self::ALREADY_ANSWERED,
             ]);
         }
 
@@ -224,12 +266,21 @@ class SurveyService
             $normalizedByQuestionId[$questionId] = $this->normalizeAnswer($question, $value);
         }
 
-        $response = SurveyResponse::create([
-            'survey_id' => $survey->id,
-            'respondent_name' => trim((string) $respondentName) ?: null,
-            'submitted_at' => now(),
-            'ip' => $ip,
-        ]);
+        try {
+            $response = SurveyResponse::create([
+                'survey_id' => $survey->id,
+                'respondent_name' => trim((string) ($meta['respondent_name'] ?? '')) ?: null,
+                'respondent_key' => $respondentKey,
+                'submitted_at' => now(),
+                'ip' => $meta['ip'] ?? null,
+            ]);
+        } catch (QueryException $e) {
+            // Dois envios simultâneos do mesmo respondente: o índice único barra o segundo
+            if (($e->errorInfo[0] ?? null) === '23505') {
+                throw ValidationException::withMessages(['survey' => self::ALREADY_ANSWERED]);
+            }
+            throw $e;
+        }
 
         foreach ($normalizedByQuestionId as $questionId => $normalized) {
             $justification = null;
@@ -261,6 +312,17 @@ class SurveyService
             }
 
             return (string) (int) $value;
+        }
+
+        if ($question->type === SurveyQuestion::TYPE_NUMBER) {
+            $number = str_replace(',', '.', (string) $value);
+            if (!is_numeric($number)) {
+                throw ValidationException::withMessages([
+                    "answers.{$question->id}" => 'Informe apenas números.',
+                ]);
+            }
+
+            return $number;
         }
 
         if ($question->type === SurveyQuestion::TYPE_SINGLE_CHOICE) {

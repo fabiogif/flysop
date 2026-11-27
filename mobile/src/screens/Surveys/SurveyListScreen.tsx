@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { apiClient, getApiErrorMessage } from '../../api/client';
 import { Survey } from '../../types';
+import { getAnsweredSurveys, getSurveyDeviceId } from '../../services/answeredSurveys';
 
 interface SurveyListScreenProps {
   onSelectSurvey: (publicToken: string) => void;
@@ -24,10 +25,16 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
 
   const fetchSurveys = async () => {
     try {
-      const response = await apiClient.get<{ data?: Survey[] } & Survey[]>('/surveys');
+      const deviceId = await getSurveyDeviceId().catch(() => '');
+      const [response, answeredLocal] = await Promise.all([
+        apiClient.get<{ data?: Survey[] } & Survey[]>('/surveys', { params: { device_id: deviceId } }),
+        getAnsweredSurveys(),
+      ]);
       const list = response.data.data ?? response.data;
       if (Array.isArray(list)) {
-        setSurveys(list);
+        // Respondida = API (cidadão/aparelho) ou registro local; respondidas vão para o fim
+        const marked = list.map((s) => ({ ...s, answered: !!s.answered || answeredLocal.includes(s.public_token) }));
+        setSurveys(marked.sort((a, b) => Number(!!a.answered) - Number(!!b.answered)));
       }
       setErrorMessage(null);
     } catch (err: unknown) {
@@ -51,7 +58,11 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
   const renderSurveyItem = ({ item }: { item: Survey }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.badgeActive}>Ativa</Text>
+        {item.answered ? (
+          <Text style={styles.badgeAnswered}>✓ Respondida</Text>
+        ) : (
+          <Text style={styles.badgeActive}>Ativa</Text>
+        )}
       </View>
       <Text style={styles.title}>{item.title}</Text>
       {item.description ? (
@@ -60,12 +71,16 @@ export const SurveyListScreen: React.FC<SurveyListScreenProps> = ({ onSelectSurv
         </Text>
       ) : null}
 
-      <TouchableOpacity
-        style={styles.answerBtn}
-        onPress={() => onSelectSurvey(item.public_token)}
-      >
-        <Text style={styles.answerBtnText}>Responder Pesquisa</Text>
-      </TouchableOpacity>
+      {item.answered ? (
+        <Text style={styles.answeredText}>Você já respondeu esta pesquisa. Obrigado!</Text>
+      ) : (
+        <TouchableOpacity
+          style={styles.answerBtn}
+          onPress={() => onSelectSurvey(item.public_token)}
+        >
+          <Text style={styles.answerBtnText}>Responder Pesquisa</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -178,6 +193,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+  },
+  badgeAnswered: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#374151',
+    backgroundColor: '#E5E7EB',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  answeredText: {
+    fontSize: 13,
+    color: '#065F46',
+    fontWeight: '600',
   },
   title: {
     fontSize: 16,

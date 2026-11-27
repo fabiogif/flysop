@@ -81,6 +81,7 @@
                             <option value="text">Texto livre</option>
                             <option value="single_choice">Múltipla escolha (única)</option>
                             <option value="scale">Escala 1–5</option>
+                            <option value="number">Número</option>
                         </select>
                     </div>
                 </div>

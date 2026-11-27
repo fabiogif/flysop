@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { apiClient } from '../../api/client';
-import { saveAnsweredSurvey } from '../../services/answeredSurveys';
+import { getSurveyDeviceId, saveAnsweredSurvey } from '../../services/answeredSurveys';
 import { Survey, SurveyQuestion } from '../../types';
 
 interface SurveyDetailScreenProps {
@@ -29,6 +29,7 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [alreadyAnswered, setAlreadyAnswered] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,6 +83,7 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
         answers,
         justifications,
         respondent_name: respondentName.trim() || null,
+        device_id: await getSurveyDeviceId().catch(() => null),
       });
       await saveAnsweredSurvey(token).catch(() => {});
       setIsCompleted(true);
@@ -93,6 +95,13 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
           const data = res.data;
           if (data && typeof data === 'object' && 'message' in data && typeof data.message === 'string') {
             msg = data.message;
+          }
+          // Já respondida (outro aparelho com a mesma conta, ou resposta anterior): não deixa reenviar
+          if (msg && msg.includes('já respondeu')) {
+            await saveAnsweredSurvey(token).catch(() => {});
+            setAlreadyAnswered(true);
+            setIsCompleted(true);
+            return;
           }
         }
       }
@@ -115,7 +124,9 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
       <SafeAreaView style={styles.centerContainer}>
         <View style={styles.completedBox}>
           <Text style={styles.completedIcon}>🎉</Text>
-          <Text style={styles.completedTitle}>Obrigado pela sua resposta!</Text>
+          <Text style={styles.completedTitle}>
+            {alreadyAnswered ? 'Você já respondeu esta pesquisa' : 'Obrigado pela sua resposta!'}
+          </Text>
           <Text style={styles.completedSubtitle}>
             Sua opinião é fundamental para o aprimoramento dos serviços públicos
             do nosso município.
@@ -186,6 +197,18 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
                   onChangeText={(val) => handleTextAnswer(q.id, val)}
                   multiline
                   numberOfLines={3}
+                />
+              )}
+
+              {/* Type: number — só dígitos, sinal e separador decimal */}
+              {q.type === 'number' && (
+                <TextInput
+                  style={styles.nameInput}
+                  placeholder="Digite um número"
+                  keyboardType="decimal-pad"
+                  value={String(answers[q.id] ?? '')}
+                  onChangeText={(val) => handleTextAnswer(q.id, val.replace(/[^0-9.,-]/g, ''))}
+                  maxLength={30}
                 />
               )}
 

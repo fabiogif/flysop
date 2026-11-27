@@ -410,4 +410,65 @@ Não"],
             ->assertSee('Justificativa: Atrasou demais')
             ->assertSee('Maria');
     }
+    public function test_number_question_accepts_only_numbers(): void
+    {
+        $survey = Survey::factory()->create(['is_active' => true]);
+        $number = SurveyQuestion::factory()->create(['survey_id' => $survey->id, 'type' => SurveyQuestion::TYPE_NUMBER, 'prompt' => 'Idade']);
+
+        $this->from(route('public.surveys.show', $survey->public_token))
+            ->post(route('public.surveys.store', $survey->public_token), ['answers' => [$number->id => 'trinta']])
+            ->assertSessionHasErrors("answers.{$number->id}");
+
+        $this->post(route('public.surveys.store', $survey->public_token), ['answers' => [$number->id => '30,5']])
+            ->assertRedirect(route('public.surveys.thanks', $survey->public_token));
+
+        $this->assertDatabaseHas('survey_answers', ['survey_question_id' => $number->id, 'value' => '30.5']);
+    }
+
+    public function test_same_browser_cannot_answer_twice(): void
+    {
+        $survey = Survey::factory()->create(['is_active' => true]);
+        $q = SurveyQuestion::factory()->create(['survey_id' => $survey->id, 'prompt' => 'Comentário']);
+
+        // Sem cookie: o primeiro envio cria o id do navegador
+        $this->post(route('public.surveys.store', $survey->public_token), ['answers' => [$q->id => 'um']])
+            ->assertCookie('survey_respondent');
+
+        $browserId = 'navegador-1';
+        $this->withCookie('survey_respondent', $browserId)
+            ->post(route('public.surveys.store', $survey->public_token), ['answers' => [$q->id => 'um']])
+            ->assertRedirect(route('public.surveys.thanks', $survey->public_token));
+
+        $this->withCookie('survey_respondent', $browserId)
+            ->get(route('public.surveys.show', $survey->public_token))
+            ->assertSee('Você já respondeu');
+
+        $this->withCookie('survey_respondent', $browserId)
+            ->post(route('public.surveys.store', $survey->public_token), ['answers' => [$q->id => 'dois']])
+            ->assertSessionHasErrors('survey');
+
+        $this->assertSame(2, SurveyResponse::where('survey_id', $survey->id)->count());
+    }
+
+    public function test_app_device_and_citizen_cannot_answer_twice_and_list_flags_answered(): void
+    {
+        $tenant = Tenant::factory()->create();
+        $survey = Survey::factory()->create(['tenant_id' => $tenant->id, 'is_active' => true]);
+        $q = SurveyQuestion::factory()->create(['survey_id' => $survey->id, 'prompt' => 'Comentário']);
+        $url = '/api/surveys/'.$survey->public_token.'/responses';
+
+        $this->postJson($url, ['answers' => [$q->id => 'a'], 'device_id' => 'dev-1'])->assertCreated();
+        $this->postJson($url, ['answers' => [$q->id => 'b'], 'device_id' => 'dev-1'])
+            ->assertStatus(422)->assertJsonPath('message', \App\Services\SurveyService::ALREADY_ANSWERED);
+        $this->getJson('/api/surveys?device_id=dev-1')->assertJsonPath('data.0.answered', true);
+        $this->getJson('/api/surveys?device_id=dev-2')->assertJsonPath('data.0.answered', false);
+
+        // Cidadão logado: vale a conta, mesmo trocando de aparelho
+        $client = \App\Models\Client::factory()->create();
+        $token = $client->createToken('app')->plainTextToken;
+        $this->withToken($token)->postJson($url, ['answers' => [$q->id => 'c'], 'device_id' => 'dev-3'])->assertCreated();
+        $this->withToken($token)->postJson($url, ['answers' => [$q->id => 'd'], 'device_id' => 'dev-4'])->assertStatus(422);
+
+        $this->assertSame(2, SurveyResponse::where('survey_id', $survey->id)->count());
+    }
 }
