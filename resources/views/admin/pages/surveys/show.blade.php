@@ -83,7 +83,10 @@
                             <tr>
                                 <td>{{ $question->sort_order + 1 }}</td>
                                 <td>{{ $question->prompt }}</td>
-                                <td>{{ \App\Models\SurveyQuestion::typeLabels()[$question->type] ?? $question->type }}</td>
+                                <td>
+                                    {{ \App\Models\SurveyQuestion::typeLabels()[$question->type] ?? $question->type }}
+                                    @if ($question->allow_justification)<span class="text-muted small">+ justificativa</span>@endif
+                                </td>
                                 <td>{{ $question->required ? 'Sim' : 'Não' }}</td>
                             </tr>
                         @empty
@@ -132,6 +135,7 @@
                     <thead>
                         <tr>
                             <th>Enviada em</th>
+                            <th>Nome</th>
                             <th>IP</th>
                             <th>Respostas</th>
                             <th></th>
@@ -141,6 +145,7 @@
                         @forelse ($recentResponses as $response)
                             <tr>
                                 <td>{{ $response->submitted_at ? $response->submitted_at->format('d/m/Y H:i') : '—' }}</td>
+                                <td>{{ $response->respondent_name ?: 'Anônimo' }}</td>
                                 <td>{{ $response->ip ?? '—' }}</td>
                                 <td>{{ $response->answers_count }}</td>
                                 <td class="text-right">
@@ -154,7 +159,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="4" class="ciop-empty">Nenhuma resposta ainda.</td></tr>
+                            <tr><td colspan="5" class="ciop-empty">Nenhuma resposta ainda.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

@@ -68,7 +68,7 @@
     @forelse ($responses as $response)
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Resposta #{{ $response->id }}</span>
+                <span>Resposta #{{ $response->id }} — {{ $response->respondent_name ?: 'Anônimo' }}</span>
                 <span>
                     <small class="text-muted mr-2">
                         {{ $response->submitted_at ? $response->submitted_at->format('d/m/Y H:i') : '—' }}
@@ -106,7 +106,12 @@
                                 @endphp
                                 <tr>
                                     <td>{{ $question->prompt }}</td>
-                                    <td>{{ $answer->value ?? '—' }}</td>
+                                    <td>
+                                        {{ $answer->value ?? '—' }}
+                                        @if ($answer && $answer->justification)
+                                            <div class="text-muted small">Justificativa: {{ $answer->justification }}</div>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

@@ -45,6 +45,7 @@ class StoreUpdateSurvey extends FormRequest
             'questions.*.type' => ['required', Rule::in(SurveyQuestion::TYPES)],
             'questions.*.prompt' => ['required', 'string', 'min:2', 'max:500'],
             'questions.*.required' => ['sometimes', 'boolean'],
+            'questions.*.allow_justification' => ['sometimes', 'boolean'],
             'questions.*.sort_order' => ['nullable', 'integer', 'min:0'],
             'questions.*.options' => ['nullable', 'array'],
             'questions.*.options.*' => ['nullable', 'string', 'max:255'],

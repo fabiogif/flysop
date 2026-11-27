@@ -25,12 +25,14 @@ class SurveyQuestion extends Model
         'prompt',
         'options',
         'required',
+        'allow_justification',
         'sort_order',
     ];
 
     protected $casts = [
         'options' => 'array',
         'required' => 'boolean',
+        'allow_justification' => 'boolean',
         'sort_order' => 'integer',
     ];
 

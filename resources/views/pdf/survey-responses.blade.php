@@ -55,13 +55,19 @@
     @forelse ($responses as $response)
         @php $answers = $response->answers->keyBy('survey_question_id'); @endphp
         <div class="response">
-            <strong>Resposta #{{ $response->id }}</strong>
+            <strong>Resposta #{{ $response->id }} — {{ $response->respondent_name ?: 'Anônimo' }}</strong>
             <span class="muted">— {{ $response->submitted_at?->format('d/m/Y H:i') ?? '—' }}</span>
             <table class="grid">
                 @foreach ($survey->questions as $question)
                     <tr>
                         <td class="label">{{ $question->prompt }}</td>
-                        <td>{{ $answers->get($question->id)->value ?? '—' }}</td>
+                        @php $answer = $answers->get($question->id); @endphp
+                        <td>
+                            {{ $answer->value ?? '—' }}
+                            @if ($answer && $answer->justification)
+                                <br><span class="muted">Justificativa: {{ $answer->justification }}</span>
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </table>

@@ -56,6 +56,7 @@ export interface SurveyQuestion {
   prompt: string;
   options?: string[];
   required: boolean;
+  allow_justification?: boolean;
   sort_order: number;
 }
 

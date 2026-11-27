@@ -37,7 +37,12 @@ class StoreSurveyResponse extends FormRequest
             return [];
         }
 
-        $rules = ['answers' => ['nullable', 'array']];
+        $rules = [
+            'respondent_name' => ['nullable', 'string', 'max:255'],
+            'answers' => ['nullable', 'array'],
+            'justifications' => ['nullable', 'array'],
+            'justifications.*' => ['nullable', 'string', 'max:2000'],
+        ];
 
         foreach ($survey->questions as $question) {
             $key = "answers.{$question->id}";
@@ -69,6 +74,8 @@ class StoreSurveyResponse extends FormRequest
             'answers.*.min' => 'Informe um valor de 1 a 5.',
             'answers.*.max' => 'Informe um valor válido.',
             'answers.*.integer' => 'Informe um valor de 1 a 5.',
+            'respondent_name.max' => 'O nome deve ter no máximo 255 caracteres.',
+            'justifications.*.max' => 'A justificativa deve ter no máximo 2000 caracteres.',
         ];
     }
 }

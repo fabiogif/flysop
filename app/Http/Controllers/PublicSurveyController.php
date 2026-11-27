@@ -45,7 +45,9 @@ class PublicSurveyController extends Controller
         $this->surveyService->submitResponse(
             $survey,
             $request->input('answers', []),
-            $request->ip()
+            $request->ip(),
+            $request->input('justifications', []),
+            $request->input('respondent_name')
         );
 
         return redirect()

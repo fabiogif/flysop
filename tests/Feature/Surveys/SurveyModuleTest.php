@@ -372,4 +372,42 @@ class SurveyModuleTest extends TestCase
         $this->get(route('surveys.responses.pdf', $survey->id))
             ->assertRedirect(route('surveys.index'));
     }
+    public function test_choice_question_with_justification_is_saved_and_shown(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->post(route('surveys.store'), [
+            'title' => 'Pesquisa com justificativa',
+            'is_active' => '1',
+            'questions' => [
+                ['type' => 'single_choice', 'prompt' => 'Aprova a obra?', 'required' => '1', 'allow_justification' => '1', 'options' => "Sim
+Não"],
+                ['type' => 'text', 'prompt' => 'Comentário', 'required' => '0', 'allow_justification' => '1', 'options' => ''],
+            ],
+        ])->assertRedirect();
+
+        $survey = Survey::latest('id')->firstOrFail();
+        [$choice, $text] = $survey->questions->values()->all();
+        $this->assertTrue($choice->allow_justification);
+        $this->assertFalse($text->allow_justification, 'justificativa só vale para múltipla escolha');
+
+        $this->getJson('/api/surveys/'.$survey->public_token)
+            ->assertOk()
+            ->assertJsonPath('data.questions.0.allow_justification', true);
+
+        $this->post(route('public.surveys.store', $survey->public_token), [
+            'answers' => [$choice->id => 'Não', $text->id => 'ok'],
+            'justifications' => [$choice->id => '  Atrasou demais  ', $text->id => 'ignorada'],
+            'respondent_name' => '  Maria  ',
+        ])->assertRedirect(route('public.surveys.thanks', $survey->public_token));
+
+        $this->assertDatabaseHas('survey_answers', ['survey_question_id' => $choice->id, 'value' => 'Não', 'justification' => 'Atrasou demais']);
+        $this->assertDatabaseHas('survey_answers', ['survey_question_id' => $text->id, 'justification' => null]);
+        $this->assertDatabaseHas('survey_responses', ['survey_id' => $survey->id, 'respondent_name' => 'Maria']);
+
+        $this->get(route('surveys.responses', $survey->id))
+            ->assertOk()
+            ->assertSee('Justificativa: Atrasou demais')
+            ->assertSee('Maria');
+    }
 }

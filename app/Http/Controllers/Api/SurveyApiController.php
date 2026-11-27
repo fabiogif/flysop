@@ -59,7 +59,9 @@ class SurveyApiController extends Controller
         $response = $this->surveyService->submitResponse(
             $survey,
             $request->input('answers', []),
-            $request->ip()
+            $request->ip(),
+            $request->input('justifications', []),
+            $request->input('respondent_name')
         );
 
         return response()->json(['id' => $response->id], 201);

@@ -13,6 +13,7 @@ class SurveyAnswer extends Model
         'survey_response_id',
         'survey_question_id',
         'value',
+        'justification',
     ];
 
     public function response()

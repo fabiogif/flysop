@@ -17,6 +17,14 @@
 
         <form method="POST" action="{{ route('public.surveys.store', $survey->public_token) }}" class="ciop-survey-form">
             @csrf
+            <fieldset class="ciop-survey-field {{ $errors->has('respondent_name') ? 'is-invalid' : '' }}">
+                <legend><label for="respondent_name">Seu nome (opcional)</label></legend>
+                <input type="text" id="respondent_name" name="respondent_name" maxlength="255" autocomplete="name"
+                    value="{{ old('respondent_name') }}">
+                @error('respondent_name')
+                    <p class="ciop-survey-error">{{ $message }}</p>
+                @enderror
+            </fieldset>
             @foreach ($survey->questions as $question)
                 <fieldset class="ciop-survey-field {{ $errors->has('answers.'.$question->id) ? 'is-invalid' : '' }}">
                     <legend>
@@ -40,6 +48,13 @@
                                 </label>
                             @endforeach
                         </div>
+                        @if ($question->allow_justification)
+                            <label class="ciop-survey-hint" for="justification-{{ $question->id }}">Justificativa (opcional)</label>
+                            <textarea id="justification-{{ $question->id }}" name="justifications[{{ $question->id }}]" rows="2" maxlength="2000">{{ old('justifications.'.$question->id) }}</textarea>
+                            @error('justifications.'.$question->id)
+                                <p class="ciop-survey-error">{{ $message }}</p>
+                            @enderror
+                        @endif
                     @elseif ($question->type === 'scale')
                         <div class="ciop-survey-scale" role="radiogroup" aria-label="Escala de 1 a 5">
                             @for ($i = 1; $i <= 5; $i++)

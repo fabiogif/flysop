@@ -24,6 +24,8 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
 }) => {
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [answers, setAnswers] = useState<Record<number, string | number>>({});
+  const [justifications, setJustifications] = useState<Record<number, string>>({});
+  const [respondentName, setRespondentName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -78,6 +80,8 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
     try {
       await apiClient.post(`/surveys/${token}/responses`, {
         answers,
+        justifications,
+        respondent_name: respondentName.trim() || null,
       });
       await saveAnsweredSurvey(token).catch(() => {});
       setIsCompleted(true);
@@ -151,6 +155,18 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
 
         {/* Dynamic Questions Renderer */}
         <View style={styles.questionsList}>
+          <View style={styles.questionCard}>
+            <Text style={styles.questionPrompt}>Seu nome (opcional)</Text>
+            <TextInput
+              style={styles.nameInput}
+              placeholder="Deixe em branco para responder anonimamente"
+              value={respondentName}
+              onChangeText={setRespondentName}
+              maxLength={255}
+              autoComplete="name"
+            />
+          </View>
+
           {survey.questions?.map((q, idx) => (
             <View key={q.id} style={styles.questionCard}>
               <Text style={styles.questionPrompt}>
@@ -201,6 +217,19 @@ export const SurveyDetailScreen: React.FC<SurveyDetailScreenProps> = ({
                       </TouchableOpacity>
                     );
                   })}
+                  {q.allow_justification && (
+                    <TextInput
+                      style={styles.textInput}
+                      placeholder="Justificativa (opcional)"
+                      value={justifications[q.id] || ''}
+                      onChangeText={(val) =>
+                        setJustifications((prev) => ({ ...prev, [q.id]: val }))
+                      }
+                      maxLength={2000}
+                      multiline
+                      numberOfLines={3}
+                    />
+                  )}
                 </View>
               )}
 
@@ -327,6 +356,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     height: 80,
     textAlignVertical: 'top',
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    color: '#111827',
+    backgroundColor: '#FFFFFF',
   },
   choiceGroup: {
     gap: 8,

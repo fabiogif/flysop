@@ -78,6 +78,8 @@ class SurveyService
                 'prompt' => $question['prompt'],
                 'options' => $options,
                 'required' => (bool) ($question['required'] ?? true),
+                // Justificativa só faz sentido em múltipla escolha (ex.: Sim/Não + por quê).
+                'allow_justification' => $type === SurveyQuestion::TYPE_SINGLE_CHOICE && (bool) ($question['allow_justification'] ?? false),
                 'sort_order' => (int) ($question['sort_order'] ?? $index),
             ];
 
@@ -184,8 +186,10 @@ class SurveyService
 
     /**
      * @param  array<int|string, mixed>  $answers  keyed by question id
+     * @param  array<int|string, mixed>  $justifications  keyed by question id (só perguntas com allow_justification)
+     * @param  ?string  $respondentName  opcional — sem nome a resposta continua anônima
      */
-    public function submitResponse(Survey $survey, array $answers, ?string $ip = null): SurveyResponse
+    public function submitResponse(Survey $survey, array $answers, ?string $ip = null, array $justifications = [], ?string $respondentName = null): SurveyResponse
     {
         if (!$survey->is_active) {
             throw ValidationException::withMessages([
@@ -222,15 +226,22 @@ class SurveyService
 
         $response = SurveyResponse::create([
             'survey_id' => $survey->id,
+            'respondent_name' => trim((string) $respondentName) ?: null,
             'submitted_at' => now(),
             'ip' => $ip,
         ]);
 
         foreach ($normalizedByQuestionId as $questionId => $normalized) {
+            $justification = null;
+            if ($questions[$questionId]->allow_justification && is_string($justifications[$questionId] ?? null)) {
+                $justification = mb_substr(trim($justifications[$questionId]), 0, 2000) ?: null;
+            }
+
             SurveyAnswer::create([
                 'survey_response_id' => $response->id,
                 'survey_question_id' => $questionId,
                 'value' => $normalized,
+                'justification' => $justification,
             ]);
         }
 
